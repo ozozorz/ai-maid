@@ -1,5 +1,9 @@
 package io.github.ozozorz.aimaid.entity;
 
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.world.entity.AnimationState;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
@@ -12,6 +16,8 @@ import net.minecraft.world.entity.animal.cow.Cow;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 
 // 准备你的第一个实体
 // 创建自定义实体的第一步，是定义它的类，并将其注册到游戏中。
@@ -46,6 +52,82 @@ public class MiniGolemEntity extends PathfinderMob {
         this.goalSelector.addGoal(1, new RandomStrollGoal(this, 1));
         this.goalSelector.addGoal(2, new LookAtPlayerGoal(this, Cow.class, 4));
         this.goalSelector.addGoal(3, new RandomLookAroundGoal(this));
+    }
+
+    // 为实体添加数据
+    // 若要在实体上存储数据，通常的做法是在实体类中直接添加字段。
+
+    // 有时，你需要将服务端实体中的数据同步到客户端实体。 关于客户端-服务端架构的更多信息，请参阅网络通信页面。 为此，我们可以通过定义
+    // EntityDataAccessor 来使用 synched data [原文如此]。
+
+    // 在本例中，我们希望实体每隔一段时间跳舞一次，因此需要创建一个会在客户端之间同步的跳舞状态，以便之后为其播放动画。
+    // 不过，跳舞冷却时间不需要与客户端同步，因为动画由服务器触发。
+    private static final EntityDataAccessor<Boolean> DANCING = SynchedEntityData.defineId(MiniGolemEntity.class,
+            EntityDataSerializers.BOOLEAN);
+    private int dancingTimeLeft;
+
+    @Override
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(DANCING, false);
+    }
+
+    public boolean isDancing() {
+        return entityData.get(DANCING);
+    }
+
+    private void setDancing(boolean dancing) {
+        entityData.set(DANCING, dancing);
+    }
+
+    // 如你所见，我们添加了一个 tick 方法来控制跳舞状态。
+    @Override
+    public void tick() {
+        super.tick();
+
+        if (!level().isClientSide()) {
+            if (this.isDancing()) {
+                if (this.dancingTimeLeft-- <= 0) {
+                    this.setDancing(false);
+                }
+            } else {
+                if (this.random.nextInt(1000) == 0) {
+                    this.setDancing(true);
+                    this.dancingTimeLeft = 100 + this.random.nextInt(100);
+                }
+            }
+        }
+    }
+
+    // 将数据存储到 NBT
+    // 对于需要在游戏关闭后仍然保存的持久数据，我们会在 MiniGolemEntity 中重写 addAdditionalSaveData 和
+    // readAdditionalSaveData 方法。 我们可以用它们来存储跳舞动画剩余的时间。
+    @Override
+    protected void addAdditionalSaveData(ValueOutput valueOutput) {
+        super.addAdditionalSaveData(valueOutput);
+        valueOutput.putInt("dancing_time_left", this.dancingTimeLeft);
+    }
+
+    @Override
+    protected void readAdditionalSaveData(ValueInput valueInput) {
+        super.readAdditionalSaveData(valueInput);
+        this.dancingTimeLeft = valueInput.getInt("dancing_time_left").orElse(0);
+        this.setDancing(this.dancingTimeLeft > 0);
+    }
+
+    // 添加动画
+    // 为实体添加动画的第一步，是在实体类中添加动画状态。 我们会创建一个动画状态，用于让实体跳舞。
+    public final AnimationState dancingAnimationState = new AnimationState();
+
+    // 我们重写了 onSyncedDataUpdated 方法。 每当同步数据在服务器或客户端更新时，该方法都会被调用。 这里的 if
+    // 语句会检查被更新的同步数据是否为跳舞同步数据。
+    @Override
+    public void onSyncedDataUpdated(EntityDataAccessor<?> data) {
+        super.onSyncedDataUpdated(data);
+
+        if (data == DANCING) {
+            this.dancingAnimationState.animateWhen(this.isDancing(), this.tickCount);
+        }
     }
 
 }

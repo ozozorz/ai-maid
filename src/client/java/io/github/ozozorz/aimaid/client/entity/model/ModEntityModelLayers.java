@@ -1,4 +1,4 @@
-package io.github.ozozorz.aimaid.client.entity;
+package io.github.ozozorz.aimaid.client.entity.model;
 
 import io.github.ozozorz.aimaid.AIMaid;
 import net.fabricmc.fabric.api.client.rendering.v1.ModelLayerRegistry;

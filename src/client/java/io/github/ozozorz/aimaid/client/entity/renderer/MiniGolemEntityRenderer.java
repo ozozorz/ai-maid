@@ -1,6 +1,9 @@
-package io.github.ozozorz.aimaid.client.entity;
+package io.github.ozozorz.aimaid.client.entity.renderer;
 
 import io.github.ozozorz.aimaid.AIMaid;
+import io.github.ozozorz.aimaid.client.entity.model.MiniGolemEntityModel;
+import io.github.ozozorz.aimaid.client.entity.model.ModEntityModelLayers;
+import io.github.ozozorz.aimaid.client.entity.state.MiniGolemEntityRenderState;
 import io.github.ozozorz.aimaid.entity.MiniGolemEntity;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.MobRenderer;
@@ -31,6 +34,13 @@ public class MiniGolemEntityRenderer
     @Override
     public Identifier getTextureLocation(MiniGolemEntityRenderState state) {
         return TEXTURE;
+    }
+
+    // 为了执行复制操作，我们在实体渲染器中重写 extractRenderState 方法。
+    @Override
+    public void extractRenderState(MiniGolemEntity entity, MiniGolemEntityRenderState state, float tickProgress) {
+        super.extractRenderState(entity, state, tickProgress);
+        state.dancingAnimationState.copyFrom(entity.dancingAnimationState);
     }
 
 }

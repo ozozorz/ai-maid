@@ -1,5 +1,8 @@
-package io.github.ozozorz.aimaid.client.entity;
+package io.github.ozozorz.aimaid.client.entity.model;
 
+import io.github.ozozorz.aimaid.client.entity.animation.MiniGolemAnimations;
+import io.github.ozozorz.aimaid.client.entity.state.MiniGolemEntityRenderState;
+import net.minecraft.client.animation.KeyframeAnimation;
 import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.model.geom.PartNames;
@@ -18,11 +21,16 @@ public class MiniGolemEntityModel extends EntityModel<MiniGolemEntityRenderState
     private final ModelPart leftLeg;
     private final ModelPart rightLeg;
 
+    // 最后，让我们将动画接入模型：
+    private final KeyframeAnimation dancing;
+
     public MiniGolemEntityModel(ModelPart root) {
         super(root);
         this.head = root.getChild(PartNames.HEAD);
         this.leftLeg = root.getChild(PartNames.LEFT_LEG);
         this.rightLeg = root.getChild(PartNames.RIGHT_LEG);
+
+        this.dancing = MiniGolemAnimations.DANCING.bake(root);
     }
 
     // 该方法通过将迷你傀儡的身体、头部和腿创建为长方体，设置它们的位置和纹理映射，并返回用于渲染的 LayerDefinition，从而定义迷你傀儡的 3D
@@ -60,13 +68,18 @@ public class MiniGolemEntityModel extends EntityModel<MiniGolemEntityRenderState
 
     @Override
     public void setupAnim(MiniGolemEntityRenderState state) {
-        super.setupAnim(state);
-        this.head.xRot = state.xRot * Mth.DEG_TO_RAD;
-        this.head.yRot = state.yRot * Mth.DEG_TO_RAD;
-        float limbSwingAmplitude = state.walkAnimationSpeed;
-        float limbSwingAnimationProgress = state.walkAnimationPos;
-        this.leftLeg.xRot = Mth.cos(limbSwingAnimationProgress * 0.2f + Mth.PI) * 1.4f * limbSwingAmplitude;
-        this.rightLeg.xRot = Mth.cos(limbSwingAnimationProgress * 0.2f) * 1.4f * limbSwingAmplitude;
+        if (state.dancingAnimationState.isStarted()) {
+            this.dancing.apply(state.dancingAnimationState, state.ageInTicks);
+        } else {
+            super.setupAnim(state);
+            this.head.xRot = state.xRot * Mth.DEG_TO_RAD;
+            this.head.yRot = state.yRot * Mth.DEG_TO_RAD;
+            float limbSwingAmplitude = state.walkAnimationSpeed;
+            float limbSwingAnimationProgress = state.walkAnimationPos;
+            this.leftLeg.xRot = Mth.cos(limbSwingAnimationProgress * 0.2f + Mth.PI) * 1.4f
+                    * limbSwingAmplitude;
+            this.rightLeg.xRot = Mth.cos(limbSwingAnimationProgress * 0.2f) * 1.4f * limbSwingAmplitude;
+        }
     }
 
 }

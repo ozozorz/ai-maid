@@ -1,7 +1,7 @@
 package io.github.ozozorz.aimaid.client;
 
-import io.github.ozozorz.aimaid.client.entity.MiniGolemEntityRenderer;
-import io.github.ozozorz.aimaid.client.entity.ModEntityModelLayers;
+import io.github.ozozorz.aimaid.client.entity.model.ModEntityModelLayers;
+import io.github.ozozorz.aimaid.client.entity.renderer.MiniGolemEntityRenderer;
 import io.github.ozozorz.aimaid.entity.ModEntityTypes;
 import net.fabricmc.api.ClientModInitializer;
 import net.minecraft.client.renderer.entity.EntityRenderers;
