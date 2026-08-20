@@ -3,6 +3,7 @@ package io.github.ozozorz.aimaid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.github.ozozorz.aimaid.entity.ModEntityTypes;
 import io.github.ozozorz.aimaid.item.ModItems;
 import net.fabricmc.api.ModInitializer;
 import net.minecraft.resources.Identifier;
@@ -22,6 +23,9 @@ public class AIMaid implements ModInitializer {
 		// Proceed with mild caution.
 
 		ModItems.initialize();
+
+		ModEntityTypes.registerModEntityTypes();
+		ModEntityTypes.registerAttributes();
 
 		LOGGER.info("Hello Fabric world!");
 	}
