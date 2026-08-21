@@ -68,10 +68,10 @@ public class MiniGolemEntityModel extends EntityModel<MiniGolemEntityRenderState
 
     @Override
     public void setupAnim(MiniGolemEntityRenderState state) {
+        super.setupAnim(state);
         if (state.dancingAnimationState.isStarted()) {
             this.dancing.apply(state.dancingAnimationState, state.ageInTicks);
         } else {
-            super.setupAnim(state);
             this.head.xRot = state.xRot * Mth.DEG_TO_RAD;
             this.head.yRot = state.yRot * Mth.DEG_TO_RAD;
             float limbSwingAmplitude = state.walkAnimationSpeed;
