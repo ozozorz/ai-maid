@@ -14,6 +14,10 @@ import net.minecraft.world.entity.MobCategory;
 // 若要注册你的实体，建议创建一个单独的 ModEntityTypes 类，用于注册所有实体类型、设置它们的尺寸，并注册它们的属性。
 public class ModEntityTypes {
 
+    // 注册女仆的实体类型
+    public static final EntityType<AiMaidEntity> AI_MAID = register("ai_maid",
+            EntityType.Builder.<AiMaidEntity>of(AiMaidEntity::new, MobCategory.CREATURE).sized(0.6f, 1.8f));
+
     public static final EntityType<MiniGolemEntity> MINI_GOLEM = register("mini_golem",
             EntityType.Builder.<MiniGolemEntity>of(MiniGolemEntity::new, MobCategory.MISC).sized(0.75f, 1.75f));
 
@@ -28,6 +32,7 @@ public class ModEntityTypes {
     }
 
     public static void registerAttributes() {
+        FabricDefaultAttributeRegistry.register(AI_MAID, AiMaidEntity.createAttributes());
         FabricDefaultAttributeRegistry.register(MINI_GOLEM, MiniGolemEntity.createCubeAttributes());
     }
 

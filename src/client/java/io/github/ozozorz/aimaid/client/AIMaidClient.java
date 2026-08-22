@@ -1,6 +1,7 @@
 package io.github.ozozorz.aimaid.client;
 
 import io.github.ozozorz.aimaid.client.entity.model.ModEntityModelLayers;
+import io.github.ozozorz.aimaid.client.entity.renderer.AiMaidEntityRenderer;
 import io.github.ozozorz.aimaid.client.entity.renderer.MiniGolemEntityRenderer;
 import io.github.ozozorz.aimaid.entity.ModEntityTypes;
 import net.fabricmc.api.ClientModInitializer;
@@ -13,5 +14,6 @@ public class AIMaidClient implements ClientModInitializer {
 		// rendering.
 		ModEntityModelLayers.registerModelLayers();
 		EntityRenderers.register(ModEntityTypes.MINI_GOLEM, MiniGolemEntityRenderer::new);
+		EntityRenderers.register(ModEntityTypes.AI_MAID, AiMaidEntityRenderer::new);
 	}
 }
