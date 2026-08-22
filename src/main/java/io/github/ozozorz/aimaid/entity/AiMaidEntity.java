@@ -1,20 +1,30 @@
 package io.github.ozozorz.aimaid.entity;
 
+import org.jspecify.annotations.Nullable;
+
 import com.google.common.collect.ImmutableList;
 
 import io.github.ozozorz.aimaid.entity.ai.AiMaidAi;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.PathfinderMob;
+import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.sensing.SensorType;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 
 // 女仆实体类
-public class AiMaidEntity extends PathfinderMob {
+public class AiMaidEntity extends TamableAnimal {
 
     public AiMaidEntity(Level level) {
         this(ModEntityTypes.AI_MAID, level);
@@ -88,16 +98,45 @@ public class AiMaidEntity extends PathfinderMob {
         /// DUBUG END
     }
 
-    // @Override
-    // protected void registerGoals() {
-    // // 掉进水里 → 尝试浮起来
-    // // 没事干 → 到处走走
-    // // 看到玩家 → 看玩家
-    // // 其他时候 → 随机转头
-    // this.goalSelector.addGoal(0, new FloatGoal(this));
-    // this.goalSelector.addGoal(1, new RandomStrollGoal(this, 1.0));
-    // this.goalSelector.addGoal(2, new LookAtPlayerGoal(this, Player.class, 8.0f));
-    // this.goalSelector.addGoal(3, new RandomLookAroundGoal(this));
-    // }
+    @Override
+    public boolean isFood(ItemStack itemStack) {
+        return false;
+    }
+
+    @Override
+    public @Nullable AgeableMob getBreedOffspring(ServerLevel arg0, AgeableMob arg1) {
+        return null;
+    }
+
+    // 判断是不是可驯服物品
+    private boolean isTamingItem(ItemStack stack) {
+        return stack.getItem() == Items.COOKIE;
+    }
+
+    // 右键交互逻辑
+    @Override
+    public InteractionResult mobInteract(Player player, InteractionHand hand) {
+        ItemStack stack = player.getItemInHand(hand);
+
+        if (!this.isTame() && this.isTamingItem(stack)) {
+            if (!this.level().isClientSide()) {
+                stack.consume(1, player);
+
+                boolean success = this.getRandom().nextInt(3) == 0;
+
+                if (success) {
+                    this.tame(player);
+                }
+
+                ServerLevel serverLevel = (ServerLevel) this.level();
+
+                serverLevel.sendParticles(success ? ParticleTypes.HEART : ParticleTypes.SMOKE, this.getX(),
+                        this.getY() + this.getBbHeight() * 0.5, this.getZ(), 7, this.getBbWidth() * 0.5,
+                        this.getBbHeight() * 0.5, this.getBbWidth() * 0.5, 0.02);
+            }
+            return InteractionResult.SUCCESS;
+        }
+        return super.mobInteract(player, hand);
+    }
 
 }
