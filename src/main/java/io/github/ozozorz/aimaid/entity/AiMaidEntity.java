@@ -37,13 +37,13 @@ public class AiMaidEntity extends PathfinderMob {
     // 第一个：Sensor 列表。告诉 Provider：AiMaid 有哪些感知器。
     // 第二个：AiMaidAi::getActivities 是方法引用。当前 26.2 的：Brain.ActivitySupplier<E>
     // 是一个函数式接口：List<ActivityData<E>> createActivities(E body);
-    private static final Brain.Provider<AiMaidEntity> BARIN_PROVIDER = Brain.provider(
+    private static final Brain.Provider<AiMaidEntity> BRAIN_PROVIDER = Brain.provider(
             ImmutableList.of(SensorType.NEAREST_LIVING_ENTITIES, SensorType.NEAREST_PLAYERS), AiMaidAi::getActivities);
 
     // rain.Packed = 从存档读取出来、准备恢复进 Brain 的记忆包。
     @Override
     protected Brain<AiMaidEntity> makeBrain(Brain.Packed packedBrain) {
-        return BARIN_PROVIDER.makeBrain(this, packedBrain);
+        return BRAIN_PROVIDER.makeBrain(this, packedBrain);
     }
 
     // 给 getBrain() 一个准确的泛型返回类型
