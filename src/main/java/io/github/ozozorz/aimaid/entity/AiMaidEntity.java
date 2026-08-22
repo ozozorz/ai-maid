@@ -1,16 +1,21 @@
 package io.github.ozozorz.aimaid.entity;
 
+import java.util.Optional;
+
 import org.jspecify.annotations.Nullable;
 
 import com.google.common.collect.ImmutableList;
 
 import io.github.ozozorz.aimaid.entity.ai.AiMaidAi;
+import io.github.ozozorz.aimaid.entity.ai.memory.ModMemoryModuleTypes;
+import io.github.ozozorz.aimaid.entity.ai.sensing.ModSensorTypes;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.ai.Brain;
@@ -48,7 +53,11 @@ public class AiMaidEntity extends TamableAnimal {
     // 第二个：AiMaidAi::getActivities 是方法引用。当前 26.2 的：Brain.ActivitySupplier<E>
     // 是一个函数式接口：List<ActivityData<E>> createActivities(E body);
     private static final Brain.Provider<AiMaidEntity> BRAIN_PROVIDER = Brain.provider(
-            ImmutableList.of(SensorType.NEAREST_LIVING_ENTITIES, SensorType.NEAREST_PLAYERS), AiMaidAi::getActivities);
+            ImmutableList.of(
+                    SensorType.NEAREST_LIVING_ENTITIES,
+                    SensorType.NEAREST_PLAYERS,
+                    ModSensorTypes.OWNER),
+            AiMaidAi::getActivities);
 
     // rain.Packed = 从存档读取出来、准备恢复进 Brain 的记忆包。
     @Override
@@ -95,6 +104,13 @@ public class AiMaidEntity extends TamableAnimal {
                             + brain.getMemory(
                                     MemoryModuleType.WALK_TARGET));
         }
+        if (this.tickCount % 20 == 0) {
+            Optional<LivingEntity> owner = this.getBrain().getMemory(
+                    ModMemoryModuleTypes.OWNER);
+
+            System.out.println(
+                    owner.map(entity -> "OWNER = " + entity.getName().getString()).orElse("OWNER = ABSENT"));
+        }
         /// DUBUG END
     }
 
@@ -113,7 +129,7 @@ public class AiMaidEntity extends TamableAnimal {
         return stack.getItem() == Items.COOKIE;
     }
 
-    // 右键交互逻辑
+    // 右键交互逻辑 - 驯服逻辑
     @Override
     public InteractionResult mobInteract(Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);

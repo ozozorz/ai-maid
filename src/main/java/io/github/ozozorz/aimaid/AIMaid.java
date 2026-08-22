@@ -4,6 +4,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.github.ozozorz.aimaid.entity.ModEntityTypes;
+import io.github.ozozorz.aimaid.entity.ai.memory.ModMemoryModuleTypes;
+import io.github.ozozorz.aimaid.entity.ai.sensing.ModSensorTypes;
 import io.github.ozozorz.aimaid.item.ModItems;
 import net.fabricmc.api.ModInitializer;
 import net.minecraft.resources.Identifier;
@@ -21,6 +23,9 @@ public class AIMaid implements ModInitializer {
 		// This code runs as soon as Minecraft is in a mod-load-ready state.
 		// However, some things (like resources) may still be uninitialized.
 		// Proceed with mild caution.
+
+		ModMemoryModuleTypes.initialize();
+		ModSensorTypes.initialize();
 
 		ModItems.initialize();
 
