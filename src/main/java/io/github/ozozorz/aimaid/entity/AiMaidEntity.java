@@ -1,5 +1,7 @@
 package io.github.ozozorz.aimaid.entity;
 
+import java.util.List;
+
 import org.jspecify.annotations.Nullable;
 
 import com.google.common.collect.ImmutableList;
@@ -7,7 +9,14 @@ import com.google.common.collect.ImmutableList;
 import io.github.ozozorz.aimaid.entity.ai.AiMaidAi;
 import io.github.ozozorz.aimaid.entity.ai.memory.ModMemoryModuleTypes;
 import io.github.ozozorz.aimaid.entity.ai.sensing.ModSensorTypes;
+import io.github.ozozorz.aimaid.entity.maidcommand.MaidCommand;
+import io.github.ozozorz.aimaid.entity.maidcommand.MaidCommands;
+import io.github.ozozorz.aimaid.registries.ModBuiltInRegistries;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -24,9 +33,18 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 
 // 女仆实体类
 public class AiMaidEntity extends TamableAnimal {
+
+    // 定义一个 用来访问“女仆当前命令”这份同步数据的Key，通过它去entityData里读取真正的数据
+    // SynchedEntityData.defineId(...) 告诉 Minecraft：我要给某一种实体类型注册一个新的同步数据槽。
+    // 给 AiMaidEntity 定义一个 String 类型的网络同步数据槽。
+    private static final EntityDataAccessor<String> MAID_COMMAND_ENTITY_DATA_ACCESSOR = SynchedEntityData.defineId(
+            AiMaidEntity.class,
+            EntityDataSerializers.STRING);
 
     public AiMaidEntity(Level level) {
         this(ModEntityTypes.AI_MAID, level);
@@ -54,7 +72,8 @@ public class AiMaidEntity extends TamableAnimal {
             ImmutableList.of(
                     SensorType.NEAREST_LIVING_ENTITIES,
                     SensorType.NEAREST_PLAYERS,
-                    ModSensorTypes.OWNER),
+                    ModSensorTypes.OWNER,
+                    ModSensorTypes.MAID_COMMAND),
             AiMaidAi::getActivities);
 
     // rain.Packed = 从存档读取出来、准备恢复进 Brain 的记忆包。
@@ -121,6 +140,9 @@ public class AiMaidEntity extends TamableAnimal {
     public InteractionResult mobInteract(Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
 
+        // ==============================
+        // 未驯服：使用驯服物品
+        // ==============================
         if (!this.isTame() && this.isTamingItem(stack)) {
             if (!this.level().isClientSide()) {
                 stack.consume(1, player);
@@ -139,7 +161,116 @@ public class AiMaidEntity extends TamableAnimal {
             }
             return InteractionResult.SUCCESS;
         }
+
+        // ==============================
+        // 已驯服：
+        // Owner Shift + 空手右键
+        // 切换 MaidCommand
+        // ==============================
+        if (this.isTame() && this.isOwnedBy(player) && player.isShiftKeyDown() && stack.isEmpty()) {
+            // 客户端：
+            // 吃掉这次交互，不再继续尝试其他手
+            if (this.level().isClientSide()) {
+                return InteractionResult.SUCCESS;
+            }
+            /// 去抖
+            long currentTick = this.level().getGameTime();
+            long interval = currentTick - this.lastCommandInteractTick;
+            // 每次收到交互都更新
+            this.lastCommandInteractTick = currentTick;
+            // 过滤右键长按产生的连续触发
+            if (interval <= COMMAND_INTERACT_GAP_TICKS) {
+                return InteractionResult.SUCCESS;
+            }
+            /// 切换MaidCommand
+            this.cycleMaidCommand();
+            System.out.println("Maid Command = " + this.getMaidCommandId());
+            return InteractionResult.SUCCESS;
+        }
+
         return super.mobInteract(player, hand);
+    }
+
+    /// 右键交互去抖用
+    private static final long COMMAND_INTERACT_GAP_TICKS = 5L;
+    private long lastCommandInteractTick = -1000L;
+
+    // 告诉每一只新创建的女仆: 你身上要有 MAID_COMMAND_ENTITY_DATA_ACCESSOR 这项同步数据，而且它的初始值是 FOLLOW
+    // 命令的 ID。
+    // 创建一只新的 AiMaidEntity -> Minecraft 开始建立它的同步数据表 -> 调用 defineSynchedData(builder)
+    // -> 在这里告诉 builder：
+    // “这只实体有哪些同步字段，以及它们默认是什么”
+    @Override
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+
+        // 在当前这只女仆的同步数据表里，创建 MAID_COMMAND_ENTITY_DATA_ACCESSOR 这一项，并把默认值设置为
+        // "你的模组id:follow"。
+        builder.define(MAID_COMMAND_ENTITY_DATA_ACCESSOR, MaidCommands.FOLLOW_ID.toString());
+    }
+
+    // 这个方法回答：这只 Maid 当前记录的命令 ID 是什么？
+    public Identifier getMaidCommandId() {
+        String raw = this.entityData.get(MAID_COMMAND_ENTITY_DATA_ACCESSOR);
+        Identifier id = Identifier.tryParse(raw);
+        if (id == null) {
+            return MaidCommands.FOLLOW_ID;
+        }
+        return id;
+    }
+
+    // 这个方法回答：把 ID 放进 Registry 后，得到的真正 MaidCommand 对象是什么？
+    public MaidCommand getMaidCommand() {
+        Identifier id = this.getMaidCommandId();
+        return ModBuiltInRegistries.MAID_COMMAND.getOptional(id).orElse(MaidCommands.FOLLOW);
+    }
+
+    // 设置MaidCommand时，规则是：能成为 Maid 当前命令的 MaidCommand，必须先进入 Registry。
+    public void setMaidCommand(MaidCommand command) {
+        Identifier id = ModBuiltInRegistries.MAID_COMMAND.getKey(command);
+        if (id == null) {
+            throw new IllegalArgumentException("Unregistered MaidCommand: " + command);
+        }
+        this.entityData.set(MAID_COMMAND_ENTITY_DATA_ACCESSOR, id.toString());
+    }
+
+    // 持久化命令ID
+    // 当 Minecraft 要把这只女仆保存进世界存档时，把她当前的 MaidCommand ID 也一起保存进去。
+    // Minecraft 保存实体 -> Entity 自己保存位置、UUID 等数据 ->
+    // AiMaidEntity.addAdditionalSaveData(...) -> 我们保存女仆自己的额外数据
+    @Override
+    protected void addAdditionalSaveData(ValueOutput output) {
+        super.addAdditionalSaveData(output);
+        output.putString("MaidCommand", this.getMaidCommandId().toString());
+    }
+
+    // 当 Minecraft 从世界存档中重新创建这只女仆时，把之前保存的 MaidCommand 重新读回来。
+    // 读取实体存档 -> 创建 AiMaidEntity ->
+    // readAdditionalSaveData(...) -> 读出 "ai_maid:stay" -> 重新放进 DATA_MAID_COMMAND
+    @Override
+    protected void readAdditionalSaveData(ValueInput input) {
+        super.readAdditionalSaveData(input);
+        // 请读取 "MaidCommand" 这一项。如果它不存在，就给我 FOLLOW。
+        // 解决了一个很实际的问题：旧存档兼容。假设这是一个旧存档，根本没有MaidCommand，这时候就会返回默认值
+        String raw = input.getStringOr("MaidCommand", MaidCommands.FOLLOW_ID.toString());
+        // 如果存档里意外出现"MaidCommand" = "%%%坏掉的数据%%%"，Identifier.tryParse(raw)返回null
+        // 如果存档里的命令 ID 连合法的 Identifier 都解析不出来，那就别用了，安全地退回 FOLLOW。
+        Identifier id = Identifier.tryParse(raw);
+        if (id == null) {
+            id = MaidCommands.FOLLOW_ID;
+        }
+        this.entityData.set(MAID_COMMAND_ENTITY_DATA_ACCESSOR, id.toString());
+    }
+
+    private void cycleMaidCommand() {
+        List<MaidCommand> commands = ModBuiltInRegistries.MAID_COMMAND.stream().toList();
+        if (commands.isEmpty()) {
+            return;
+        }
+        MaidCommand currentMaidCommand = this.getMaidCommand();
+        int index = commands.indexOf(currentMaidCommand);
+        int nextIndex = (index + 1) % commands.size();
+        this.setMaidCommand(commands.get(nextIndex));
     }
 
 }

@@ -9,7 +9,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.sensing.Sensor;
 
-public class AiMaidOwnerSensor extends Sensor<AiMaidEntity> {
+public class OwnerSensor extends Sensor<AiMaidEntity> {
 
     @Override
     protected void doTick(ServerLevel level, AiMaidEntity maid) {

@@ -5,6 +5,7 @@ import java.util.Optional;
 import com.mojang.datafixers.util.Unit;
 
 import io.github.ozozorz.aimaid.AIMaid;
+import io.github.ozozorz.aimaid.entity.maidcommand.MaidCommand;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
@@ -18,7 +19,8 @@ public class ModMemoryModuleTypes {
 
     // 正在跟随主人的记忆
     public static final MemoryModuleType<Unit> FOLLOWING_OWNER = register("following_owner");
-    
+
+    public static final MemoryModuleType<MaidCommand> MAID_COMMAND = register("maid_command");
 
     private ModMemoryModuleTypes() {
     }

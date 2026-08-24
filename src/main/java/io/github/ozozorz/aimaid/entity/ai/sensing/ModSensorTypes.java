@@ -11,7 +11,9 @@ import net.minecraft.world.entity.ai.sensing.SensorType;
 
 public class ModSensorTypes {
 
-    public static final SensorType<AiMaidOwnerSensor> OWNER = register("owner", AiMaidOwnerSensor::new);
+    public static final SensorType<OwnerSensor> OWNER = register("owner", OwnerSensor::new);
+
+    public static final SensorType<MaidCommandSensor> MAID_COMMAND = register("maid_command", MaidCommandSensor::new);
 
     private ModSensorTypes() {
     }
