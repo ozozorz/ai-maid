@@ -2,6 +2,8 @@ package io.github.ozozorz.aimaid.entity.ai.memory;
 
 import java.util.Optional;
 
+import com.mojang.datafixers.util.Unit;
+
 import io.github.ozozorz.aimaid.AIMaid;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -11,7 +13,12 @@ import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 
 public class ModMemoryModuleTypes {
 
+    // 主人是哪个实体的记忆
     public static final MemoryModuleType<LivingEntity> OWNER = register("owner");
+
+    // 正在跟随主人的记忆
+    public static final MemoryModuleType<Unit> FOLLOWING_OWNER = register("following_owner");
+    
 
     private ModMemoryModuleTypes() {
     }

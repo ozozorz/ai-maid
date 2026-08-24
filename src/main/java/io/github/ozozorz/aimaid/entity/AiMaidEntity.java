@@ -1,7 +1,5 @@
 package io.github.ozozorz.aimaid.entity;
 
-import java.util.Optional;
-
 import org.jspecify.annotations.Nullable;
 
 import com.google.common.collect.ImmutableList;
@@ -15,7 +13,6 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.ai.Brain;
@@ -87,30 +84,19 @@ public class AiMaidEntity extends TamableAnimal {
             Brain<AiMaidEntity> brain = this.getBrain();
 
             System.out.println(
-                    "ACTIVE = "
-                            + brain.getActiveNonCoreActivity());
+                    "following = "
+                            + brain.hasMemoryValue(
+                                    ModMemoryModuleTypes.FOLLOWING_OWNER));
 
             System.out.println(
-                    "NEAREST_PLAYERS = "
-                            + brain.getMemory(
-                                    MemoryModuleType.NEAREST_PLAYERS));
-
-            System.out.println(
-                    "LOOK_TARGET = "
-                            + brain.getMemory(
-                                    MemoryModuleType.LOOK_TARGET));
-
-            System.out.println(
-                    "WALK_TARGET = "
+                    "walk = "
                             + brain.getMemory(
                                     MemoryModuleType.WALK_TARGET));
-        }
-        if (this.tickCount % 20 == 0) {
-            Optional<LivingEntity> owner = this.getBrain().getMemory(
-                    ModMemoryModuleTypes.OWNER);
 
             System.out.println(
-                    owner.map(entity -> "OWNER = " + entity.getName().getString()).orElse("OWNER = ABSENT"));
+                    "look = "
+                            + brain.getMemory(
+                                    MemoryModuleType.LOOK_TARGET));
         }
         /// DUBUG END
     }

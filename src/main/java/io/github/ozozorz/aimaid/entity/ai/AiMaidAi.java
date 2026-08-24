@@ -1,6 +1,7 @@
 package io.github.ozozorz.aimaid.entity.ai;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import com.google.common.collect.ImmutableList;
@@ -8,14 +9,18 @@ import com.mojang.datafixers.util.Pair;
 
 import io.github.ozozorz.aimaid.entity.AiMaidEntity;
 import io.github.ozozorz.aimaid.entity.ai.behavior.FollowOwner;
+import io.github.ozozorz.aimaid.entity.ai.behavior.RandomStrollAroundOwner;
+import io.github.ozozorz.aimaid.entity.ai.behavior.SetOwnerLookTarget;
 import io.github.ozozorz.aimaid.entity.ai.memory.ModMemoryModuleTypes;
 import io.github.ozozorz.aimaid.entity.schedule.ModActivities;
+import net.minecraft.util.valueproviders.UniformInt;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.ai.ActivityData;
 import net.minecraft.world.entity.ai.behavior.BehaviorControl;
 import net.minecraft.world.entity.ai.behavior.DoNothing;
 import net.minecraft.world.entity.ai.behavior.LookAtTargetSink;
 import net.minecraft.world.entity.ai.behavior.MoveToTargetSink;
+import net.minecraft.world.entity.ai.behavior.RandomLookAround;
 import net.minecraft.world.entity.ai.behavior.RandomStroll;
 import net.minecraft.world.entity.ai.behavior.RunOne;
 import net.minecraft.world.entity.ai.behavior.SetEntityLookTarget;
@@ -52,10 +57,25 @@ public class AiMaidAi {
     }
 
     private static ActivityData<AiMaidEntity> initFollowOwnerActivity() {
-        return ActivityData.create(ModActivities.FOLLOW_OWNER,
-                ActivityData.createPriorityPairs(10, ImmutableList.of(FollowOwner.create(1.0F, 3.0))),
+        return ActivityData.create(
+                ModActivities.FOLLOW_OWNER,
+                ActivityData.createPriorityPairs(10, ImmutableList.of(
+                        FollowOwner.create(1.0F, 6.0, 3.0),
+                        createFollowAmbientBehaviors())),
                 Set.of(Pair.of(ModMemoryModuleTypes.OWNER, MemoryStatus.VALUE_PRESENT)),
-                Set.of(MemoryModuleType.WALK_TARGET));
+                Set.of(MemoryModuleType.WALK_TARGET, ModMemoryModuleTypes.FOLLOWING_OWNER));
+    }
+
+    private static RunOne<AiMaidEntity> createFollowAmbientBehaviors() {
+        return new RunOne<>(
+                Map.of(
+                        ModMemoryModuleTypes.FOLLOWING_OWNER,
+                        MemoryStatus.VALUE_ABSENT),
+                ImmutableList.of(
+                        Pair.of(SetOwnerLookTarget.create(8.0F), 4),
+                        Pair.of(new RandomLookAround(UniformInt.of(40, 80), 45.0F, -15.0F, 20.0F), 3),
+                        Pair.of(RandomStrollAroundOwner.create(0.6F, 2.0, 5.0), 1),
+                        Pair.of(new DoNothing(30, 60), 4)));
     }
 
 }
