@@ -1,11 +1,15 @@
 package io.github.ozozorz.aimaid.entity.ai;
 
 import java.util.List;
+import java.util.Set;
 
 import com.google.common.collect.ImmutableList;
 import com.mojang.datafixers.util.Pair;
 
 import io.github.ozozorz.aimaid.entity.AiMaidEntity;
+import io.github.ozozorz.aimaid.entity.ai.behavior.FollowOwner;
+import io.github.ozozorz.aimaid.entity.ai.memory.ModMemoryModuleTypes;
+import io.github.ozozorz.aimaid.entity.schedule.ModActivities;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.ai.ActivityData;
 import net.minecraft.world.entity.ai.behavior.BehaviorControl;
@@ -16,6 +20,8 @@ import net.minecraft.world.entity.ai.behavior.RandomStroll;
 import net.minecraft.world.entity.ai.behavior.RunOne;
 import net.minecraft.world.entity.ai.behavior.SetEntityLookTarget;
 import net.minecraft.world.entity.ai.behavior.Swim;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import net.minecraft.world.entity.schedule.Activity;
 
 public class AiMaidAi {
@@ -24,7 +30,11 @@ public class AiMaidAi {
     }
 
     public static List<ActivityData<AiMaidEntity>> getActivities(AiMaidEntity maid) {
-        return List.of(initCoreActivity(), initIdleActivity());
+        return List.of(initCoreActivity(), initIdleActivity(), initFollowOwnerActivity());
+    }
+
+    public static void updateActivity(AiMaidEntity maid) {
+        maid.getBrain().setActiveActivityToFirstValid(List.of(ModActivities.FOLLOW_OWNER, Activity.IDLE));
     }
 
     private static ActivityData<AiMaidEntity> initCoreActivity() {
@@ -41,8 +51,11 @@ public class AiMaidAi {
                 Pair.of(RandomStroll.stroll(1.0F), 2), Pair.of(new DoNothing(30, 60), 1)));
     }
 
-    public static void updateActivity(AiMaidEntity maid) {
-        maid.getBrain().setActiveActivityToFirstValid(List.of(Activity.IDLE));
+    private static ActivityData<AiMaidEntity> initFollowOwnerActivity() {
+        return ActivityData.create(ModActivities.FOLLOW_OWNER,
+                ActivityData.createPriorityPairs(10, ImmutableList.of(FollowOwner.create(1.0F, 3.0))),
+                Set.of(Pair.of(ModMemoryModuleTypes.OWNER, MemoryStatus.VALUE_PRESENT)),
+                Set.of(MemoryModuleType.WALK_TARGET));
     }
 
 }

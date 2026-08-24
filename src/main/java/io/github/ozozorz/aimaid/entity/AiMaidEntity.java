@@ -39,6 +39,7 @@ public class AiMaidEntity extends TamableAnimal {
         super(entityType, level);
     }
 
+    // 定义女仆实例化出来有哪些默认属性：最大生命值20，移动速度3
     public static AttributeSupplier.Builder createAttributes() {
         return PathfinderMob.createMobAttributes()
                 .add(Attributes.MAX_HEALTH, 20.0)

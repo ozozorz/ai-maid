@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import io.github.ozozorz.aimaid.entity.ModEntityTypes;
 import io.github.ozozorz.aimaid.entity.ai.memory.ModMemoryModuleTypes;
 import io.github.ozozorz.aimaid.entity.ai.sensing.ModSensorTypes;
+import io.github.ozozorz.aimaid.entity.schedule.ModActivities;
 import io.github.ozozorz.aimaid.item.ModItems;
 import net.fabricmc.api.ModInitializer;
 import net.minecraft.resources.Identifier;
@@ -26,6 +27,7 @@ public class AIMaid implements ModInitializer {
 
 		ModMemoryModuleTypes.initialize();
 		ModSensorTypes.initialize();
+		ModActivities.initialize();
 
 		ModItems.initialize();
 
