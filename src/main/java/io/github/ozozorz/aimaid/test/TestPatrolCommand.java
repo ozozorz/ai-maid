@@ -22,4 +22,9 @@ public class TestPatrolCommand implements MaidCommand {
         return List.of(TestAddonActivities.PATROL, Activity.IDLE);
     }
 
+    @Override
+    public int getMenuOrder() {
+        return 400;
+    }
+
 }

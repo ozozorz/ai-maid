@@ -1,0 +1,6 @@
+{
+    "maid_command.ai-maid.free": "Free",
+    "maid_command.ai-maid.follow": "Follow",
+    "maid_command.ai-maid.stay": "Stay",
+    "message.ai-maid.maid_command_changed": "Maid Command: %s"
+}

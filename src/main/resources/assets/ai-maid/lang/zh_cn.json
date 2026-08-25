@@ -1,4 +1,8 @@
 {
     "item.ai-maid.suspicious_substance": "可疑物质",
-    "item.ai-maid.mini_golem_spawn_egg": "迷你傀儡刷怪蛋"
+    "item.ai-maid.mini_golem_spawn_egg": "迷你傀儡刷怪蛋",
+    "maid_command.ai-maid.free": "自由活动",
+    "maid_command.ai-maid.follow": "跟随",
+    "maid_command.ai-maid.stay": "待命",
+    "message.ai-maid.maid_command_changed": "女仆命令：%s"
 }

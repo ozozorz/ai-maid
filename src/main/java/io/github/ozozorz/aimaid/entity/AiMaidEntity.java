@@ -10,9 +10,11 @@ import io.github.ozozorz.aimaid.entity.ai.AiMaidAi;
 import io.github.ozozorz.aimaid.entity.ai.memory.ModMemoryModuleTypes;
 import io.github.ozozorz.aimaid.entity.ai.sensing.ModSensorTypes;
 import io.github.ozozorz.aimaid.entity.maidcommand.MaidCommand;
+import io.github.ozozorz.aimaid.entity.maidcommand.MaidCommandMenu;
 import io.github.ozozorz.aimaid.entity.maidcommand.MaidCommands;
 import io.github.ozozorz.aimaid.registries.ModBuiltInRegistries;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -187,8 +189,7 @@ public class AiMaidEntity extends TamableAnimal {
                 return InteractionResult.SUCCESS;
             }
             /// 切换MaidCommand
-            this.cycleMaidCommand();
-            System.out.println("Maid Command = " + this.getMaidCommandId());
+            this.cycleMaidCommand(player);
             return InteractionResult.SUCCESS;
         }
 
@@ -266,15 +267,23 @@ public class AiMaidEntity extends TamableAnimal {
         this.entityData.set(MAID_COMMAND_ENTITY_DATA_ACCESSOR, id.toString());
     }
 
-    private void cycleMaidCommand() {
-        List<MaidCommand> commands = ModBuiltInRegistries.MAID_COMMAND.stream().toList();
+    private void cycleMaidCommand(Player player) {
+        List<MaidCommand> commands = MaidCommandMenu.getSelectableCommands(this, player);
         if (commands.isEmpty()) {
             return;
         }
         MaidCommand currentMaidCommand = this.getMaidCommand();
-        int index = commands.indexOf(currentMaidCommand);
-        int nextIndex = (index + 1) % commands.size();
-        this.setMaidCommand(commands.get(nextIndex));
+        int currentIndex = commands.indexOf(currentMaidCommand);
+        int nextIndex;
+        if (currentIndex < 0) {
+            nextIndex = 0;
+        } else {
+            nextIndex = (currentIndex + 1) % commands.size();
+        }
+        MaidCommand nextMaidCommand = commands.get(nextIndex);
+        this.setMaidCommand(nextMaidCommand);
+        player.sendOverlayMessage(
+                Component.translatable("message.ai-maid.maid_command_changed", nextMaidCommand.getDisplayName()));
     }
 
 }
