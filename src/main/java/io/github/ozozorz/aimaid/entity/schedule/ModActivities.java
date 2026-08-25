@@ -10,6 +10,8 @@ public class ModActivities {
 
     public static final Activity FOLLOW_OWNER = register("follow_owner");
 
+    public static final Activity STAY = register("stay");
+
     private ModActivities() {
     }
 
