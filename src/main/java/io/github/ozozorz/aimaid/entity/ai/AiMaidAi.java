@@ -1,5 +1,6 @@
 package io.github.ozozorz.aimaid.entity.ai;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -12,10 +13,14 @@ import io.github.ozozorz.aimaid.entity.ai.behavior.FollowOwner;
 import io.github.ozozorz.aimaid.entity.ai.behavior.RandomStrollAroundOwner;
 import io.github.ozozorz.aimaid.entity.ai.behavior.SetOwnerLookTarget;
 import io.github.ozozorz.aimaid.entity.ai.memory.ModMemoryModuleTypes;
+import io.github.ozozorz.aimaid.entity.maidcommand.MaidCommand;
 import io.github.ozozorz.aimaid.entity.schedule.ModActivities;
+import io.github.ozozorz.aimaid.registries.ModBuiltInRegistries;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.valueproviders.UniformInt;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.ai.ActivityData;
+import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.ai.behavior.BehaviorControl;
 import net.minecraft.world.entity.ai.behavior.DoNothing;
 import net.minecraft.world.entity.ai.behavior.LookAtTargetSink;
@@ -35,11 +40,37 @@ public class AiMaidAi {
     }
 
     public static List<ActivityData<AiMaidEntity>> getActivities(AiMaidEntity maid) {
-        return List.of(initCoreActivity(), initIdleActivity(), initFollowOwnerActivity());
+        LinkedHashMap<Activity, ActivityData<AiMaidEntity>> activities = new LinkedHashMap<>();
+        addActivity(activities, initCoreActivity(), "built-in CORE");
+        addActivity(activities, initIdleActivity(), "built-in IDLE");
+        for (MaidCommand maidCommand : ModBuiltInRegistries.MAID_COMMAND) {
+            Identifier maidCommandId = ModBuiltInRegistries.MAID_COMMAND.getKey(maidCommand);
+            for (ActivityData<AiMaidEntity> activityData : maidCommand.createActivities(maid)) {
+                addActivity(activities, activityData, String.valueOf(maidCommandId));
+            }
+        }
+        return List.copyOf(activities.values());
     }
 
+    public static void addActivity(Map<Activity, ActivityData<AiMaidEntity>> activities,
+            ActivityData<AiMaidEntity> activityData, String source) {
+        Activity activity = activityData.activityType();
+        ActivityData<AiMaidEntity> existing = activities.putIfAbsent(activity, activityData);
+        if (existing != null) {
+            throw new IllegalStateException("Duplicate AiMaid activity " + activity + " contributed by " + source);
+        }
+    }
+
+    /// MaidCommand 决定“应该考虑哪些模式”，ActivityData 决定“这个模式此刻是否具备运行条件”。
     public static void updateActivity(AiMaidEntity maid) {
-        maid.getBrain().setActiveActivityToFirstValid(List.of(ModActivities.FOLLOW_OWNER, Activity.IDLE));
+        Brain<AiMaidEntity> brain = maid.getBrain();
+        // 新 Brain 创建后的最初时刻，CommandSensor 可能还没有把 Memory 填好, Memory 暂时没值, 直接读取实体持久命令
+        MaidCommand maidCommand = brain.getMemory(ModMemoryModuleTypes.MAID_COMMAND).orElseGet(maid::getMaidCommand);
+        List<Activity> candidates = maidCommand.getActivityCandidates(maid);
+        if (candidates.isEmpty()) {
+            candidates = List.of(Activity.IDLE);
+        }
+        brain.setActiveActivityToFirstValid(candidates);
     }
 
     private static ActivityData<AiMaidEntity> initCoreActivity() {
@@ -56,7 +87,7 @@ public class AiMaidAi {
                 Pair.of(RandomStroll.stroll(1.0F), 2), Pair.of(new DoNothing(30, 60), 1)));
     }
 
-    private static ActivityData<AiMaidEntity> initFollowOwnerActivity() {
+    public static ActivityData<AiMaidEntity> createFollowOwnerActivity() {
         return ActivityData.create(
                 ModActivities.FOLLOW_OWNER,
                 ActivityData.createPriorityPairs(10, ImmutableList.of(

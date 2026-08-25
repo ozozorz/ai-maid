@@ -11,9 +11,9 @@ public class MaidCommands {
     public static final Identifier FOLLOW_ID = id("follow");
     public static final Identifier STAY_ID = id("stay");
 
-    public static final MaidCommand FREE = register(FREE_ID, new SimpleMaidCommand());
-    public static final MaidCommand FOLLOW = register(FOLLOW_ID, new SimpleMaidCommand());
-    public static final MaidCommand STAY = register(STAY_ID, new SimpleMaidCommand());
+    public static final MaidCommand FREE = register(FREE_ID, new FreeMaidCommand());
+    public static final MaidCommand FOLLOW = register(FOLLOW_ID, new FollowMaidCommand());
+    public static final MaidCommand STAY = register(STAY_ID, new StayMaidCommand());
 
     private MaidCommands() {
     }

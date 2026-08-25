@@ -116,6 +116,10 @@ public class AiMaidEntity extends TamableAnimal {
                     "look = "
                             + brain.getMemory(
                                     MemoryModuleType.LOOK_TARGET));
+
+            System.out.println(
+                    "activity = "
+                            + brain.getActiveNonCoreActivity());
         }
         /// DUBUG END
     }
