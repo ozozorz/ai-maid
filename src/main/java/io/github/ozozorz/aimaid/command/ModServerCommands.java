@@ -7,6 +7,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import io.github.ozozorz.aimaid.AIMaid;
 import io.github.ozozorz.aimaid.command.maidtargetresolver.EntityArgumentMaidTargetResolver;
 import io.github.ozozorz.aimaid.command.maidtargetresolver.MaidTargetResolver;
+import io.github.ozozorz.aimaid.command.maidtargetresolver.MaidTargetSuggestions;
 import io.github.ozozorz.aimaid.command.maidtargetresolver.NameMaidTargetResolver;
 import io.github.ozozorz.aimaid.command.maidtargetresolver.NearestMaidTargetResolver;
 import io.github.ozozorz.aimaid.command.maidtargetresolver.UuidMaidTargetResolver;
@@ -30,7 +31,8 @@ public class ModServerCommands {
                 .register((dispatcher, buildContext, selection) -> register(dispatcher, buildContext));
     }
 
-    private static void register(CommandDispatcher<CommandSourceStack> dispatcher, CommandBuildContext buildContext) {
+    private static void register(CommandDispatcher<CommandSourceStack> dispatcher,
+            CommandBuildContext buildContext) {
 
         LiteralArgumentBuilder<CommandSourceStack> root = Commands.literal("maid");
 
@@ -44,14 +46,16 @@ public class ModServerCommands {
         // /maid @e[...] command follow
         root.then(
                 Commands.argument("maid", EntityArgument.entity())
-                        .then(createCommandNode(buildContext, new EntityArgumentMaidTargetResolver("maid"))));
+                        .then(createCommandNode(buildContext,
+                                new EntityArgumentMaidTargetResolver("maid"))));
 
         // 3 显示 nearest
         //
         // /maid nearest command follow
         root.then(
                 Commands.literal("nearest")
-                        .then(createCommandNode(buildContext, NearestMaidTargetResolver.INSTANCE)));
+                        .then(createCommandNode(buildContext,
+                                NearestMaidTargetResolver.INSTANCE)));
 
         // 4 UUID
         //
@@ -60,8 +64,10 @@ public class ModServerCommands {
                 Commands.literal("uuid")
                         .then(
                                 Commands.argument("maid_uuid", UuidArgument.uuid())
+                                        .suggests(MaidTargetSuggestions::suggestUuids)
                                         .then(createCommandNode(buildContext,
-                                                new UuidMaidTargetResolver("maid_uuid")))));
+                                                new UuidMaidTargetResolver(
+                                                        "maid_uuid")))));
 
         // 5 名字
         //
@@ -69,9 +75,12 @@ public class ModServerCommands {
         root.then(
                 Commands.literal("name")
                         .then(
-                                Commands.argument("maid_name", StringArgumentType.string())
+                                Commands.argument("maid_name",
+                                        StringArgumentType.string())
+                                        .suggests(MaidTargetSuggestions::suggestNames)
                                         .then(createCommandNode(buildContext,
-                                                new NameMaidTargetResolver("maid_name")))));
+                                                new NameMaidTargetResolver(
+                                                        "maid_name")))));
 
         dispatcher.register(root);
     }

@@ -14,8 +14,6 @@ import net.minecraft.server.level.ServerPlayer;
 
 public class NameMaidTargetResolver implements MaidTargetResolver {
 
-    private static final double SEARCH_RADIUS = 128.0D;
-
     private static final SimpleCommandExceptionType ERROR_NOT_FOUND = new SimpleCommandExceptionType(
             Component.translatable("command.ai-maid.maid.name_not_found"));
 
@@ -30,14 +28,17 @@ public class NameMaidTargetResolver implements MaidTargetResolver {
 
     @Override
     public AiMaidEntity resolve(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+
         ServerPlayer player = context.getSource().getPlayerOrException();
 
         String name = StringArgumentType.getString(context, this.argumentName);
 
-        List<AiMaidEntity> matches = player.level().getEntitiesOfClass(AiMaidEntity.class,
-                player.getBoundingBox().inflate(SEARCH_RADIUS),
-                maid -> maid.isAlive() && maid.isTame() && maid.isOwnedBy(player) && maid.hasCustomName()
-                        && maid.getCustomName().getString().equals(name));
+        List<AiMaidEntity> matches = MaidTargetQueries
+                .findOwnedMaidsNearby(player)
+                .stream()
+                .filter(AiMaidEntity::hasCustomName)
+                .filter(maid -> maid.getCustomName().getString().equals(name))
+                .toList();
 
         if (matches.isEmpty()) {
             throw ERROR_NOT_FOUND.create();
