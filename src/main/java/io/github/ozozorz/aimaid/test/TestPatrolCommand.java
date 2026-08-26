@@ -37,16 +37,30 @@ public class TestPatrolCommand implements MaidCommand {
     @Override
     public void buildServerCommand(LiteralArgumentBuilder<CommandSourceStack> node, CommandBuildContext buildContext,
             MaidTargetResolver targetResolver) {
+
+        // 不带参数：
+        //
+        // /maid command testaddon:patrol
+        //
+        // 使用这只 Maid 已经保存的 radius；
+        // 如果从来没设置过，就使用默认 4。
+        node.executes(context -> MaidCommandCommandApi.executeSelection(context, targetResolver, this));
+
+        // 带 radius：
+        //
+        // /maid command testaddon:patrol 4
         node.then(
                 Commands.argument("radius", IntegerArgumentType.integer(2, 32))
                         .executes(context -> {
-                            int radius = IntegerArgumentType.getInteger(context, "radius");
-                            // 这里以后：
-                            // 给“这一只 Maid”保存 patrol radius
-                            //
-                            // 然后再切换到 PATROL command。
 
-                            return MaidCommandCommandApi.executeSelection(context, targetResolver, this);
+                            int radius = IntegerArgumentType.getInteger(context, "radius");
+
+                            AiMaidEntity maid = MaidCommandCommandApi.resolveSelectableTarget(context, targetResolver,
+                                    this);
+
+                            TestAddonMaidData.setPatrolRadius(maid, radius);
+
+                            return MaidCommandCommandApi.finishSelection(context, maid, this);
                         }));
 
     }
