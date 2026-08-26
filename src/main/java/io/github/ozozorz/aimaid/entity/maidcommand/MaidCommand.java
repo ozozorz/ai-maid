@@ -89,4 +89,8 @@ public interface MaidCommand {
             MaidTargetResolver targetResolver) {
         node.executes(context -> MaidCommandCommandApi.executeSelection(context, targetResolver, this));
     }
+
+    default void onSelected(AiMaidEntity maid) {
+
+    }
 }

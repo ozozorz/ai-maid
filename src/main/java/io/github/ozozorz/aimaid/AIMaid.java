@@ -14,6 +14,7 @@ import io.github.ozozorz.aimaid.registries.ModBuiltInRegistries;
 import io.github.ozozorz.aimaid.test.TestAddonActivities;
 import io.github.ozozorz.aimaid.test.TestAddonCommands;
 import io.github.ozozorz.aimaid.test.TestAddonMaidData;
+import io.github.ozozorz.aimaid.test.TestAddonMemoryModuleTypes;
 import net.fabricmc.api.ModInitializer;
 import net.minecraft.resources.Identifier;
 
@@ -55,6 +56,7 @@ public class AIMaid implements ModInitializer {
 		// Test加载
 		TestAddonMaidData.initialize();
 		TestAddonCommands.initialize();
+		TestAddonMemoryModuleTypes.initialize();
 		TestAddonActivities.initialize();
 
 		LOGGER.info("Hello Fabric world!");

@@ -229,10 +229,13 @@ public class AiMaidEntity extends TamableAnimal {
     }
 
     // 设置MaidCommand时，规则是：能成为 Maid 当前命令的 MaidCommand，必须先进入 Registry。
-    public void setMaidCommand(MaidCommand command) {
-        Identifier id = ModBuiltInRegistries.MAID_COMMAND.getKey(command);
+    public void setMaidCommand(MaidCommand maidCommand) {
+        Identifier id = ModBuiltInRegistries.MAID_COMMAND.getKey(maidCommand);
         if (id == null) {
-            throw new IllegalArgumentException("Unregistered MaidCommand: " + command);
+            throw new IllegalArgumentException("Unregistered MaidCommand: " + maidCommand);
+        }
+        if (!this.level().isClientSide()) {
+            maidCommand.onSelected(this);
         }
         this.entityData.set(MAID_COMMAND_ENTITY_DATA_ACCESSOR, id.toString());
     }
