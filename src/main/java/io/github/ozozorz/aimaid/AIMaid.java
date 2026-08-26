@@ -3,6 +3,7 @@ package io.github.ozozorz.aimaid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.github.ozozorz.aimaid.command.ModServerCommands;
 import io.github.ozozorz.aimaid.entity.ModEntityTypes;
 import io.github.ozozorz.aimaid.entity.ai.memory.ModMemoryModuleTypes;
 import io.github.ozozorz.aimaid.entity.ai.sensing.ModSensorTypes;
@@ -43,12 +44,15 @@ public class AIMaid implements ModInitializer {
 		// 其他原有初始化
 		ModItems.initialize();
 
+		// 物品初始化
 		ModEntityTypes.registerModEntityTypes();
 		ModEntityTypes.registerAttributes();
 
 		// Test加载
 		TestAddonCommands.initialize();
 		TestAddonActivities.initialize();
+		// 指令初始化
+		ModServerCommands.initialize();
 
 		LOGGER.info("Hello Fabric world!");
 	}

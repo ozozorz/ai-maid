@@ -2,8 +2,14 @@ package io.github.ozozorz.aimaid.entity.maidcommand;
 
 import java.util.List;
 
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+
+import io.github.ozozorz.aimaid.command.MaidCommandCommandApi;
+import io.github.ozozorz.aimaid.command.maidtargetresolver.MaidTargetResolver;
 import io.github.ozozorz.aimaid.entity.AiMaidEntity;
 import io.github.ozozorz.aimaid.registries.ModBuiltInRegistries;
+import net.minecraft.commands.CommandBuildContext;
+import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.ai.ActivityData;
@@ -77,5 +83,10 @@ public interface MaidCommand {
     // 所以给 MaidCommand 明确一个 UI 排序值
     default int getMenuOrder() {
         return 1000;
+    }
+
+    default void buildServerCommand(LiteralArgumentBuilder<CommandSourceStack> node, CommandBuildContext buildContext,
+            MaidTargetResolver targetResolver) {
+        node.executes(context -> MaidCommandCommandApi.executeSelection(context, targetResolver, this));
     }
 }
