@@ -44,7 +44,7 @@ public class MaidCommandCommandApi {
     public static int finishSelection(CommandContext<CommandSourceStack> context, AiMaidEntity maid,
             MaidCommand maidCommand) {
 
-        maid.setMaidCommand(maidCommand);
+        maid.selecetMaidCommand(maidCommand);
 
         context.getSource().sendSuccess(() -> Component.translatable("command.ai-maid.maid,command_changed",
                 maid.getDisplayName(), maidCommand.getDisplayName()), false);

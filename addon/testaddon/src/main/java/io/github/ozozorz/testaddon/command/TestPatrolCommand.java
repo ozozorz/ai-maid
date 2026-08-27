@@ -1,4 +1,4 @@
-package io.github.ozozorz.aimaid.test;
+package io.github.ozozorz.testaddon.command;
 
 import java.util.List;
 import java.util.Map;
@@ -13,6 +13,11 @@ import io.github.ozozorz.aimaid.command.MaidCommandCommandApi;
 import io.github.ozozorz.aimaid.command.maidtargetresolver.MaidTargetResolver;
 import io.github.ozozorz.aimaid.entity.AiMaidEntity;
 import io.github.ozozorz.aimaid.entity.maidcommand.MaidCommand;
+import io.github.ozozorz.testaddon.ai.TestAddonActivities;
+import io.github.ozozorz.testaddon.ai.TestAddonMemoryModuleTypes;
+import io.github.ozozorz.testaddon.ai.behavior.TestChoosePatrolTarget;
+import io.github.ozozorz.testaddon.ai.behavior.TestWalkToPatrolTarget;
+import io.github.ozozorz.testaddon.data.TestAddonMaidData;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;

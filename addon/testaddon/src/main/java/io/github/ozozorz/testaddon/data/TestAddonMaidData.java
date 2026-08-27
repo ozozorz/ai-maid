@@ -1,4 +1,4 @@
-package io.github.ozozorz.aimaid.test;
+package io.github.ozozorz.testaddon.data;
 
 import org.jetbrains.annotations.Nullable;
 
@@ -43,12 +43,14 @@ public class TestAddonMaidData {
     }
 
     @Nullable
-    public static GlobalPos getPatrolCentere(AiMaidEntity maid) {
+    public static GlobalPos getPatrolCenter(AiMaidEntity maid) {
         return maid.getAttached(PATROL_CENTER);
     }
 
     public static void setPatrolCenter(AiMaidEntity maid) {
-        maid.setAttached(PATROL_CENTER, GlobalPos.of(maid.level().dimension(), maid.blockPosition()));
+        GlobalPos center = GlobalPos.of(maid.level().dimension(), maid.blockPosition());
+
+        maid.setAttached(PATROL_CENTER, center);
     }
 
 }

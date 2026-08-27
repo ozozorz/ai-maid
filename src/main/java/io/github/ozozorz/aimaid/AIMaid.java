@@ -6,15 +6,12 @@ import org.slf4j.LoggerFactory;
 import io.github.ozozorz.aimaid.command.ModServerCommands;
 import io.github.ozozorz.aimaid.entity.ModEntityTypes;
 import io.github.ozozorz.aimaid.entity.ai.memory.ModMemoryModuleTypes;
+import io.github.ozozorz.aimaid.entity.ai.sensing.MaidBrainSensors;
 import io.github.ozozorz.aimaid.entity.ai.sensing.ModSensorTypes;
 import io.github.ozozorz.aimaid.entity.maidcommand.MaidCommands;
 import io.github.ozozorz.aimaid.entity.schedule.ModActivities;
 import io.github.ozozorz.aimaid.item.ModItems;
 import io.github.ozozorz.aimaid.registries.ModBuiltInRegistries;
-import io.github.ozozorz.aimaid.test.TestAddonActivities;
-import io.github.ozozorz.aimaid.test.TestAddonCommands;
-import io.github.ozozorz.aimaid.test.TestAddonMaidData;
-import io.github.ozozorz.aimaid.test.TestAddonMemoryModuleTypes;
 import net.fabricmc.api.ModInitializer;
 import net.minecraft.resources.Identifier;
 
@@ -32,16 +29,17 @@ public class AIMaid implements ModInitializer {
 		// However, some things (like resources) may still be uninitialized.
 		// Proceed with mild caution.
 
+		// Brain 类型
+		ModMemoryModuleTypes.initialize();
+		ModSensorTypes.initialize();
+		MaidBrainSensors.initialize();
+		ModActivities.initialize();
+
 		// 先建立Registry本身
 		ModBuiltInRegistries.initialize();
 
 		// 再往Registry注册核心entries
 		MaidCommands.initialize();
-
-		// Brain 类型
-		ModMemoryModuleTypes.initialize();
-		ModSensorTypes.initialize();
-		ModActivities.initialize();
 
 		// 其他原有初始化
 		ModItems.initialize();
@@ -52,12 +50,6 @@ public class AIMaid implements ModInitializer {
 
 		// 指令初始化
 		ModServerCommands.initialize();
-
-		// Test加载
-		TestAddonMaidData.initialize();
-		TestAddonCommands.initialize();
-		TestAddonMemoryModuleTypes.initialize();
-		TestAddonActivities.initialize();
 
 		LOGGER.info("Hello Fabric world!");
 	}

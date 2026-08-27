@@ -1,8 +1,9 @@
-package io.github.ozozorz.aimaid.test;
+package io.github.ozozorz.testaddon.ai.behavior;
 
 import com.mojang.datafixers.util.Unit;
 
 import io.github.ozozorz.aimaid.entity.AiMaidEntity;
+import io.github.ozozorz.testaddon.ai.TestAddonMemoryModuleTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.valueproviders.UniformInt;
 import net.minecraft.world.entity.ai.behavior.BehaviorControl;

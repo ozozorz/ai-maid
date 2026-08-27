@@ -4,10 +4,8 @@ import java.util.List;
 
 import org.jspecify.annotations.Nullable;
 
-import com.google.common.collect.ImmutableList;
-
 import io.github.ozozorz.aimaid.entity.ai.AiMaidAi;
-import io.github.ozozorz.aimaid.entity.ai.sensing.ModSensorTypes;
+import io.github.ozozorz.aimaid.entity.ai.sensing.MaidBrainSensors;
 import io.github.ozozorz.aimaid.entity.maidcommand.MaidCommand;
 import io.github.ozozorz.aimaid.entity.maidcommand.MaidCommandMenu;
 import io.github.ozozorz.aimaid.entity.maidcommand.MaidCommands;
@@ -28,8 +26,6 @@ import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.ai.memory.MemoryModuleType;
-import net.minecraft.world.entity.ai.sensing.SensorType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -69,18 +65,24 @@ public class AiMaidEntity extends TamableAnimal {
     // 第一个：Sensor 列表。告诉 Provider：AiMaid 有哪些感知器。
     // 第二个：AiMaidAi::getActivities 是方法引用。当前 26.2 的：Brain.ActivitySupplier<E>
     // 是一个函数式接口：List<ActivityData<E>> createActivities(E body);
-    private static final Brain.Provider<AiMaidEntity> BRAIN_PROVIDER = Brain.provider(
-            ImmutableList.of(
-                    SensorType.NEAREST_LIVING_ENTITIES,
-                    SensorType.NEAREST_PLAYERS,
-                    ModSensorTypes.OWNER,
-                    ModSensorTypes.MAID_COMMAND),
-            AiMaidAi::getActivities);
+    // private static final Brain.Provider<AiMaidEntity> BRAIN_PROVIDER =
+    // Brain.provider(
+    // ImmutableList.of(
+    // SensorType.NEAREST_LIVING_ENTITIES,
+    // SensorType.NEAREST_PLAYERS,
+    // ModSensorTypes.OWNER,
+    // ModSensorTypes.MAID_COMMAND),
+    // AiMaidAi::getActivities);
+    private static final class BrainProviderHolder {
+        private static final Brain.Provider<AiMaidEntity> INSTANCE = Brain.provider(MaidBrainSensors.getSensorTypes(),
+                AiMaidAi::getActivities);
+    }
 
     // rain.Packed = 从存档读取出来、准备恢复进 Brain 的记忆包。
     @Override
     protected Brain<AiMaidEntity> makeBrain(Brain.Packed packedBrain) {
-        return BRAIN_PROVIDER.makeBrain(this, packedBrain);
+        // return BRAIN_PROVIDER.makeBrain(this, packedBrain);
+        return BrainProviderHolder.INSTANCE.makeBrain(this, packedBrain);
     }
 
     // 给 getBrain() 一个准确的泛型返回类型
@@ -100,28 +102,28 @@ public class AiMaidEntity extends TamableAnimal {
         super.customServerAiStep(level);
 
         /// DEBUG
-        if (this.tickCount % 40 == 0) {
-            Brain<AiMaidEntity> brain = this.getBrain();
+        // if (this.tickCount % 40 == 0) {
+        // Brain<AiMaidEntity> brain = this.getBrain();
 
-            // System.out.println(
-            // "following = "
-            // + brain.hasMemoryValue(
-            // ModMemoryModuleTypes.FOLLOWING_OWNER));
+        // System.out.println(
+        // "following = "
+        // + brain.hasMemoryValue(
+        // ModMemoryModuleTypes.FOLLOWING_OWNER));
 
-            System.out.println(
-                    "walk = "
-                            + brain.getMemory(
-                                    MemoryModuleType.WALK_TARGET));
+        // System.out.println(
+        // "WALK_TARGET = "
+        // + brain.getMemory(
+        // MemoryModuleType.WALK_TARGET));
 
-            System.out.println(
-                    "look = "
-                            + brain.getMemory(
-                                    MemoryModuleType.LOOK_TARGET));
+        // System.out.println(
+        // "LOOK_TARGET = "
+        // + brain.getMemory(
+        // MemoryModuleType.LOOK_TARGET));
 
-            System.out.println(
-                    "activity = "
-                            + brain.getActiveNonCoreActivity());
-        }
+        // System.out.println(
+        // "activity = "
+        // + brain.getActiveNonCoreActivity());
+        // }
         /// DUBUG END
     }
 
@@ -230,15 +232,18 @@ public class AiMaidEntity extends TamableAnimal {
     }
 
     // 设置MaidCommand时，规则是：能成为 Maid 当前命令的 MaidCommand，必须先进入 Registry。
-    public void setMaidCommand(MaidCommand maidCommand) {
+    public void selecetMaidCommand(MaidCommand maidCommand) {
         Identifier id = ModBuiltInRegistries.MAID_COMMAND.getKey(maidCommand);
         if (id == null) {
             throw new IllegalArgumentException("Unregistered MaidCommand: " + maidCommand);
         }
+        // ① 先真正切换状态
+        this.entityData.set(MAID_COMMAND_ENTITY_DATA_ACCESSOR, id.toString());
+        // ② 再通知新 Command：
+        // “你现在已经被选中了”
         if (!this.level().isClientSide()) {
             maidCommand.onSelected(this);
         }
-        this.entityData.set(MAID_COMMAND_ENTITY_DATA_ACCESSOR, id.toString());
     }
 
     // 持久化命令ID
@@ -266,6 +271,10 @@ public class AiMaidEntity extends TamableAnimal {
         if (id == null) {
             id = MaidCommands.FOLLOW_ID;
         }
+        this.restoreMaidCommandId(id);
+    }
+
+    private void restoreMaidCommandId(Identifier id) {
         this.entityData.set(MAID_COMMAND_ENTITY_DATA_ACCESSOR, id.toString());
     }
 
@@ -283,7 +292,7 @@ public class AiMaidEntity extends TamableAnimal {
             nextIndex = (currentIndex + 1) % commands.size();
         }
         MaidCommand nextMaidCommand = commands.get(nextIndex);
-        this.setMaidCommand(nextMaidCommand);
+        this.selecetMaidCommand(nextMaidCommand);
         player.sendOverlayMessage(
                 Component.translatable("message.ai-maid.maid_command_changed", nextMaidCommand.getDisplayName()));
     }

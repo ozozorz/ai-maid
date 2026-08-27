@@ -1,4 +1,4 @@
-package io.github.ozozorz.aimaid.test;
+package io.github.ozozorz.testaddon.ai;
 
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;

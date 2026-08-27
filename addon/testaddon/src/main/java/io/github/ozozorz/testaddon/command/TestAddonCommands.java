@@ -1,4 +1,4 @@
-package io.github.ozozorz.aimaid.test;
+package io.github.ozozorz.testaddon.command;
 
 import io.github.ozozorz.aimaid.entity.maidcommand.MaidCommand;
 import io.github.ozozorz.aimaid.registries.ModBuiltInRegistries;

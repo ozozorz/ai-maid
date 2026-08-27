@@ -1,6 +1,7 @@
-package io.github.ozozorz.aimaid.test;
+package io.github.ozozorz.testaddon.ai.behavior;
 
 import io.github.ozozorz.aimaid.entity.AiMaidEntity;
+import io.github.ozozorz.testaddon.ai.TestAddonMemoryModuleTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.world.entity.ai.behavior.BehaviorControl;
@@ -16,24 +17,16 @@ public class TestChoosePatrolTarget {
     public static BehaviorControl<AiMaidEntity> create() {
         // 声明 instance.absent(PATROL_PAUSE) 的目的不是读取它，而是把它作为 Behavior 的启动条件
         return BehaviorBuilder.create(instance -> instance.group(
+                instance.present(TestAddonMemoryModuleTypes.PATROL_CENTER),
+                instance.present(TestAddonMemoryModuleTypes.PATROL_RADIUS),
                 instance.absent(TestAddonMemoryModuleTypes.PATROL_TARGET),
                 instance.absent(TestAddonMemoryModuleTypes.PATROL_PAUSE))
-                .apply(instance, (patrolTarget, patrolPause) -> {
+                .apply(instance, (patrolCenterMemory, patrolRadiusMemory, patrolTarget, patrolPause) -> {
                     return (level, maid, timestamp) -> {
-                        GlobalPos center = TestAddonMaidData.getPatrolCentere(maid);
 
-                        if (center == null) {
-                            // 兼容旧存档 / 异常数据
-                            // PATROL 已经激活但还没有 center
-                            TestAddonMaidData.setPatrolCenter(maid);
-                            return false;
-                        }
+                        GlobalPos center = instance.get(patrolCenterMemory);
 
-                        if (!center.dimension().equals(level.dimension())) {
-                            return false;
-                        }
-
-                        int radius = TestAddonMaidData.getPatrolRadius(maid);
+                        int radius = instance.get(patrolRadiusMemory);
 
                         Vec3 target = findPatrolPosition(maid, center.pos(), radius);
 

@@ -1,8 +1,8 @@
 {
 	"schemaVersion": 1,
-	"id": "ai-maid",
+	"id": "testaddon",
 	"version": "${version}",
-	"name": "AI Maid",
+	"name": "TestAddon",
 	"description": "This is an example description! Tell everyone what your mod is about!",
 	"authors": [
 		"Me!"
@@ -12,20 +12,24 @@
 		"sources": "https://github.com/FabricMC/fabric-example-mod"
 	},
 	"license": "CC0-1.0",
-	"icon": "assets/ai-maid/icon.png",
+	"icon": "assets/testaddon/icon.png",
 	"environment": "*",
 	"entrypoints": {
 		"main": [
-			"io.github.ozozorz.aimaid.AIMaid"
+			"io.github.ozozorz.testaddon.TestAddon"
 		],
 		"client": [
-			"io.github.ozozorz.aimaid.client.AIMaidClient"
+			"io.github.ozozorz.testaddon.client.TestAddonClient"
+		],
+		"ai-maid-addon": [
+			"io.github.ozozorz.testaddon.TestAiMaidAddon"
 		]
 	},
 	"depends": {
 		"fabricloader": ">=0.19.3",
 		"minecraft": "~26.2",
 		"java": ">=25",
-		"fabric-api": "*"
+		"fabric-api": "*",
+		"ai-maid": "*"
 	}
 }
