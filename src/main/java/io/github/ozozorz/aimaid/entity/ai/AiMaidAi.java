@@ -101,7 +101,7 @@ public class AiMaidAi {
         return ActivityData.create(
                 ModActivities.FOLLOW_OWNER,
                 ActivityData.createPriorityPairs(10, ImmutableList.of(
-                        FollowOwner.create(1.0F, 6.0, 3.0, 1),
+                        FollowOwner.create(1.0F, 10.0, 4.0, 1),
                         createFollowAmbientBehaviors())),
                 Set.of(Pair.of(ModMemoryModuleTypes.OWNER, MemoryStatus.VALUE_PRESENT)),
                 Set.of(MemoryModuleType.WALK_TARGET, ModMemoryModuleTypes.FOLLOWING_OWNER));
@@ -115,7 +115,7 @@ public class AiMaidAi {
                 ImmutableList.of(
                         Pair.of(SetOwnerLookTarget.create(8.0F), 4),
                         Pair.of(new RandomLookAround(UniformInt.of(40, 80), 45.0F, -15.0F, 20.0F), 3),
-                        Pair.of(RandomStrollAroundOwner.create(0.6F, 2.0, 5.0), 1),
+                        Pair.of(RandomStrollAroundOwner.create(0.6F, 2.0, 6.0), 1),
                         Pair.of(new DoNothing(30, 60), 4)));
     }
 

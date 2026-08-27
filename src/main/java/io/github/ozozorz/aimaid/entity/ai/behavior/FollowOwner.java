@@ -60,9 +60,11 @@ public class FollowOwner {
                         // =========================
                         if (distanceSqr > startDistanceSqr) {
                             followingOwnerMemoryAccessor.set(Unit.INSTANCE);
+                            walkTargetMemoryAccessor.set(new WalkTarget(owner, speedModifier, walkCloseEnoughDistance));
                         }
-
-                        walkTargetMemoryAccessor.set(new WalkTarget(owner, speedModifier, walkCloseEnoughDistance));
+                        // 主人在 startDistance 以内：
+                        // 什么都不要做。
+                        // 尤其不要 set WALK_TARGET，也不要 erase WALK_TARGET。
 
                         return true;
                     };
