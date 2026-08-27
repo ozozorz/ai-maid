@@ -1,0 +1,7 @@
+{
+	"schemaVersion": 1,
+	"id": "aimaid-devrun",
+	"version": "1.0.0",
+	"name": "AiMaid Development Runner",
+	"environment": "*"
+}

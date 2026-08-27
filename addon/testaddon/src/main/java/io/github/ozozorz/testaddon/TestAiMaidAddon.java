@@ -14,7 +14,5 @@ public class TestAiMaidAddon implements AiMaidAddonEntrypoint {
         TestAddonSensorTypes.initialize();
 
         registrar.registerBrainSensor(TestAddonSensorTypes.PATROL_CONFIG);
-
-        System.out.println("[TestAddon] AiMaid addon entrypoint invoked");
     }
 }

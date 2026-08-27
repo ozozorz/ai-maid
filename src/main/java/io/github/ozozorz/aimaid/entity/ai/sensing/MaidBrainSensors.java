@@ -49,7 +49,6 @@ public class MaidBrainSensors {
         for (EntrypointContainer<AiMaidAddonEntrypoint> container : FabricLoader.getInstance()
                 .getEntrypointContainers("ai-maid-addon", AiMaidAddonEntrypoint.class)) {
             String modId = container.getProvider().getMetadata().getId();
-            System.out.println("[AiMaid] Loading addon entrypoint from " + modId);
             AiMaidAddonRegistrar registrar = sensortype -> registerInternal(sensortype, modId);
             container.getEntrypoint().register(registrar);
         }
