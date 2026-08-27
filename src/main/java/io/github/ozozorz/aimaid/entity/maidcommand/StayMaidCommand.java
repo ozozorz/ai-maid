@@ -53,7 +53,8 @@ public class StayMaidCommand implements MaidCommand {
     private static RunOne<AiMaidEntity> createStayAmbientBehaviors() {
         return new RunOne<>(ImmutableList.of(
                 Pair.of(SetOwnerLookTarget.create(8.0), 4),
-                Pair.of(new RandomLookAround(UniformInt.of(40, 80), 45.0F, -15.0F, 20.0F), 3),
+                Pair.of(new RandomLookAround(UniformInt.of(40, 80), 45.0F, -15.0F,
+                        20.0F), 3),
                 Pair.of(new DoNothing(30, 60), 4)));
     }
 

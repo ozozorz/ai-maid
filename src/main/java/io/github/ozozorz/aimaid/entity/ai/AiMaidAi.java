@@ -22,6 +22,7 @@ import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.ai.ActivityData;
 import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.ai.behavior.BehaviorControl;
+import net.minecraft.world.entity.ai.behavior.CountDownCooldownTicks;
 import net.minecraft.world.entity.ai.behavior.DoNothing;
 import net.minecraft.world.entity.ai.behavior.LookAtTargetSink;
 import net.minecraft.world.entity.ai.behavior.MoveToTargetSink;
@@ -75,7 +76,10 @@ public class AiMaidAi {
 
     private static ActivityData<AiMaidEntity> initCoreActivity() {
         return ActivityData.create(Activity.CORE, 0, ImmutableList.<BehaviorControl<? super AiMaidEntity>>of(
-                new Swim<AiMaidEntity>(0.8F), new LookAtTargetSink(45, 90), new MoveToTargetSink()));
+                new Swim<AiMaidEntity>(0.8F),
+                new CountDownCooldownTicks(MemoryModuleType.GAZE_COOLDOWN_TICKS),
+                new LookAtTargetSink(45, 90),
+                new MoveToTargetSink()));
     }
 
     private static ActivityData<AiMaidEntity> initIdleActivity() {
@@ -85,15 +89,19 @@ public class AiMaidAi {
     }
 
     private static RunOne<AiMaidEntity> createIdleBehaviors() {
-        return new RunOne<>(ImmutableList.of(Pair.of(SetEntityLookTarget.create(EntityTypes.PLAYER, 8.0F), 2),
-                Pair.of(RandomStroll.stroll(1.0F), 2), Pair.of(new DoNothing(30, 60), 1)));
+        return new RunOne<>(
+                ImmutableList.of(
+                        Pair.of(SetEntityLookTarget.create(EntityTypes.PLAYER, 8.0F), 2),
+                        Pair.of(RandomStroll.stroll(1.0F), 2),
+                        Pair.of(new RandomLookAround(UniformInt.of(40, 80), 45.0F, -15.0F, 20.0F), 2),
+                        Pair.of(new DoNothing(30, 60), 1)));
     }
 
     public static ActivityData<AiMaidEntity> createFollowOwnerActivity() {
         return ActivityData.create(
                 ModActivities.FOLLOW_OWNER,
                 ActivityData.createPriorityPairs(10, ImmutableList.of(
-                        FollowOwner.create(1.0F, 6.0, 3.0),
+                        FollowOwner.create(1.0F, 6.0, 3.0, 1),
                         createFollowAmbientBehaviors())),
                 Set.of(Pair.of(ModMemoryModuleTypes.OWNER, MemoryStatus.VALUE_PRESENT)),
                 Set.of(MemoryModuleType.WALK_TARGET, ModMemoryModuleTypes.FOLLOWING_OWNER));

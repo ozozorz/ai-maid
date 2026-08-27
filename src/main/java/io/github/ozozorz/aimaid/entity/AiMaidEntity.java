@@ -28,6 +28,7 @@ import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.sensing.SensorType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -99,28 +100,28 @@ public class AiMaidEntity extends TamableAnimal {
         super.customServerAiStep(level);
 
         /// DEBUG
-        // if (this.tickCount % 40 == 0) {
-        // Brain<AiMaidEntity> brain = this.getBrain();
+        if (this.tickCount % 40 == 0) {
+            Brain<AiMaidEntity> brain = this.getBrain();
 
-        // System.out.println(
-        // "following = "
-        // + brain.hasMemoryValue(
-        // ModMemoryModuleTypes.FOLLOWING_OWNER));
+            // System.out.println(
+            // "following = "
+            // + brain.hasMemoryValue(
+            // ModMemoryModuleTypes.FOLLOWING_OWNER));
 
-        // System.out.println(
-        // "walk = "
-        // + brain.getMemory(
-        // MemoryModuleType.WALK_TARGET));
+            System.out.println(
+                    "walk = "
+                            + brain.getMemory(
+                                    MemoryModuleType.WALK_TARGET));
 
-        // System.out.println(
-        // "look = "
-        // + brain.getMemory(
-        // MemoryModuleType.LOOK_TARGET));
+            System.out.println(
+                    "look = "
+                            + brain.getMemory(
+                                    MemoryModuleType.LOOK_TARGET));
 
-        // System.out.println(
-        // "activity = "
-        // + brain.getActiveNonCoreActivity());
-        // }
+            System.out.println(
+                    "activity = "
+                            + brain.getActiveNonCoreActivity());
+        }
         /// DUBUG END
     }
 

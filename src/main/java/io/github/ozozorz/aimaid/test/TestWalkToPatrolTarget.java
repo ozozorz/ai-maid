@@ -1,14 +1,20 @@
 package io.github.ozozorz.aimaid.test;
 
+import com.mojang.datafixers.util.Unit;
+
 import io.github.ozozorz.aimaid.entity.AiMaidEntity;
 import net.minecraft.core.BlockPos;
+import net.minecraft.util.valueproviders.UniformInt;
 import net.minecraft.world.entity.ai.behavior.BehaviorControl;
 import net.minecraft.world.entity.ai.behavior.declarative.BehaviorBuilder;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.WalkTarget;
-import net.minecraft.world.phys.Vec3;
 
 public class TestWalkToPatrolTarget {
+
+    private static final int CLOSE_ENGHOU_DISTANCE = 1;
+
+    private static final UniformInt PAUSE_TIME = UniformInt.of(40, 100);
 
     private TestWalkToPatrolTarget() {
     }
@@ -16,28 +22,31 @@ public class TestWalkToPatrolTarget {
     public static BehaviorControl<AiMaidEntity> create(float speedModifier) {
         return BehaviorBuilder.create(instance -> instance.group(
                 instance.present(TestAddonMemoryModuleTypes.PATROL_TARGET),
-                instance.registered(MemoryModuleType.WALK_TARGET))
-                .apply(instance, (patrolTargetMemory, walkTargetMemory) -> {
+                instance.registered(MemoryModuleType.WALK_TARGET),
+                instance.registered(TestAddonMemoryModuleTypes.PATROL_PAUSE))
+                .apply(instance, (patrolTargetMemory, walkTargetMemory, patrolPauseMemory) -> {
                     return (level, maid, timestamp) -> {
 
                         BlockPos patrolTarget = instance.get(patrolTargetMemory);
 
-                        Vec3 targetCenter = Vec3.atCenterOf(patrolTarget);
+                        boolean reached = patrolTarget.distManhattan(maid.blockPosition()) <= CLOSE_ENGHOU_DISTANCE;
 
-                        /*
-                         * 到达本次 PATROL_TARGET。
-                         */
-                        if (maid.position().distanceToSqr(targetCenter) <= 2.25) {
+                        // =====================
+                        // 已经到达巡逻点
+                        // =====================
+                        if (reached) {
                             patrolTargetMemory.erase();
                             walkTargetMemory.erase();
+                            int pauseTicks = PAUSE_TIME.sample(maid.getRandom());
+                            patrolPauseMemory.setWithExpiry(Unit.INSTANCE, pauseTicks);
                             return true;
                         }
 
-                        /*
-                         * 已经有 WALK_TARGET 时不要覆盖。
-                         */
+                        // =====================
+                        // 还没到
+                        // =====================
                         if (!maid.getBrain().hasMemoryValue(MemoryModuleType.WALK_TARGET)) {
-                            walkTargetMemory.set(new WalkTarget(patrolTarget, speedModifier, 1));
+                            walkTargetMemory.set(new WalkTarget(patrolTarget, speedModifier, CLOSE_ENGHOU_DISTANCE));
                         }
 
                         return true;

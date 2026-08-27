@@ -14,9 +14,11 @@ public class TestChoosePatrolTarget {
     }
 
     public static BehaviorControl<AiMaidEntity> create() {
-
+        // 声明 instance.absent(PATROL_PAUSE) 的目的不是读取它，而是把它作为 Behavior 的启动条件
         return BehaviorBuilder.create(instance -> instance.group(
-                instance.absent(TestAddonMemoryModuleTypes.PATROL_TARGET)).apply(instance, patrolTarget -> {
+                instance.absent(TestAddonMemoryModuleTypes.PATROL_TARGET),
+                instance.absent(TestAddonMemoryModuleTypes.PATROL_PAUSE))
+                .apply(instance, (patrolTarget, patrolPause) -> {
                     return (level, maid, timestamp) -> {
                         GlobalPos center = TestAddonMaidData.getPatrolCentere(maid);
 

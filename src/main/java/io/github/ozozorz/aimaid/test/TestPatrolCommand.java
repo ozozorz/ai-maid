@@ -1,6 +1,7 @@
 package io.github.ozozorz.aimaid.test;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import com.google.common.collect.ImmutableList;
@@ -21,6 +22,7 @@ import net.minecraft.world.entity.ai.behavior.DoNothing;
 import net.minecraft.world.entity.ai.behavior.RandomLookAround;
 import net.minecraft.world.entity.ai.behavior.RunOne;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import net.minecraft.world.entity.schedule.Activity;
 
 public class TestPatrolCommand implements MaidCommand {
@@ -88,6 +90,7 @@ public class TestPatrolCommand implements MaidCommand {
                 Set.of(),
                 Set.of(
                         TestAddonMemoryModuleTypes.PATROL_TARGET,
+                        TestAddonMemoryModuleTypes.PATROL_PAUSE,
                         MemoryModuleType.WALK_TARGET,
                         MemoryModuleType.LOOK_TARGET));
     }
@@ -95,9 +98,10 @@ public class TestPatrolCommand implements MaidCommand {
     private RunOne<AiMaidEntity> createPatrolAmbientBehaviors() {
 
         return new RunOne<>(
+                Map.of(TestAddonMemoryModuleTypes.PATROL_PAUSE, MemoryStatus.VALUE_PRESENT),
                 ImmutableList.of(
-                        Pair.of(new RandomLookAround(UniformInt.of(40, 80), 45.0F, -15.0F, 20.0F), 3),
-                        Pair.of(new DoNothing(20, 40), 2)));
+                        Pair.of(new RandomLookAround(UniformInt.of(20, 50), 60.0F, -20.0F, 25.0F), 3),
+                        Pair.of(new DoNothing(20, 40), 4)));
 
     }
 
