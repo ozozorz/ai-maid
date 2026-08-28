@@ -11,6 +11,7 @@ public class MaidItemTransfer {
     private MaidItemTransfer() {
     }
 
+    // 将物品从背包移到装备槽位
     public static int moveInventoryToEquipment(AiMaidEntity maid, int inventorySlot, EquipmentSlot equipmentSlot) {
         Objects.requireNonNull(maid);
         Objects.requireNonNull(equipmentSlot);
@@ -39,6 +40,7 @@ public class MaidItemTransfer {
 
     }
 
+    // 将物品从装备槽位移到背包
     public static int moveEquipmentToInventory(AiMaidEntity maid, EquipmentSlot equipmentSlot) {
         Objects.requireNonNull(maid);
         Objects.requireNonNull(equipmentSlot);
@@ -57,6 +59,21 @@ public class MaidItemTransfer {
         }
         maid.setItemSlot(equipmentSlot, remainder);
         return movedCount;
+    }
+
+    public static int moveInventoryToPreferredEquipmentSlot(AiMaidEntity maid, int inventorySlot) {
+        Objects.requireNonNull(maid);
+        MaidInventory inventory = maid.getInventory();
+        Objects.checkIndex(inventorySlot, inventory.getContainerSize());
+        ItemStack source = inventory.getItem(inventorySlot);
+        if (source.isEmpty()) {
+            return 0;
+        }
+        EquipmentSlot preferredSlot = maid.getEquipmentSlotForItem(source);
+        if (!isSupportedEquipmentSlot(preferredSlot)) {
+            return 0;
+        }
+        return moveInventoryToEquipment(maid, inventorySlot, preferredSlot);
     }
 
     private static boolean isSupportedEquipmentSlot(EquipmentSlot slot) {

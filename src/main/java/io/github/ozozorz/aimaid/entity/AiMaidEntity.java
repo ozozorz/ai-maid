@@ -350,18 +350,17 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
         this.getInventory().setItem(
                 0,
                 new ItemStack(
-                        Items.IRON_BOOTS));
+                        Items.APPLE));
 
         // 清空真正要测试的目标槽
         this.setItemSlot(
-                EquipmentSlot.FEET,
+                EquipmentSlot.MAINHAND,
                 ItemStack.EMPTY);
 
         int moved = MaidItemTransfer
-                .moveInventoryToEquipment(
+                .moveInventoryToPreferredEquipmentSlot(
                         this,
-                        0,
-                        EquipmentSlot.FEET);
+                        0);
 
         System.out.println(
                 "moved = "
@@ -373,9 +372,9 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
                                 .getItem(0));
 
         System.out.println(
-                "FEET = "
+                "MAINHAND = "
                         + this.getItemBySlot(
-                                EquipmentSlot.FEET));
+                                EquipmentSlot.MAINHAND));
     }
 
     // ========inventory相关=========
