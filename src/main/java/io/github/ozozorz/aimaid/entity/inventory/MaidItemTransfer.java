@@ -1,6 +1,9 @@
 package io.github.ozozorz.aimaid.entity.inventory;
 
+import java.util.Comparator;
 import java.util.Objects;
+import java.util.OptionalInt;
+import java.util.function.Predicate;
 
 import io.github.ozozorz.aimaid.entity.AiMaidEntity;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -74,6 +77,31 @@ public class MaidItemTransfer {
             return 0;
         }
         return moveInventoryToEquipment(maid, inventorySlot, preferredSlot);
+    }
+
+    public static int moveFirstMatchingInventoryItemToPreferredEquipmentSlot(AiMaidEntity maid,
+            Predicate<ItemStack> predicate) {
+        Objects.requireNonNull(maid);
+        Objects.requireNonNull(predicate);
+
+        OptionalInt slot = maid.getInventory().findFirstMatchingSlot(predicate);
+        if (slot.isEmpty()) {
+            return 0;
+        }
+        return moveInventoryToPreferredEquipmentSlot(maid, slot.getAsInt());
+    }
+
+    public static int moveBestMatchingInventoryItemToPreferredEquipmentSlot(AiMaidEntity maid,
+            Predicate<ItemStack> predicate, Comparator<ItemStack> comparator) {
+        Objects.requireNonNull(maid);
+        Objects.requireNonNull(predicate);
+        Objects.requireNonNull(comparator);
+
+        OptionalInt slot = maid.getInventory().findBestMatchingSlot(predicate, comparator);
+        if (slot.isEmpty()) {
+            return 0;
+        }
+        return moveInventoryToPreferredEquipmentSlot(maid, slot.getAsInt());
     }
 
     private static boolean isSupportedEquipmentSlot(EquipmentSlot slot) {
