@@ -36,6 +36,7 @@ public class MaidItemTransfer {
         }
         maid.setItemSlot(equipmentSlot, removed);
         return removed.getCount();
+
     }
 
     public static int moveEquipmentToInventory(AiMaidEntity maid, EquipmentSlot equipmentSlot) {

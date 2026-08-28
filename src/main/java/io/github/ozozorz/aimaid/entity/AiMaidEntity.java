@@ -337,20 +337,45 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
     private void stickDebug(ServerLevel level) {
         this.getInventory().clearContent();
         this.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
+        this.setItemSlot(EquipmentSlot.OFFHAND, ItemStack.EMPTY);
+        this.setItemSlot(EquipmentSlot.HEAD, ItemStack.EMPTY);
+        this.setItemSlot(EquipmentSlot.CHEST, ItemStack.EMPTY);
+        this.setItemSlot(EquipmentSlot.LEGS, ItemStack.EMPTY);
+        this.setItemSlot(EquipmentSlot.FEET, ItemStack.EMPTY);
     }
 
     private void hoeDebug() {
         this.getInventory().clearContent();
-        for (int i = 0; i < this.getInventory().getContainerSize(); i++) {
-            this.getInventory().setItem(i, new ItemStack(Items.COBBLESTONE, 64));
-        }
-        // this.getInventory().setItem(0, new ItemStack(Items.APPLE, 60));
-        this.getInventory().setItem(0, new ItemStack(Items.IRON_HELMET));
-        this.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
-        int moved = MaidItemTransfer.moveInventoryToEquipment(this, 0, EquipmentSlot.HEAD);
-        System.out.println("moved = " + moved);
-        System.out.println("inventory slot 0 = " + this.getInventory().getItem(0));
-        System.out.println("HEAD = " + this.getItemBySlot(EquipmentSlot.MAINHAND));
+
+        this.getInventory().setItem(
+                0,
+                new ItemStack(
+                        Items.IRON_BOOTS));
+
+        // 清空真正要测试的目标槽
+        this.setItemSlot(
+                EquipmentSlot.FEET,
+                ItemStack.EMPTY);
+
+        int moved = MaidItemTransfer
+                .moveInventoryToEquipment(
+                        this,
+                        0,
+                        EquipmentSlot.FEET);
+
+        System.out.println(
+                "moved = "
+                        + moved);
+
+        System.out.println(
+                "inventory slot 0 = "
+                        + this.getInventory()
+                                .getItem(0));
+
+        System.out.println(
+                "FEET = "
+                        + this.getItemBySlot(
+                                EquipmentSlot.FEET));
     }
 
     // ========inventory相关=========
