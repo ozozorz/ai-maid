@@ -21,14 +21,15 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.npc.InventoryCarrier;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -178,14 +179,7 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
         // ==============================
         if (this.isTame() && this.isOwnedBy(player) && !player.isShiftKeyDown() && stack.is(Items.STICK)) {
             if (!this.level().isClientSide()) {
-                this.getInventory().setItem(0, new ItemStack(Items.APPLE, 10));
-                this.getInventory().setItem(17, new ItemStack(Items.IRON_SWORD));
-                this.getInventory().setItem(34, new ItemStack(Items.DIAMOND, 5));
-                System.out.println("slot 0 = " + this.getInventory().getItem(0));
-                System.out.println("slot 17 = " + this.getInventory().getItem(17));
-                System.out.println("slot 34 = " + this.getInventory().getItem(34));
-                System.out.println("slot 1 = " + this.getInventory().getItem(1));
-                System.out.println("slot 33 = " + this.getInventory().getItem(33));
+                this.stickDebug((ServerLevel) this.level());
             }
             return InteractionResult.SUCCESS;
         }
@@ -194,11 +188,7 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
         // ==============================
         if (this.isTame() && this.isOwnedBy(player) && !player.isShiftKeyDown() && stack.is(Items.WOODEN_HOE)) {
             if (!this.level().isClientSide()) {
-                System.out.println("slot 0 = " + this.getInventory().getItem(0));
-                System.out.println("slot 17 = " + this.getInventory().getItem(17));
-                System.out.println("slot 34 = " + this.getInventory().getItem(34));
-                System.out.println("slot 1 = " + this.getInventory().getItem(1));
-                System.out.println("slot 33 = " + this.getInventory().getItem(33));
+                this.hoeDebug();
             }
             return InteractionResult.SUCCESS;
         }
@@ -339,11 +329,38 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
                 Component.translatable("message.ai-maid.maid_command_changed", nextMaidCommand.getDisplayName()));
     }
 
+    private void stickDebug(ServerLevel level) {
+        // this.getInventory().clearContent();
+        // this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.AIR));
+        // this.setCanPickUpLoot(true);
+        // System.out.println("canPickUpLoot = " + this.canPickUpLoot());
+    }
+
+    // @Override
+    // public boolean wantsToPickUp(ServerLevel level, ItemStack itemStack) {
+    //     boolean result = super.wantsToPickUp(level, itemStack);
+    //     System.out.println("Mob wantsToPickUp: " + itemStack + " -> " + result);
+    //     return result;
+    // }
+
+    // @Override
+    // protected void pickUpItem(ServerLevel level, ItemEntity entity) {
+    //     System.out.println("Mob pickUpItem: " + entity.getItem());
+    //     super.pickUpItem(level, entity);
+    //     System.out.println("after pickup:");
+    //     System.out.println("MAINHAND = " + this.getMainHandItem());
+    //     System.out.println("inventory slot 0 = " + this.getInventory().getItem(0));
+    // }
+
+    private void hoeDebug() {
+
+    }
+
     // ========inventory相关=========
-    public final MaidInventory inventory = new MaidInventory();
+    private final MaidInventory inventory = new MaidInventory();
 
     @Override
-    public SimpleContainer getInventory() {
+    public MaidInventory getInventory() {
         return this.inventory;
     }
 
