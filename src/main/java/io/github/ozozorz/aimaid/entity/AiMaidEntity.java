@@ -1,6 +1,7 @@
 package io.github.ozozorz.aimaid.entity;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.jspecify.annotations.Nullable;
 
@@ -29,6 +30,7 @@ import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.npc.InventoryCarrier;
 import net.minecraft.world.entity.player.Player;
@@ -107,28 +109,9 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
         super.customServerAiStep(level);
 
         /// DEBUG
-        // if (this.tickCount % 40 == 0) {
-        // Brain<AiMaidEntity> brain = this.getBrain();
-
-        // System.out.println(
-        // "following = "
-        // + brain.hasMemoryValue(
-        // ModMemoryModuleTypes.FOLLOWING_OWNER));
-
-        // System.out.println(
-        // "WALK_TARGET = "
-        // + brain.getMemory(
-        // MemoryModuleType.WALK_TARGET));
-
-        // System.out.println(
-        // "LOOK_TARGET = "
-        // + brain.getMemory(
-        // MemoryModuleType.LOOK_TARGET));
-
-        // System.out.println(
-        // "activity = "
-        // + brain.getActiveNonCoreActivity());
-        // }
+        if (this.tickCount % 40 == 0) {
+            this.brainTickDebug(level);
+        }
         /// DUBUG END
     }
 
@@ -329,31 +312,22 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
                 Component.translatable("message.ai-maid.maid_command_changed", nextMaidCommand.getDisplayName()));
     }
 
-    private void stickDebug(ServerLevel level) {
-        // this.getInventory().clearContent();
-        // this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.AIR));
-        // this.setCanPickUpLoot(true);
-        // System.out.println("canPickUpLoot = " + this.canPickUpLoot());
+    private void brainTickDebug(ServerLevel level) {
+        Optional<ItemEntity> wantedItem = this.getBrain().getMemory(MemoryModuleType.NEAREST_VISIBLE_WANTED_ITEM);
+        System.out.println("maid = " + this.getUUID() + ", wanted item = "
+                + wantedItem.map(itemEntity -> itemEntity.getItem().toString()).orElse("empty"));
     }
 
-    // @Override
-    // public boolean wantsToPickUp(ServerLevel level, ItemStack itemStack) {
-    //     boolean result = super.wantsToPickUp(level, itemStack);
-    //     System.out.println("Mob wantsToPickUp: " + itemStack + " -> " + result);
-    //     return result;
-    // }
-
-    // @Override
-    // protected void pickUpItem(ServerLevel level, ItemEntity entity) {
-    //     System.out.println("Mob pickUpItem: " + entity.getItem());
-    //     super.pickUpItem(level, entity);
-    //     System.out.println("after pickup:");
-    //     System.out.println("MAINHAND = " + this.getMainHandItem());
-    //     System.out.println("inventory slot 0 = " + this.getInventory().getItem(0));
-    // }
+    private void stickDebug(ServerLevel level) {
+        this.getInventory().clearContent();
+        this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.AIR));
+        for (int i = 0; i < this.getInventory().getContainerSize(); i++) {
+            this.getInventory().setItem(i, new ItemStack(Items.COBBLESTONE, 64));
+        }
+    }
 
     private void hoeDebug() {
-
+        this.getInventory().setItem(0, new ItemStack(Items.APPLE, 63));
     }
 
     // ========inventory相关=========
@@ -373,6 +347,12 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
     public void readInventoryFromTag(ValueInput input) {
         this.inventory.clearContent();
         ContainerHelper.loadAllItems(input.childOrEmpty(InventoryCarrier.TAG_INVENTORY), this.inventory.getItems());
+    }
+
+    @Override
+    public boolean wantsToPickUp(ServerLevel level, ItemStack itemStack) {
+        // Maid 的 inventory 物理上有没有能力接收至少一部分这个物品？
+        return !itemStack.isEmpty() && this.getInventory().canAddItem(itemStack);
     }
 
 }

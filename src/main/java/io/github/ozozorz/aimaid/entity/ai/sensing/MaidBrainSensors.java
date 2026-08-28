@@ -32,6 +32,7 @@ public class MaidBrainSensors {
         // 核心 Maid 自己需要的 Sensor
         registerInternal(SensorType.NEAREST_LIVING_ENTITIES, AIMaid.MOD_ID);
         registerInternal(SensorType.NEAREST_PLAYERS, AIMaid.MOD_ID);
+        registerInternal(SensorType.NEAREST_ITEMS, AIMaid.MOD_ID);
         registerInternal(ModSensorTypes.OWNER, AIMaid.MOD_ID);
         registerInternal(ModSensorTypes.MAID_COMMAND, AIMaid.MOD_ID);
         loadAddonEntrypoints();
