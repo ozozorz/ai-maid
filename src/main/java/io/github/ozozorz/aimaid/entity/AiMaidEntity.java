@@ -7,6 +7,7 @@ import org.jspecify.annotations.Nullable;
 import io.github.ozozorz.aimaid.entity.ai.AiMaidAi;
 import io.github.ozozorz.aimaid.entity.ai.sensing.MaidBrainSensors;
 import io.github.ozozorz.aimaid.entity.inventory.MaidInventory;
+import io.github.ozozorz.aimaid.entity.inventory.MaidItemTransfer;
 import io.github.ozozorz.aimaid.entity.maidcommand.MaidCommand;
 import io.github.ozozorz.aimaid.entity.maidcommand.MaidCommandMenu;
 import io.github.ozozorz.aimaid.entity.maidcommand.MaidCommands;
@@ -335,17 +336,21 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
 
     private void stickDebug(ServerLevel level) {
         this.getInventory().clearContent();
-        this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.AIR));
-
-        System.out.println("maid=" + this.getUUID() + ", canPickUpLoot=" + this.canPickUpLoot());
-
+        this.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
     }
 
     private void hoeDebug() {
+        this.getInventory().clearContent();
         for (int i = 0; i < this.getInventory().getContainerSize(); i++) {
             this.getInventory().setItem(i, new ItemStack(Items.COBBLESTONE, 64));
         }
-        this.getInventory().setItem(0, new ItemStack(Items.APPLE, 60));
+        // this.getInventory().setItem(0, new ItemStack(Items.APPLE, 60));
+        this.getInventory().setItem(0, new ItemStack(Items.IRON_HELMET));
+        this.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
+        int moved = MaidItemTransfer.moveInventoryToEquipment(this, 0, EquipmentSlot.HEAD);
+        System.out.println("moved = " + moved);
+        System.out.println("inventory slot 0 = " + this.getInventory().getItem(0));
+        System.out.println("HEAD = " + this.getItemBySlot(EquipmentSlot.MAINHAND));
     }
 
     // ========inventory相关=========
