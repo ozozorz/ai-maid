@@ -31,6 +31,7 @@ import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+import net.minecraft.world.entity.ai.memory.WalkTarget;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.npc.InventoryCarrier;
 import net.minecraft.world.entity.player.Player;
@@ -313,22 +314,33 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
     }
 
     private void brainTickDebug(ServerLevel level) {
-        Optional<ItemEntity> wantedItem = this.getBrain().getMemory(MemoryModuleType.NEAREST_VISIBLE_WANTED_ITEM);
-        System.out.println("maid = " + this.getUUID() + ", wanted item = "
-                + wantedItem.map(itemEntity -> itemEntity.getItem().toString()).orElse("empty"));
-        System.out.println("walk target = " + this.getBrain().getMemory(MemoryModuleType.WALK_TARGET));
+        Brain<AiMaidEntity> brain = this.getBrain();
+        Optional<ItemEntity> wanted = brain.getMemory(MemoryModuleType.NEAREST_VISIBLE_WANTED_ITEM);
+        Optional<WalkTarget> walkTarget = brain.getMemory(MemoryModuleType.WALK_TARGET);
+        System.out.println("maid = " + this.getUUID());
+        System.out.println("activity = " + brain.getActiveNonCoreActivity());
+        System.out.println("wanted = "
+                + wanted.map(item -> item.getItem() + ", distance = " + this.distanceTo(item)).orElse("empty"));
+        System.out
+                .println("walk = " + walkTarget
+                        .map(target -> "post=" + target.getTarget().currentBlockPosition() + ", speed="
+                                + target.getSpeedModifier() + ", closeEnough=" + target.getCloseEnoughDist())
+                        .orElse("empty"));
     }
 
     private void stickDebug(ServerLevel level) {
         this.getInventory().clearContent();
         this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.AIR));
-        // for (int i = 0; i < this.getInventory().getContainerSize(); i++) {
-        // this.getInventory().setItem(i, new ItemStack(Items.COBBLESTONE, 64));
-        // }
+        this.setCanPickUpLoot(true);
+        System.out.println("maid=" + this.getUUID() + ", canPickUpLoot=" + this.canPickUpLoot());
+
     }
 
     private void hoeDebug() {
-        this.getInventory().setItem(0, new ItemStack(Items.APPLE, 63));
+        for (int i = 0; i < this.getInventory().getContainerSize(); i++) {
+            this.getInventory().setItem(i, new ItemStack(Items.COBBLESTONE, 64));
+        }
+        this.getInventory().setItem(0, new ItemStack(Items.APPLE, 60));
     }
 
     // ========inventory相关=========
@@ -354,6 +366,11 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
     public boolean wantsToPickUp(ServerLevel level, ItemStack itemStack) {
         // Maid 的 inventory 物理上有没有能力接收至少一部分这个物品？
         return !itemStack.isEmpty() && this.getInventory().canAddItem(itemStack);
+    }
+
+    @Override
+    protected void pickUpItem(ServerLevel level, ItemEntity entity) {
+        InventoryCarrier.pickUpItem(level, this, this, entity);
     }
 
 }
