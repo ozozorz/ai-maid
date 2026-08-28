@@ -316,14 +316,15 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
         Optional<ItemEntity> wantedItem = this.getBrain().getMemory(MemoryModuleType.NEAREST_VISIBLE_WANTED_ITEM);
         System.out.println("maid = " + this.getUUID() + ", wanted item = "
                 + wantedItem.map(itemEntity -> itemEntity.getItem().toString()).orElse("empty"));
+        System.out.println("walk target = " + this.getBrain().getMemory(MemoryModuleType.WALK_TARGET));
     }
 
     private void stickDebug(ServerLevel level) {
         this.getInventory().clearContent();
         this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.AIR));
-        for (int i = 0; i < this.getInventory().getContainerSize(); i++) {
-            this.getInventory().setItem(i, new ItemStack(Items.COBBLESTONE, 64));
-        }
+        // for (int i = 0; i < this.getInventory().getContainerSize(); i++) {
+        // this.getInventory().setItem(i, new ItemStack(Items.COBBLESTONE, 64));
+        // }
     }
 
     private void hoeDebug() {

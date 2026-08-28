@@ -24,6 +24,7 @@ import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.ai.behavior.BehaviorControl;
 import net.minecraft.world.entity.ai.behavior.CountDownCooldownTicks;
 import net.minecraft.world.entity.ai.behavior.DoNothing;
+import net.minecraft.world.entity.ai.behavior.GoToWantedItem;
 import net.minecraft.world.entity.ai.behavior.LookAtTargetSink;
 import net.minecraft.world.entity.ai.behavior.MoveToTargetSink;
 import net.minecraft.world.entity.ai.behavior.RandomLookAround;
@@ -33,6 +34,7 @@ import net.minecraft.world.entity.ai.behavior.SetEntityLookTarget;
 import net.minecraft.world.entity.ai.behavior.Swim;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
+import net.minecraft.world.entity.ai.sensing.NearestItemSensor;
 import net.minecraft.world.entity.schedule.Activity;
 
 public class AiMaidAi {
@@ -83,9 +85,17 @@ public class AiMaidAi {
     }
 
     private static ActivityData<AiMaidEntity> initIdleActivity() {
-        return ActivityData.create(Activity.IDLE,
-                ActivityData.createPriorityPairs(10, ImmutableList.of(createIdleBehaviors())), Set.of(),
-                Set.of(MemoryModuleType.WALK_TARGET, MemoryModuleType.LOOK_TARGET));
+        return ActivityData.create(
+                Activity.IDLE,
+                ActivityData.createPriorityPairs(
+                        10,
+                        ImmutableList.of(
+                                GoToWantedItem.create(1.0F, true, NearestItemSensor.MAX_DISTANCE_TO_WANTED_ITEM),
+                                createIdleBehaviors())),
+                Set.of(),
+                Set.of(
+                        MemoryModuleType.WALK_TARGET,
+                        MemoryModuleType.LOOK_TARGET));
     }
 
     private static RunOne<AiMaidEntity> createIdleBehaviors() {
