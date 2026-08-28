@@ -6,6 +6,7 @@ import org.jspecify.annotations.Nullable;
 
 import io.github.ozozorz.aimaid.entity.ai.AiMaidAi;
 import io.github.ozozorz.aimaid.entity.ai.sensing.MaidBrainSensors;
+import io.github.ozozorz.aimaid.entity.inventory.MaidInventory;
 import io.github.ozozorz.aimaid.entity.maidcommand.MaidCommand;
 import io.github.ozozorz.aimaid.entity.maidcommand.MaidCommandMenu;
 import io.github.ozozorz.aimaid.entity.maidcommand.MaidCommands;
@@ -19,6 +20,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.PathfinderMob;
@@ -26,6 +28,7 @@ import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.npc.InventoryCarrier;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -34,7 +37,7 @@ import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 
 // 女仆实体类
-public class AiMaidEntity extends TamableAnimal {
+public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
 
     // 定义一个 用来访问“女仆当前命令”这份同步数据的Key，通过它去entityData里读取真正的数据
     // SynchedEntityData.defineId(...) 告诉 Minecraft：我要给某一种实体类型注册一个新的同步数据槽。
@@ -170,6 +173,21 @@ public class AiMaidEntity extends TamableAnimal {
         }
 
         // ==============================
+        // 木棍DEBUG：
+        // ==============================
+        if (this.isTame() && this.isOwnedBy(player) && !player.isShiftKeyDown() && stack.is(Items.STICK)) {
+            if (!this.level().isClientSide()) {
+                ItemStack current = this.getInventory().getItem(0);
+                int oldCount = current.isEmpty() ? 0 : current.getCount();
+                this.getInventory().setItem(0, new ItemStack(Items.APPLE, oldCount + 1));
+                System.out.println("maid = " + this.getUUID());
+                System.out.println("inventory size = " + this.getInventory().getContainerSize());
+                System.out.println("inventory slot 0 = " + this.getInventory().getItem(0));
+            }
+            return InteractionResult.SUCCESS;
+        }
+
+        // ==============================
         // 已驯服：
         // Owner Shift + 空手右键
         // 切换 MaidCommand
@@ -295,6 +313,14 @@ public class AiMaidEntity extends TamableAnimal {
         this.selecetMaidCommand(nextMaidCommand);
         player.sendOverlayMessage(
                 Component.translatable("message.ai-maid.maid_command_changed", nextMaidCommand.getDisplayName()));
+    }
+
+    // ========inventory相关=========
+    public final MaidInventory inventory = new MaidInventory();
+
+    @Override
+    public SimpleContainer getInventory() {
+        return this.inventory;
     }
 
 }
