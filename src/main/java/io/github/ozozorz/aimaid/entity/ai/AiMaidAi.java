@@ -46,6 +46,7 @@ public class AiMaidAi {
         LinkedHashMap<Activity, ActivityData<AiMaidEntity>> activities = new LinkedHashMap<>();
         addActivity(activities, initCoreActivity(), "built-in CORE");
         addActivity(activities, initIdleActivity(), "built-in IDLE");
+        addActivity(activities, initPickUpItemActivity(), "built-in PICK_UP_ITEM");
         for (MaidCommand maidCommand : ModBuiltInRegistries.MAID_COMMAND) {
             Identifier maidCommandId = ModBuiltInRegistries.MAID_COMMAND.getKey(maidCommand);
             for (ActivityData<AiMaidEntity> activityData : maidCommand.createActivities(maid)) {
@@ -90,7 +91,6 @@ public class AiMaidAi {
                 ActivityData.createPriorityPairs(
                         10,
                         ImmutableList.of(
-                                GoToWantedItem.create(1.0F, true, NearestItemSensor.MAX_DISTANCE_TO_WANTED_ITEM),
                                 createIdleBehaviors())),
                 Set.of(),
                 Set.of(
@@ -127,6 +127,19 @@ public class AiMaidAi {
                         Pair.of(new RandomLookAround(UniformInt.of(40, 80), 45.0F, -15.0F, 20.0F), 3),
                         Pair.of(RandomStrollAroundOwner.create(0.6F, 2.0, 6.0), 1),
                         Pair.of(new DoNothing(30, 60), 4)));
+    }
+
+    private static ActivityData<AiMaidEntity> initPickUpItemActivity() {
+        return ActivityData.create(
+                ModActivities.PICK_UP_ITEM,
+                ActivityData.createPriorityPairs(10,
+                        ImmutableList.of(
+                                GoToWantedItem.create(1.0F, true, NearestItemSensor.MAX_DISTANCE_TO_WANTED_ITEM))),
+                // 有效条件
+                Set.of(Pair.of(MemoryModuleType.NEAREST_VISIBLE_WANTED_ITEM, MemoryStatus.VALUE_PRESENT)),
+                Set.of(
+                        MemoryModuleType.WALK_TARGET,
+                        MemoryModuleType.LOOK_TARGET));
     }
 
 }

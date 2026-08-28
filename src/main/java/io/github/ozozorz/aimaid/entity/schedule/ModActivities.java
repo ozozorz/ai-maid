@@ -12,6 +12,8 @@ public class ModActivities {
 
     public static final Activity STAY = register("stay");
 
+    public static final Activity PICK_UP_ITEM = register("pick_up_item");
+
     private ModActivities() {
     }
 

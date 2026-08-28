@@ -319,6 +319,7 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
         Optional<ItemEntity> wanted = brain.getMemory(MemoryModuleType.NEAREST_VISIBLE_WANTED_ITEM);
         Optional<WalkTarget> walkTarget = brain.getMemory(MemoryModuleType.WALK_TARGET);
         System.out.println("maid = " + this.getUUID());
+        System.out.println("command = " + this.getMaidCommandId());
         System.out.println("activity = " + brain.getActiveNonCoreActivity());
         System.out.println("wanted = "
                 + wanted.map(item -> item.getItem() + ", distance = " + this.distanceTo(item)).orElse("empty"));
