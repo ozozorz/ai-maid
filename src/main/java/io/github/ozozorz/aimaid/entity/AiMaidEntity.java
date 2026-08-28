@@ -1,7 +1,6 @@
 package io.github.ozozorz.aimaid.entity;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.jspecify.annotations.Nullable;
 
@@ -31,10 +30,10 @@ import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
-import net.minecraft.world.entity.ai.memory.WalkTarget;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.npc.InventoryCarrier;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
@@ -111,8 +110,8 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
         super.customServerAiStep(level);
 
         /// DEBUG
+        this.brainTickDebug(level);
         if (this.tickCount % 40 == 0) {
-            this.brainTickDebug(level);
         }
         /// DUBUG END
     }
@@ -318,22 +317,20 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
                 Component.translatable("message.ai-maid.maid_command_changed", nextMaidCommand.getDisplayName()));
     }
 
+    private boolean debugLastWantedPresent;
+    private Activity debugLastActivity;
+
     private void brainTickDebug(ServerLevel level) {
         Brain<AiMaidEntity> brain = this.getBrain();
-        Optional<ItemEntity> wanted = brain.getMemory(MemoryModuleType.NEAREST_VISIBLE_WANTED_ITEM);
-        Optional<WalkTarget> walkTarget = brain.getMemory(MemoryModuleType.WALK_TARGET);
-        System.out.println("maid = " + this.getUUID());
-        System.out.println("command = " + this.getMaidCommandId());
-        System.out.println("activity = " + brain.getActiveNonCoreActivity());
-        System.out.println("wanted = "
-                + wanted.map(item -> item.getItem() + ", distance = " + this.distanceTo(item)).orElse("empty"));
-        System.out
-                .println("walk = " + walkTarget
-                        .map(target -> "post=" + target.getTarget().currentBlockPosition() + ", speed="
-                                + target.getSpeedModifier() + ", closeEnough=" + target.getCloseEnoughDist())
-                        .orElse("empty"));
-        System.out.println("canPickUpLoot = " + this.canPickUpLoot());
-        System.out.println("pickup cooldown = " + brain.getMemory(MemoryModuleType.ITEM_PICKUP_COOLDOWN_TICKS));
+        boolean wantedPresent = brain.hasMemoryValue(MemoryModuleType.NEAREST_VISIBLE_WANTED_ITEM);
+        Activity currentActivity = brain.getActiveNonCoreActivity().orElse(null);
+        if (wantedPresent != this.debugLastWantedPresent || currentActivity != this.debugLastActivity) {
+            System.out.println("gameTime = " + level.getGameTime());
+            System.out.println("wanted present = " + wantedPresent);
+            System.out.println("activity = " + currentActivity);
+            this.debugLastWantedPresent = wantedPresent;
+            this.debugLastActivity = currentActivity;
+        }
     }
 
     private void stickDebug(ServerLevel level) {
@@ -382,6 +379,15 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
     @Override
     protected void pickUpItem(ServerLevel level, ItemEntity entity) {
         InventoryCarrier.pickUpItem(level, this, this, entity);
+        Brain<AiMaidEntity> brain = this.getBrain();
+        boolean isCurrentWantedItem = brain.isMemoryValue(MemoryModuleType.NEAREST_VISIBLE_WANTED_ITEM, entity);
+        if (!isCurrentWantedItem) {
+            return;
+        }
+        boolean targetInvalid = entity.isRemoved() || !this.wantsToPickUp(level, entity.getItem());
+        if (targetInvalid) {
+            brain.eraseMemory(MemoryModuleType.NEAREST_VISIBLE_WANTED_ITEM);
+        }
     }
 
 }
