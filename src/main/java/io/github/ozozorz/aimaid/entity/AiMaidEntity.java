@@ -275,6 +275,10 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
     @Override
     protected void readAdditionalSaveData(ValueInput input) {
         super.readAdditionalSaveData(input);
+        // AiMaid 固有能力：
+        // 始终启用 Vanilla Mob pickup infrastructure。
+        // 是否实际接受某个物品由 wantsToPickUp / MaidCommand policy 决定。
+        this.setCanPickUpLoot(true);
 
         // 从存档读取背包数据
         this.readInventoryFromTag(input);
@@ -328,6 +332,8 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
                         .map(target -> "post=" + target.getTarget().currentBlockPosition() + ", speed="
                                 + target.getSpeedModifier() + ", closeEnough=" + target.getCloseEnoughDist())
                         .orElse("empty"));
+        System.out.println("canPickUpLoot = " + this.canPickUpLoot());
+        System.out.println("pickup cooldown = " + brain.getMemory(MemoryModuleType.ITEM_PICKUP_COOLDOWN_TICKS));
     }
 
     private void stickDebug(ServerLevel level) {
