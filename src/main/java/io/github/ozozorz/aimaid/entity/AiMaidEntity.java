@@ -18,6 +18,7 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.SimpleContainer;
@@ -177,12 +178,27 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
         // ==============================
         if (this.isTame() && this.isOwnedBy(player) && !player.isShiftKeyDown() && stack.is(Items.STICK)) {
             if (!this.level().isClientSide()) {
-                ItemStack current = this.getInventory().getItem(0);
-                int oldCount = current.isEmpty() ? 0 : current.getCount();
-                this.getInventory().setItem(0, new ItemStack(Items.APPLE, oldCount + 1));
-                System.out.println("maid = " + this.getUUID());
-                System.out.println("inventory size = " + this.getInventory().getContainerSize());
-                System.out.println("inventory slot 0 = " + this.getInventory().getItem(0));
+                this.getInventory().setItem(0, new ItemStack(Items.APPLE, 10));
+                this.getInventory().setItem(17, new ItemStack(Items.IRON_SWORD));
+                this.getInventory().setItem(34, new ItemStack(Items.DIAMOND, 5));
+                System.out.println("slot 0 = " + this.getInventory().getItem(0));
+                System.out.println("slot 17 = " + this.getInventory().getItem(17));
+                System.out.println("slot 34 = " + this.getInventory().getItem(34));
+                System.out.println("slot 1 = " + this.getInventory().getItem(1));
+                System.out.println("slot 33 = " + this.getInventory().getItem(33));
+            }
+            return InteractionResult.SUCCESS;
+        }
+        // ==============================
+        // 木锄头DEBUG：
+        // ==============================
+        if (this.isTame() && this.isOwnedBy(player) && !player.isShiftKeyDown() && stack.is(Items.WOODEN_HOE)) {
+            if (!this.level().isClientSide()) {
+                System.out.println("slot 0 = " + this.getInventory().getItem(0));
+                System.out.println("slot 17 = " + this.getInventory().getItem(17));
+                System.out.println("slot 34 = " + this.getInventory().getItem(34));
+                System.out.println("slot 1 = " + this.getInventory().getItem(1));
+                System.out.println("slot 33 = " + this.getInventory().getItem(33));
             }
             return InteractionResult.SUCCESS;
         }
@@ -271,6 +287,10 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
     @Override
     protected void addAdditionalSaveData(ValueOutput output) {
         super.addAdditionalSaveData(output);
+
+        // 背包数据存入存档
+        this.writeInventoryToTag(output);
+
         output.putString("MaidCommand", this.getMaidCommandId().toString());
     }
 
@@ -280,6 +300,10 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
     @Override
     protected void readAdditionalSaveData(ValueInput input) {
         super.readAdditionalSaveData(input);
+
+        // 从存档读取背包数据
+        this.readInventoryFromTag(input);
+
         // 请读取 "MaidCommand" 这一项。如果它不存在，就给我 FOLLOW。
         // 解决了一个很实际的问题：旧存档兼容。假设这是一个旧存档，根本没有MaidCommand，这时候就会返回默认值
         String raw = input.getStringOr("MaidCommand", MaidCommands.FOLLOW_ID.toString());
@@ -321,6 +345,17 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
     @Override
     public SimpleContainer getInventory() {
         return this.inventory;
+    }
+
+    @Override
+    public void writeInventoryToTag(ValueOutput output) {
+        ContainerHelper.saveAllItems(output.child(InventoryCarrier.TAG_INVENTORY), this.inventory.getItems());
+    }
+
+    @Override
+    public void readInventoryFromTag(ValueInput input) {
+        this.inventory.clearContent();
+        ContainerHelper.loadAllItems(input.childOrEmpty(InventoryCarrier.TAG_INVENTORY), this.inventory.getItems());
     }
 
 }
