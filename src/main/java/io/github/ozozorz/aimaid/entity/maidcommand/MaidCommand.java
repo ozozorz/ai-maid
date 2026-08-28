@@ -12,9 +12,11 @@ import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.ai.ActivityData;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.schedule.Activity;
+import net.minecraft.world.item.ItemStack;
 
 // 任何可以注册到 Maid Command Registry 的对象，
 // 都必须是一个 MaidCommand。
@@ -92,5 +94,9 @@ public interface MaidCommand {
 
     default void onSelected(AiMaidEntity maid) {
 
+    }
+
+    default boolean allowsItemPickup(AiMaidEntity maid, ServerLevel level, ItemStack itemStack) {
+        return false;
     }
 }

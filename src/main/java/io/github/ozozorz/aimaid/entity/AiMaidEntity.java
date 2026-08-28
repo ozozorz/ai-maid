@@ -57,6 +57,7 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
 
     public AiMaidEntity(EntityType<? extends AiMaidEntity> entityType, Level level) {
         super(entityType, level);
+        this.setCanPickUpLoot(true);
     }
 
     // 定义女仆实例化出来有哪些默认属性：最大生命值20，移动速度3
@@ -331,7 +332,7 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
     private void stickDebug(ServerLevel level) {
         this.getInventory().clearContent();
         this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.AIR));
-        this.setCanPickUpLoot(true);
+
         System.out.println("maid=" + this.getUUID() + ", canPickUpLoot=" + this.canPickUpLoot());
 
     }
@@ -364,8 +365,11 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
 
     @Override
     public boolean wantsToPickUp(ServerLevel level, ItemStack itemStack) {
-        // Maid 的 inventory 物理上有没有能力接收至少一部分这个物品？
-        return !itemStack.isEmpty() && this.getInventory().canAddItem(itemStack);
+        if (itemStack.isEmpty())
+            return false;
+        if (!this.getInventory().canAddItem(itemStack))
+            return false;
+        return this.getMaidCommand().allowsItemPickup(this, level, itemStack);
     }
 
     @Override
