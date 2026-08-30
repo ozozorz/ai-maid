@@ -20,7 +20,7 @@ public class MaidItemTransfer {
         Objects.requireNonNull(equipmentSlot);
         MaidInventory inventory = maid.getInventory();
         Objects.checkIndex(inventorySlot, inventory.getContainerSize());
-        if (!isSupportedEquipmentSlot(equipmentSlot)) {
+        if (!supportsEquipmentSlot(equipmentSlot)) {
             return 0;
         }
         ItemStack source = inventory.getItem(inventorySlot);
@@ -47,7 +47,7 @@ public class MaidItemTransfer {
     public static int moveEquipmentToInventory(AiMaidEntity maid, EquipmentSlot equipmentSlot) {
         Objects.requireNonNull(maid);
         Objects.requireNonNull(equipmentSlot);
-        if (!isSupportedEquipmentSlot(equipmentSlot)) {
+        if (!supportsEquipmentSlot(equipmentSlot)) {
             return 0;
         }
         ItemStack equipped = maid.getItemBySlot(equipmentSlot);
@@ -64,6 +64,7 @@ public class MaidItemTransfer {
         return movedCount;
     }
 
+    // 自动将物品转移到对应装备槽
     public static int moveInventoryToPreferredEquipmentSlot(AiMaidEntity maid, int inventorySlot) {
         Objects.requireNonNull(maid);
         MaidInventory inventory = maid.getInventory();
@@ -73,12 +74,13 @@ public class MaidItemTransfer {
             return 0;
         }
         EquipmentSlot preferredSlot = maid.getEquipmentSlotForItem(source);
-        if (!isSupportedEquipmentSlot(preferredSlot)) {
+        if (!supportsEquipmentSlot(preferredSlot)) {
             return 0;
         }
         return moveInventoryToEquipment(maid, inventorySlot, preferredSlot);
     }
 
+    // 自动将第一个匹配的物品转移到对应装备槽
     public static int moveFirstMatchingInventoryItemToPreferredEquipmentSlot(AiMaidEntity maid,
             Predicate<ItemStack> predicate) {
         Objects.requireNonNull(maid);
@@ -91,6 +93,7 @@ public class MaidItemTransfer {
         return moveInventoryToPreferredEquipmentSlot(maid, slot.getAsInt());
     }
 
+    // 自动将最佳匹配的物品转移到对应装备槽
     public static int moveBestMatchingInventoryItemToPreferredEquipmentSlot(AiMaidEntity maid,
             Predicate<ItemStack> predicate, Comparator<ItemStack> comparator) {
         Objects.requireNonNull(maid);
@@ -104,7 +107,9 @@ public class MaidItemTransfer {
         return moveInventoryToPreferredEquipmentSlot(maid, slot.getAsInt());
     }
 
-    private static boolean isSupportedEquipmentSlot(EquipmentSlot slot) {
+    // 装备槽位是不是女仆支持的槽
+    public static boolean supportsEquipmentSlot(EquipmentSlot slot) {
+        Objects.requireNonNull(slot);
         return switch (slot) {
             case MAINHAND,
                     OFFHAND,
@@ -117,12 +122,58 @@ public class MaidItemTransfer {
         };
     }
 
-    private static boolean canPlaceInEquipmentSlot(AiMaidEntity maid, ItemStack itemStack, EquipmentSlot slot) {
+    // 能否放进装备槽
+    public static boolean canPlaceInEquipmentSlot(AiMaidEntity maid, ItemStack itemStack, EquipmentSlot slot) {
+        Objects.requireNonNull(maid);
+        Objects.requireNonNull(itemStack);
+        Objects.requireNonNull(slot);
+
+        if (!supportsEquipmentSlot(slot)) {
+            return false;
+        }
+
+        if (itemStack.isEmpty()) {
+            return false;
+        }
+
         return switch (slot) {
             case MAINHAND, OFFHAND -> true;
             case HEAD, CHEST, LEGS, FEET -> maid.isEquippableInSlot(itemStack, slot);
             default -> false;
         };
+    }
+
+    // 交换背包一格的物品和装备槽
+    public static boolean swapInventoryWithEquipment(AiMaidEntity maid, int inventorySlot,
+            EquipmentSlot equipmentSlot) {
+        // 变量合法性判断
+        Objects.requireNonNull(maid);
+        Objects.requireNonNull(equipmentSlot);
+        MaidInventory inventory = maid.getInventory();
+        Objects.checkIndex(inventorySlot, inventory.getContainerSize());
+        if (!supportsEquipmentSlot(equipmentSlot)) {
+            return false;
+        }
+        ItemStack inventoryStack = inventory.getItem(inventorySlot);
+        if (inventoryStack.isEmpty()) {
+            return false;
+        }
+        if (!canPlaceInEquipmentSlot(maid, inventoryStack, equipmentSlot)) {
+            return false;
+        }
+
+        ItemStack equippedStack = maid.getItemBySlot(equipmentSlot);
+        // 如果本来就是空的，直接复用移动逻辑
+        if (equippedStack.isEmpty()) {
+            return moveInventoryToEquipment(maid, inventorySlot, equipmentSlot) > 0;
+        }
+
+        // 交换
+        // 先让inventory接住旧装备
+        // 然后再正式更新 equipment
+        inventory.setItem(inventorySlot, equippedStack);
+        maid.setItemSlot(equipmentSlot, inventoryStack);
+        return true;
     }
 
 }

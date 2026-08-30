@@ -1,14 +1,13 @@
 package io.github.ozozorz.aimaid.entity;
 
 import java.util.List;
-import java.util.OptionalInt;
 
 import org.jspecify.annotations.Nullable;
 
 import io.github.ozozorz.aimaid.entity.ai.AiMaidAi;
 import io.github.ozozorz.aimaid.entity.ai.sensing.MaidBrainSensors;
+import io.github.ozozorz.aimaid.entity.inventory.MaidEquipmentHelper;
 import io.github.ozozorz.aimaid.entity.inventory.MaidInventory;
-import io.github.ozozorz.aimaid.entity.inventory.MaidItemTransfer;
 import io.github.ozozorz.aimaid.entity.maidcommand.MaidCommand;
 import io.github.ozozorz.aimaid.entity.maidcommand.MaidCommandMenu;
 import io.github.ozozorz.aimaid.entity.maidcommand.MaidCommands;
@@ -348,60 +347,19 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
 
     private void hoeDebug() {
         MaidInventory inventory = this.getInventory();
-        inventory.clearContent();
-
-        inventory.setItem(
-                2,
-                new ItemStack(
-                        Items.COBBLESTONE,
-                        32));
-
-        inventory.setItem(
-                7,
-                new ItemStack(
-                        Items.IRON_AXE));
-
-        inventory.setItem(
-                15,
-                new ItemStack(
-                        Items.APPLE,
-                        12));
-
-        inventory.setItem(
-                23,
-                new ItemStack(
-                        Items.DIAMOND_AXE));
-
-        this.setItemSlot(
-                EquipmentSlot.MAINHAND,
-                ItemStack.EMPTY);
-        OptionalInt axeSlot = inventory.findFirstMatchingSlot(
-                stack -> stack.is(
-                        ItemTags.AXES));
-
-        System.out.println(
-                "first axe slot = "
-                        + axeSlot);
-
-        System.out.println(
-                "axe count = "
-                        + inventory.countMatching(
-                                stack -> stack.is(
-                                        ItemTags.AXES)));
-
-        int moved = MaidItemTransfer
-                .moveFirstMatchingInventoryItemToPreferredEquipmentSlot(
+        for (int i = 0; i < inventory.getContainerSize(); i++) {
+            inventory.setItem(i, new ItemStack(Items.COBBLESTONE, 64));
+        }
+        inventory.setItem(7, new ItemStack(Items.IRON_AXE));
+        this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.APPLE, 10));
+        boolean ready = MaidEquipmentHelper
+                .ensureEquipment(
                         this,
+                        EquipmentSlot.MAINHAND,
                         stack -> stack.is(
                                 ItemTags.AXES));
-
-        System.out.println(
-                "moved = "
-                        + moved);
-
-        System.out.println(
-                "MAINHAND = "
-                        + this.getMainHandItem());
+        System.out.println("ready = " + ready);
+        System.out.println("slot 7 = " + inventory.getItem(7));
     }
 
     // ========inventory相关=========
