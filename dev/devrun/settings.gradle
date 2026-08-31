@@ -1,0 +1,37 @@
+pluginManagement {
+	repositories {
+		maven {
+			name = 'Fabric'
+			url = 'https://maven.fabricmc.net/'
+		}
+		mavenCentral()
+		gradlePluginPortal()
+	}
+}
+
+// Should match your modid
+rootProject.name = 'aimaid-devrun'
+
+// Core
+includeBuild('../..') {
+    dependencySubstitution {
+        substitute module(
+                'io.github.ozozorz.aimaid:ai-maid'
+        ) using project(':')
+    }
+}
+
+
+// TestAddon
+includeBuild('../../addon/testaddon') {
+    dependencySubstitution {
+        substitute module(
+                'io.github.ozozorz.aimaid:testaddon'
+        ) using project(':')
+    }
+}
+
+
+// 以后：
+// includeBuild('../../addon/farmaddon') { ... }
+// includeBuild('../../addon/combataddon') { ... }

@@ -3,9 +3,6 @@ plugins {
 	id 'maven-publish'
 }
 
-version = project.testaddon_version
-group = project.maven_group
-
 repositories {
 	// Add repositories to retrieve artifacts from in here.
 	// You should only use this when depending on other mods because
@@ -23,6 +20,16 @@ loom {
 			sourceSet sourceSets.client
 		}
 	}
+
+	runs {
+		client {
+			programArg "--username"
+			programArg "MaidDev"
+
+			programArg "--uuid"
+			programArg "11111111-1111-1111-1111-111111111111"
+		}
+	}
 }
 
 dependencies {
@@ -33,13 +40,13 @@ dependencies {
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
 
-
-    // AiMaid common
-    implementation project(":")
-
-    // AiMaid client
-    clientImplementation rootProject.sourceSets.client.output
-
+	// AIMaid API / Runtime
+	def aiMaid = "io.github.ozozorz.aimaid:ai-maid:${project.aimaid_version}"
+	implementation aiMaid
+	
+	// splitEnvironmentSourceSets下
+	// client source set 也明确声明依赖
+	clientImplementation aiMaid
 }
 
 processResources {

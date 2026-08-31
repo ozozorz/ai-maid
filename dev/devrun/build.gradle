@@ -2,9 +2,6 @@ plugins {
 	id 'net.fabricmc.fabric-loom' version "${loom_version}"
 }
 
-version = "1.0.0"
-group = project.maven_group
-
 loom {
 	splitEnvironmentSourceSets()
 
@@ -34,48 +31,14 @@ dependencies {
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
 
-	    // =========================
-    // AiMaid 主模组
-    // =========================
+	def aiMaid = "io.github.ozozorz.aimaid:ai-maid:${project.aimaid_version}"
+	def testAddon = "io.github.ozozorz.aimaid:testaddon:${project.testaddon_version}"
 
-    implementation project(":")
+	implementation aiMaid
+	clientImplementation aiMaid
 
-    clientImplementation rootProject
-            .sourceSets
-            .client
-            .output
-
-
-    // =========================
-    // TestAddon
-    // =========================
-
-    implementation project(":testaddon")
-
-    clientImplementation this.project(":testaddon")
-            .sourceSets
-            .client
-            .output
-
-
-    // =========================
-    // 以后其他 Addon
-    // =========================
-
-    // implementation project(":farmaddon")
-
-    // clientImplementation project(":farmaddon")
-    //         .sourceSets
-    //         .client
-    //         .output
-
-
-    // implementation project(":combataddon")
-
-    // clientImplementation project(":combataddon")
-    //         .sourceSets
-    //         .client
-    //         .output 
+	implementation testAddon
+	clientImplementation testAddon
 }
 
 

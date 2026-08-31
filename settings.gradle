@@ -11,18 +11,3 @@ pluginManagement {
 
 // Should match your modid
 rootProject.name = 'ai-maid'
-
-include 'testaddon'
-project(':testaddon').projectDir = file('addon/testaddon')
-
-// 以后：
-// include 'farmaddon'
-// project(':farmaddon').projectDir = file('addon/farmaddon')
-
-// include 'combataddon'
-// project(':combataddon').projectDir = file('addon/combataddon')
-
-
-// 专门用于一次加载所有 Mod
-include 'devrun'
-project(':devrun').projectDir = file('dev/devrun')

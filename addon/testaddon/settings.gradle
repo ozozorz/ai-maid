@@ -1,0 +1,24 @@
+pluginManagement {
+	repositories {
+		maven {
+			name = 'Fabric'
+			url = 'https://maven.fabricmc.net/'
+		}
+		mavenCentral()
+		gradlePluginPortal()
+	}
+}
+
+// Should match your modid
+rootProject.name = 'testaddon'
+
+// 本仓库开发时，直接使用 ../../ 的 AiMaid 源码。
+// Gradle 会把下面 build.gradle 中的 Maven 依赖
+// 替换成本地 AiMaid Build。
+includeBuild('../..') {
+	dependencySubstitution {
+		substitute module(
+				'io.github.ozozorz.aimaid:ai-maid'
+		) using project(':')
+	}
+}
