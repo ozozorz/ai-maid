@@ -6,7 +6,6 @@ import org.jspecify.annotations.Nullable;
 
 import io.github.ozozorz.aimaid.entity.ai.AiMaidAi;
 import io.github.ozozorz.aimaid.entity.ai.sensing.MaidBrainSensors;
-import io.github.ozozorz.aimaid.entity.inventory.MaidEquipmentHelper;
 import io.github.ozozorz.aimaid.entity.inventory.MaidInventory;
 import io.github.ozozorz.aimaid.entity.maidcommand.MaidCommand;
 import io.github.ozozorz.aimaid.entity.maidcommand.MaidCommandMenu;
@@ -112,8 +111,8 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
         super.customServerAiStep(level);
 
         /// DEBUG
-        this.brainTickDebug(level);
         if (this.tickCount % 40 == 0) {
+            this.brainTickDebug(level);
         }
         /// DUBUG END
     }
@@ -333,6 +332,15 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
             this.debugLastWantedPresent = wantedPresent;
             this.debugLastActivity = currentActivity;
         }
+        
+        System.out.println("slot 0 = " + inventory.getItem(0));
+        ItemStack mainhandStack = this.getItemBySlot(EquipmentSlot.MAINHAND);
+        if (mainhandStack.is(ItemTags.AXES)) {
+            int maxDurability = mainhandStack.getMaxDamage();
+            int damage = mainhandStack.getDamageValue();
+            int remainingDurability = maxDurability - damage;
+            System.out.println("斧头耐久: " + remainingDurability + " / " + maxDurability);
+        }
     }
 
     private void stickDebug(ServerLevel level) {
@@ -351,14 +359,8 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
             inventory.setItem(i, new ItemStack(Items.COBBLESTONE, 64));
         }
         inventory.setItem(7, new ItemStack(Items.IRON_AXE));
+        inventory.setItem(0, ItemStack.EMPTY);
         this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.APPLE, 10));
-        boolean ready = MaidEquipmentHelper
-                .ensureEquipment(
-                        this,
-                        EquipmentSlot.MAINHAND,
-                        stack -> stack.is(
-                                ItemTags.AXES));
-        System.out.println("ready = " + ready);
         System.out.println("slot 7 = " + inventory.getItem(7));
     }
 
