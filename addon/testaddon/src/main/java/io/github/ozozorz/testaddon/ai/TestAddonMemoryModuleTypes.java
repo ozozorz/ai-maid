@@ -22,10 +22,14 @@ public class TestAddonMemoryModuleTypes {
     public static final MemoryModuleType<Integer> PATROL_RADIUS = register("patrol_radius");
 
     public static final MemoryModuleType<BlockPos> LUMBER_TARGET = register("lumber_target");
+
+    // Maid 工作时脚部所在的方块坐标
+    public static final MemoryModuleType<BlockPos> LUMBER_WORK_POS = register("lumber_work_pos");
     
     // 纯 runtime maker: 这一轮 lumber 已经结束
     public static final MemoryModuleType<Unit> LUMBER_DONE = register("lumber_done");
-    
+
+
     private static <T> MemoryModuleType<T> register(String name) {
         return Registry.register(BuiltInRegistries.MEMORY_MODULE_TYPE,
                 Identifier.fromNamespaceAndPath("testaddon", name), new MemoryModuleType<>(Optional.empty())

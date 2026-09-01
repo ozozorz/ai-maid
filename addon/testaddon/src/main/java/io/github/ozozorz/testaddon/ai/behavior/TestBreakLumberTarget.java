@@ -19,32 +19,42 @@ import net.minecraft.world.level.gamerules.GameRules;
 
 public class TestBreakLumberTarget {
 
-    private static final double WORK_DISTANCE = 2.0;
-
     private TestBreakLumberTarget() {
     }
 
     public static BehaviorControl<AiMaidEntity> create() {
         return BehaviorBuilder.create(i -> {
             var memories = i.group(
+                // 真正准备破坏的原木
                 i.present(TestAddonMemoryModuleTypes.LUMBER_TARGET),
+                // 计划好的工作站位
+                i.present(TestAddonMemoryModuleTypes.LUMBER_WORK_POS),
                 i.absent(TestAddonMemoryModuleTypes.LUMBER_DONE)
             );
-            return memories.apply(i, (lumberTarget, lumberDone) -> {
+            return memories.apply(i, (lumberTarget, lumberWorkPos, lumberDone) -> {
                 return (level, maid, timestamp) -> {
                     
                     BlockPos targetPos = i.get(lumberTarget);
+                    BlockPos workPos = i.get(lumberWorkPos);
 
                     BlockState state = level.getBlockState(targetPos);
 
-                    // 到工作时再验证一次真实世界状态。
+                    // 作时再次验证世界状态
                     if (!state.is(BlockTags.LOGS) || !level.getGameRules().get(GameRules.MOB_GRIEFING)) {
                         lumberDone.set(Unit.INSTANCE);
                         return true;
                     }
 
-                    // 还没走到工作距离
-                    if (!targetPos.closerToCenterThan(maid.position(), WORK_DISTANCE)) {
+                    // 两个 Memory 必须表示：水平相邻的原木与站位。
+                    // 这也是对 Memory 数据一致性的保护。
+                    if (targetPos.distManhattan(workPos) != 1) {
+                        lumberDone.set(Unit.INSTANCE);
+                        return true;
+                    }
+
+                    // 不再使用模糊的 2 格球形距离。
+                    // Maid 必须真正站到规划出来的 LUMBER_WORK_POS。
+                    if (!workPos.equals(maid.blockPosition())) {
                         return false;
                     }
 
@@ -56,11 +66,7 @@ public class TestBreakLumberTarget {
 
                     destroyWithLivingEntity(level, maid, targetPos, state, tool);
 
-                    /*
-                     * 不管最终 destroy 是否成功，
-                     * 这次“一块原木”的尝试都结束。
-                     * 避免某个特殊方块导致无限重试。
-                     */
+                    // 一次 command 仍然只处理一块原木
                     lumberDone.set(Unit.INSTANCE);
 
                     return true;

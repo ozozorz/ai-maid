@@ -47,9 +47,7 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
     // 定义一个 用来访问“女仆当前命令”这份同步数据的Key，通过它去entityData里读取真正的数据
     // SynchedEntityData.defineId(...) 告诉 Minecraft：我要给某一种实体类型注册一个新的同步数据槽。
     // 给 AiMaidEntity 定义一个 String 类型的网络同步数据槽。
-    private static final EntityDataAccessor<String> MAID_COMMAND_ENTITY_DATA_ACCESSOR = SynchedEntityData.defineId(
-            AiMaidEntity.class,
-            EntityDataSerializers.STRING);
+    private static final EntityDataAccessor<String> MAID_COMMAND_ENTITY_DATA_ACCESSOR = SynchedEntityData.defineId(AiMaidEntity.class, EntityDataSerializers.STRING);
 
     public AiMaidEntity(Level level) {
         this(ModEntityTypes.AI_MAID, level);
@@ -63,8 +61,8 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
     // 定义女仆实例化出来有哪些默认属性：最大生命值20，移动速度3
     public static AttributeSupplier.Builder createAttributes() {
         return PathfinderMob.createMobAttributes()
-                .add(Attributes.MAX_HEALTH, 20.0)
-                .add(Attributes.MOVEMENT_SPEED, 0.3);
+            .add(Attributes.MAX_HEALTH, 20.0)
+            .add(Attributes.MOVEMENT_SPEED, 0.3);
     }
 
     // Brain.Provider 不是 Brain。
@@ -83,14 +81,12 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
     // ModSensorTypes.MAID_COMMAND),
     // AiMaidAi::getActivities);
     private static final class BrainProviderHolder {
-        private static final Brain.Provider<AiMaidEntity> INSTANCE = Brain.provider(MaidBrainSensors.getSensorTypes(),
-                AiMaidAi::getActivities);
+        private static final Brain.Provider<AiMaidEntity> INSTANCE = Brain.provider(MaidBrainSensors.getSensorTypes(), AiMaidAi::getActivities);
     }
 
     // rain.Packed = 从存档读取出来、准备恢复进 Brain 的记忆包。
     @Override
     protected Brain<AiMaidEntity> makeBrain(Brain.Packed packedBrain) {
-        // return BRAIN_PROVIDER.makeBrain(this, packedBrain);
         return BrainProviderHolder.INSTANCE.makeBrain(this, packedBrain);
     }
 
@@ -110,11 +106,10 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
 
         super.customServerAiStep(level);
 
-        /// DEBUG
+        // DEBUG
         if (this.tickCount % 40 == 0) {
             this.brainTickDebug(level);
         }
-        /// DUBUG END
     }
 
     @Override

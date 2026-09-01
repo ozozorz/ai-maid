@@ -64,6 +64,7 @@ public class TestLumberCommand implements MaidCommand {
         Brain<AiMaidEntity> brain = maid.getBrain();
         brain.eraseMemory(TestAddonMemoryModuleTypes.LUMBER_DONE);
         brain.eraseMemory(TestAddonMemoryModuleTypes.LUMBER_TARGET);
+        brain.eraseMemory(TestAddonMemoryModuleTypes.LUMBER_WORK_POS);
         brain.eraseMemory(MemoryModuleType.WALK_TARGET);
         brain.eraseMemory(MemoryModuleType.LOOK_TARGET);
         brain.eraseMemory(MemoryModuleType.CANT_REACH_WALK_TARGET_SINCE);
@@ -115,6 +116,7 @@ public class TestLumberCommand implements MaidCommand {
              */
             Set.of(
                 TestAddonMemoryModuleTypes.LUMBER_TARGET,
+                TestAddonMemoryModuleTypes.LUMBER_WORK_POS,
                 MemoryModuleType.WALK_TARGET,
                 MemoryModuleType.LOOK_TARGET,
                 MemoryModuleType.CANT_REACH_WALK_TARGET_SINCE
