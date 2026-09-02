@@ -1,12 +1,17 @@
 package io.github.ozozorz.aimaid.client.screen;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 import org.jspecify.annotations.Nullable;
 
 import io.github.ozozorz.aimaid.entity.AiMaidEntity;
+import io.github.ozozorz.aimaid.entity.maidcommand.MaidCommand;
 import io.github.ozozorz.aimaid.menu.MaidMenu;
+import io.github.ozozorz.aimaid.registries.ModBuiltInRegistries;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Entity;
@@ -20,6 +25,26 @@ public class AiMaidScreen extends AbstractContainerScreen<MaidMenu> {
 
     private static final int STATUS_LEFT = 10;
     private static final int STATUS_TOP = 26;
+
+    private static final int COMMAND_COLUMNS = 2;
+    private static final int COMMAND_ROWS = 3;
+
+
+    private static final int COMMANDS_PER_PAGE = COMMAND_COLUMNS * COMMAND_ROWS;
+
+    private static final int COMMAND_LEFT = 9;
+    private static final int COMMAND_TOP = 64;
+
+    private static final int COMMAND_BUTTON_WIDTH = 43;
+    private static final int COMMAND_BUTTON_HEIGHT = 16;
+
+    private static final int COMMAND_GAP_X = 2;
+    private static final int COMMAND_GAP_Y = 2;
+
+    private int commandPage = 0;
+
+    private final List<CommandButtonEntry> commandButtons = new ArrayList<>();
+
 
     public AiMaidScreen(MaidMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title, IMAGE_WIDTH, IMAGE_HEIGHT);
@@ -72,14 +97,19 @@ public class AiMaidScreen extends AbstractContainerScreen<MaidMenu> {
         // 很重要：
         // 不要默认客户端一定能找到实体。实体可能刚好死亡、unload、dimension change、packet timing 发生变化
         if (maid == null) {
-            graphics.text(this.font, Component.translatable("gui.ai-maid.entity_unavailable"), STATUS_LEFT, STATUS_TOP + 18, 0x404040, false);
+            graphics.text(this.font, Component.translatable("gui.ai-maid.entity_unavailable"), STATUS_LEFT, STATUS_TOP + 12, 0x404040, false);
+            return;
         }
 
         String health = String.format(Locale.ROOT, "%.1f / %.1f", maid.getHealth(), maid.getMaxHealth());
 
-        graphics.text( this.font, Component.translatable("gui.ai-maid.health", health), STATUS_LEFT, STATUS_TOP + 18, 0x404040, false);
+        graphics.text( this.font, Component.translatable("gui.ai-maid.health", health), STATUS_LEFT, STATUS_TOP + 12, 0x404040, false);
         graphics.text(this.font, Component.translatable("gui.ai-maid.command"), STATUS_LEFT, STATUS_TOP + 36, 0x404040, false);
         graphics.text(this.font, maid.getMaidCommand().getDisplayName(), STATUS_LEFT, STATUS_TOP + 48, 0x404040, false);
+
+        MaidCommand selected = this.menu.getSelectedCommand();
+        Component selectedName = selected == null ? Component.translatable("gui.ai-maid.command_unknow") : selected.getDisplayName();
+        graphics.text(this.font, Component.translatable("gui.ai-maid.command_value", selectedName), STATUS_LEFT, STATUS_TOP + 24, 0x404040, false);
     }
 
     private @Nullable AiMaidEntity getClientMaid() {
@@ -94,6 +124,109 @@ public class AiMaidScreen extends AbstractContainerScreen<MaidMenu> {
         }
 
         return null;
+    }
+
+    @Override
+    protected void init() {
+        // 特别重要。
+        // AbstractContainerScreen.init() 会计算：leftPos、topPos
+        // 所以一定先调用 super。
+        super.init();
+        this.commandButtons.clear();
+        this.commandPage = Math.min(this.commandPage, getMaxCommandPage());
+        addCommandButtons();
+    }
+
+    @Override
+    protected void containerTick() {
+        super.containerTick();
+        for (CommandButtonEntry entry : this.commandButtons) {
+            // Server policy：true / false
+            entry.button().active = this.menu.isCommandSelectable(entry.visibleCommandIndex);
+            // selected command 发生变化时，更新 > 标记。
+            entry.button().setMessage(getCommandButtonLabel(entry.command()));
+        }
+    }
+
+    private void addCommandButtons() {
+        List<MaidCommand> commands = this.menu.getVisibleCommands();
+        int startIndex = this.commandPage * COMMANDS_PER_PAGE;
+        int endIndex = Math.min(startIndex + COMMANDS_PER_PAGE, commands.size());
+        for (int index = startIndex; index < endIndex; index++) {
+            MaidCommand command = commands.get(index);
+            int localIndex = index - startIndex;
+            int column = localIndex % COMMAND_COLUMNS;
+            int row = localIndex / COMMAND_COLUMNS;
+            int x = this.leftPos + COMMAND_LEFT + column * (COMMAND_BUTTON_WIDTH + COMMAND_GAP_X);
+            int y = this.topPos + COMMAND_TOP + row * (COMMAND_BUTTON_HEIGHT + COMMAND_GAP_Y);
+            Button button = Button.builder(getCommandButtonLabel(command), ignored -> {pressCommandButton(command);}).bounds(x, y, COMMAND_BUTTON_WIDTH, COMMAND_BUTTON_HEIGHT).build();
+            
+            // 初始 enabled / disabled 状态来自 Server -> DataSlot -> Client。
+            button.active = this.menu.isCommandSelectable(index);
+            this.addRenderableWidget(button);
+            this.commandButtons.add(new CommandButtonEntry(index, command, button));
+        }
+        addCommandPageButtons();
+    }
+
+    private void pressCommandButton(MaidCommand command) {
+        if (this.minecraft.gameMode == null) {
+            return;
+        }
+        int rawId = ModBuiltInRegistries.MAID_COMMAND.getId(command);
+        if (rawId < 0) {
+            return;
+        }
+        // 不直接 maid.selecetMaidCommand(...) Client 没有这个权力。
+        this.minecraft.gameMode.handleInventoryButtonClick(this.menu.containerId, rawId);
+    }
+
+    private Component getCommandButtonLabel(MaidCommand command) {
+        if (this.menu.isSelectedCommand(command)) {
+            return Component.literal("> ").append(command.getDisplayName());
+        }
+        return command.getDisplayName();
+    }
+
+    private int getMaxCommandPage() {
+        int size = this.menu.getVisibleCommands().size();
+        if (size == 0) {
+            return 0;
+        }
+        return (size - 1) / COMMANDS_PER_PAGE;
+    }
+
+    private void addCommandPageButtons() {
+        int maxPage = getMaxCommandPage();
+
+        if (maxPage == 0) {
+            return;
+        }
+
+        Button previous = Button.builder(Component.literal("<"), ignored -> {
+            this.commandPage--;
+            this.rebuildWidgets();
+        }).bounds(this.leftPos + 69, this.topPos + 22, 13, 13).build();
+
+        previous.active = this.commandPage > 0;
+
+        this.addRenderableWidget(previous);
+
+        Button next = Button.builder(Component.literal(">"), ignored -> {
+            this.commandPage++;
+            this.rebuildWidgets();
+        }).bounds(this.leftPos + 84, this.topPos + 22, 13, 13).build();
+
+        next.active = this.commandPage < maxPage;
+
+        this.addRenderableWidget(next);
+    }
+
+    private record CommandButtonEntry(
+        int visibleCommandIndex,
+        MaidCommand command,
+        Button button
+    ) {
     }
 
 }

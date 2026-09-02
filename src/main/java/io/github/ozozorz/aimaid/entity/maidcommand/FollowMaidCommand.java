@@ -20,4 +20,9 @@ public class FollowMaidCommand implements MaidCommand {
         return List.of(ModActivities.FOLLOW_OWNER, Activity.IDLE);
     }
 
+    @Override
+    public int getMenuOrder() {
+        return 200;
+    }
+
 }

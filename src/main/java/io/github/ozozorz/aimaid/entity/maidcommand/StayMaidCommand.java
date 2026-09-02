@@ -58,4 +58,9 @@ public class StayMaidCommand implements MaidCommand {
                 Pair.of(new DoNothing(30, 60), 4)));
     }
 
+    @Override
+    public int getMenuOrder() {
+        return 300;
+    }
+
 }

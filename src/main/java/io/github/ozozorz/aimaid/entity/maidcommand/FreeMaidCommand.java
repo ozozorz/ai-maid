@@ -20,4 +20,9 @@ public class FreeMaidCommand implements MaidCommand {
         return true;
     }
 
+    @Override
+    public int getMenuOrder() {
+        return 100;
+    }
+
 }

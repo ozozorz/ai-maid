@@ -11,5 +11,8 @@
     "gui.ai-maid.entity_unavailable": "Maid status unavailable",
 
     "command.ai-maid.maid.not_owner": "You do not own this maid",
-    "command.ai-maid.maid.gui_unavailable": "The maid is out of interaction range or cannot open the menu"
+    "command.ai-maid.maid.gui_unavailable": "The maid is out of interaction range or cannot open the menu",
+    
+    "gui.ai-maid.command_value": "Command: %s",
+    "gui.ai-maid.command_unknown": "Unknown"
 }

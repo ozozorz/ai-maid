@@ -76,6 +76,17 @@ public interface MaidCommand {
     // 但暂时不可选择。以后 GUI 可以把它画成灰色。
     // 还有一个重要的安全原则：canPlayerSelect() 不是用来替代 maid.isOwnedBy(player)
     // 主人权限属于整个 Maid 命令系统的通用授权，应该由实体交互/以后网络包的服务端处理统一验证。
+    /*
+     * Server-side selection policy。
+     *
+     * MaidMenu 打开期间可能被反复查询，
+     * 因此实现应该：
+     *
+     * 1. 无副作用
+     * 2. 足够便宜
+     * 3. 不在这里修改 Maid 状态
+     * 4. 不替代通用 ownership 安全验证
+     */    
     default boolean canPlayerSelect(AiMaidEntity maid, Player player) {
         return true;
     }
