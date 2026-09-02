@@ -4,5 +4,14 @@
     "maid_command.ai-maid.free": "自由活动",
     "maid_command.ai-maid.follow": "跟随",
     "maid_command.ai-maid.stay": "待命",
-    "message.ai-maid.maid_command_changed": "女仆命令：%s"
+    "message.ai-maid.maid_command_changed": "女仆命令：%s",
+    
+    "gui.ai-maid.maid_inventory": "女仆背包",
+    "gui.ai-maid.status": "状态",
+    "gui.ai-maid.health": "生命：%s",
+    "gui.ai-maid.command": "MaidCommand",
+    "gui.ai-maid.entity_unavailable": "女仆状态暂不可用",
+    
+    "command.ai-maid.maid.not_owner": "你不是这只女仆的主人",
+    "command.ai-maid.maid.gui_unavailable": "女仆不在可交互范围内，或当前无法打开面板"
 }

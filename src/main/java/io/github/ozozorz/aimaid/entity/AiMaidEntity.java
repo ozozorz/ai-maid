@@ -1,23 +1,21 @@
 package io.github.ozozorz.aimaid.entity;
 
-import java.util.List;
-
 import org.jspecify.annotations.Nullable;
 
 import io.github.ozozorz.aimaid.entity.ai.AiMaidAi;
 import io.github.ozozorz.aimaid.entity.ai.sensing.MaidBrainSensors;
 import io.github.ozozorz.aimaid.entity.inventory.MaidInventory;
 import io.github.ozozorz.aimaid.entity.maidcommand.MaidCommand;
-import io.github.ozozorz.aimaid.entity.maidcommand.MaidCommandMenu;
 import io.github.ozozorz.aimaid.entity.maidcommand.MaidCommands;
+import io.github.ozozorz.aimaid.menu.MaidMenuOpener;
 import io.github.ozozorz.aimaid.registries.ModBuiltInRegistries;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.InteractionHand;
@@ -176,34 +174,24 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
         // ==============================
         // 已驯服：
         // Owner Shift + 空手右键
-        // 切换 MaidCommand
+        // 打开 Maid GUI。
         // ==============================
-        if (this.isTame() && this.isOwnedBy(player) && player.isShiftKeyDown() && stack.isEmpty()) {
-            // 客户端：
-            // 吃掉这次交互，不再继续尝试其他手
+        if (this.isTame() && this.isOwnedBy(player) && player.isShiftKeyDown()) {
+            // 客户端只负责确认交互已经被消费。
+            // 真正 openMenu 必须服务器执行。
             if (this.level().isClientSide()) {
                 return InteractionResult.SUCCESS;
             }
-            /// 去抖
-            long currentTick = this.level().getGameTime();
-            long interval = currentTick - this.lastCommandInteractTick;
-            // 每次收到交互都更新
-            this.lastCommandInteractTick = currentTick;
-            // 过滤右键长按产生的连续触发
-            if (interval <= COMMAND_INTERACT_GAP_TICKS) {
-                return InteractionResult.SUCCESS;
+
+            if (player instanceof ServerPlayer serverPlayer) {
+                MaidMenuOpener.open(serverPlayer, this);
             }
-            /// 切换MaidCommand
-            this.cycleMaidCommand(player);
+
             return InteractionResult.SUCCESS;
         }
-
+        
         return super.mobInteract(player, hand);
     }
-
-    /// 右键交互去抖用
-    private static final long COMMAND_INTERACT_GAP_TICKS = 5L;
-    private long lastCommandInteractTick = -1000L;
 
     // 告诉每一只新创建的女仆: 你身上要有 MAID_COMMAND_ENTITY_DATA_ACCESSOR 这项同步数据，而且它的初始值是 FOLLOW
     // 命令的 ID。
@@ -292,25 +280,6 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
 
     private void restoreMaidCommandId(Identifier id) {
         this.entityData.set(MAID_COMMAND_ENTITY_DATA_ACCESSOR, id.toString());
-    }
-
-    private void cycleMaidCommand(Player player) {
-        List<MaidCommand> commands = MaidCommandMenu.getSelectableCommands(this, player);
-        if (commands.isEmpty()) {
-            return;
-        }
-        MaidCommand currentMaidCommand = this.getMaidCommand();
-        int currentIndex = commands.indexOf(currentMaidCommand);
-        int nextIndex;
-        if (currentIndex < 0) {
-            nextIndex = 0;
-        } else {
-            nextIndex = (currentIndex + 1) % commands.size();
-        }
-        MaidCommand nextMaidCommand = commands.get(nextIndex);
-        this.selecetMaidCommand(nextMaidCommand);
-        player.sendOverlayMessage(
-                Component.translatable("message.ai-maid.maid_command_changed", nextMaidCommand.getDisplayName()));
     }
 
     private boolean debugLastWantedPresent;

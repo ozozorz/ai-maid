@@ -11,6 +11,7 @@ import io.github.ozozorz.aimaid.entity.ai.sensing.ModSensorTypes;
 import io.github.ozozorz.aimaid.entity.maidcommand.MaidCommands;
 import io.github.ozozorz.aimaid.entity.schedule.ModActivities;
 import io.github.ozozorz.aimaid.item.ModItems;
+import io.github.ozozorz.aimaid.menu.ModMenuTypes;
 import io.github.ozozorz.aimaid.registries.ModBuiltInRegistries;
 import net.fabricmc.api.ModInitializer;
 import net.minecraft.resources.Identifier;
@@ -43,11 +44,10 @@ public class AIMaid implements ModInitializer {
 
 		// 其他原有初始化
 		ModItems.initialize();
-
-		// 物品初始化
+		ModMenuTypes.initialize();
+		// 实体初始化
 		ModEntityTypes.registerModEntityTypes();
 		ModEntityTypes.registerAttributes();
-
 		// 指令初始化
 		ModServerCommands.initialize();
 

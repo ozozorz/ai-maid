@@ -2,5 +2,14 @@
     "maid_command.ai-maid.free": "Free",
     "maid_command.ai-maid.follow": "Follow",
     "maid_command.ai-maid.stay": "Stay",
-    "message.ai-maid.maid_command_changed": "Maid Command: %s"
+    "message.ai-maid.maid_command_changed": "Maid Command: %s",
+
+    "gui.ai-maid.maid_inventory": "Maid Inventory",
+    "gui.ai-maid.status": "Status",
+    "gui.ai-maid.health": "Health: %s",
+    "gui.ai-maid.command": "MaidCommand",
+    "gui.ai-maid.entity_unavailable": "Maid status unavailable",
+
+    "command.ai-maid.maid.not_owner": "You do not own this maid",
+    "command.ai-maid.maid.gui_unavailable": "The maid is out of interaction range or cannot open the menu"
 }
