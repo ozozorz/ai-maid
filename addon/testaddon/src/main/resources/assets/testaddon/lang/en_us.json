@@ -1,4 +1,7 @@
 {
     "maid_command.testaddon.patrol": "Patrol",
-    "maid_command.testaddon.lumber": "Lumber"
+    "maid_command.testaddon.lumber": "Lumber",
+
+    "maid_activity.testaddon.patrol": "Patrolling",
+    "maid_activity.testaddon.lumber": "Lumbering"
 }

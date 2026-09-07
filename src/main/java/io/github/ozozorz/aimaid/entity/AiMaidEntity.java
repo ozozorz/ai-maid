@@ -16,13 +16,11 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.tags.ItemTags;
 import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.ai.Brain;
@@ -32,7 +30,6 @@ import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.npc.InventoryCarrier;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
@@ -99,15 +96,8 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
     @Override
     protected void customServerAiStep(ServerLevel level) {
         this.getBrain().tick(level, this);
-
         AiMaidAi.updateActivity(this);
-
         super.customServerAiStep(level);
-
-        // DEBUG
-        if (this.tickCount % 40 == 0) {
-            this.brainTickDebug(level);
-        }
     }
 
     @Override
@@ -129,7 +119,6 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
     @Override
     public InteractionResult mobInteract(Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
-
         // ==============================
         // 未驯服：使用驯服物品
         // ==============================
@@ -148,25 +137,6 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
                 serverLevel.sendParticles(success ? ParticleTypes.HEART : ParticleTypes.SMOKE, this.getX(),
                         this.getY() + this.getBbHeight() * 0.5, this.getZ(), 7, this.getBbWidth() * 0.5,
                         this.getBbHeight() * 0.5, this.getBbWidth() * 0.5, 0.02);
-            }
-            return InteractionResult.SUCCESS;
-        }
-
-        // ==============================
-        // 木棍DEBUG：
-        // ==============================
-        if (this.isTame() && this.isOwnedBy(player) && !player.isShiftKeyDown() && stack.is(Items.STICK)) {
-            if (!this.level().isClientSide()) {
-                this.stickDebug((ServerLevel) this.level());
-            }
-            return InteractionResult.SUCCESS;
-        }
-        // ==============================
-        // 木锄头DEBUG：
-        // ==============================
-        if (this.isTame() && this.isOwnedBy(player) && !player.isShiftKeyDown() && stack.is(Items.WOODEN_HOE)) {
-            if (!this.level().isClientSide()) {
-                this.hoeDebug();
             }
             return InteractionResult.SUCCESS;
         }
@@ -280,52 +250,6 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
 
     private void restoreMaidCommandId(Identifier id) {
         this.entityData.set(MAID_COMMAND_ENTITY_DATA_ACCESSOR, id.toString());
-    }
-
-    private boolean debugLastWantedPresent;
-    private Activity debugLastActivity;
-
-    private void brainTickDebug(ServerLevel level) {
-        Brain<AiMaidEntity> brain = this.getBrain();
-        boolean wantedPresent = brain.hasMemoryValue(MemoryModuleType.NEAREST_VISIBLE_WANTED_ITEM);
-        Activity currentActivity = brain.getActiveNonCoreActivity().orElse(null);
-        if (wantedPresent != this.debugLastWantedPresent || currentActivity != this.debugLastActivity) {
-            System.out.println("gameTime = " + level.getGameTime());
-            System.out.println("wanted present = " + wantedPresent);
-            System.out.println("activity = " + currentActivity);
-            this.debugLastWantedPresent = wantedPresent;
-            this.debugLastActivity = currentActivity;
-        }
-        
-        System.out.println("slot 0 = " + inventory.getItem(0));
-        ItemStack mainhandStack = this.getItemBySlot(EquipmentSlot.MAINHAND);
-        if (mainhandStack.is(ItemTags.AXES)) {
-            int maxDurability = mainhandStack.getMaxDamage();
-            int damage = mainhandStack.getDamageValue();
-            int remainingDurability = maxDurability - damage;
-            System.out.println("斧头耐久: " + remainingDurability + " / " + maxDurability);
-        }
-    }
-
-    private void stickDebug(ServerLevel level) {
-        this.getInventory().clearContent();
-        this.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
-        this.setItemSlot(EquipmentSlot.OFFHAND, ItemStack.EMPTY);
-        this.setItemSlot(EquipmentSlot.HEAD, ItemStack.EMPTY);
-        this.setItemSlot(EquipmentSlot.CHEST, ItemStack.EMPTY);
-        this.setItemSlot(EquipmentSlot.LEGS, ItemStack.EMPTY);
-        this.setItemSlot(EquipmentSlot.FEET, ItemStack.EMPTY);
-    }
-
-    private void hoeDebug() {
-        MaidInventory inventory = this.getInventory();
-        for (int i = 0; i < inventory.getContainerSize(); i++) {
-            inventory.setItem(i, new ItemStack(Items.COBBLESTONE, 64));
-        }
-        inventory.setItem(7, new ItemStack(Items.IRON_AXE));
-        inventory.setItem(0, ItemStack.EMPTY);
-        this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.APPLE, 10));
-        System.out.println("slot 7 = " + inventory.getItem(7));
     }
 
     // ========inventory相关=========

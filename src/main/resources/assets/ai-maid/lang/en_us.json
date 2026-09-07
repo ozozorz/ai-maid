@@ -4,6 +4,7 @@
     "maid_command.ai-maid.stay": "Stay",
     "message.ai-maid.maid_command_changed": "Maid Command: %s",
 
+
     "gui.ai-maid.maid_inventory": "Maid Inventory",
     "gui.ai-maid.status": "Status",
     "gui.ai-maid.health": "Health: %s",
@@ -14,5 +15,13 @@
     "command.ai-maid.maid.gui_unavailable": "The maid is out of interaction range or cannot open the menu",
     
     "gui.ai-maid.command_value": "Command: %s",
-    "gui.ai-maid.command_unknown": "Unknown"
+    "gui.ai-maid.command_unknown": "Unknown",
+
+    "gui.ai-maid.activity_value": "Status: %s",
+    "gui.ai-maid.activity_unknown": "Unknown",
+
+    "maid_activity.minecraft.idle": "Idle",
+    "maid_activity.ai-maid.follow_owner": "Following Owner",
+    "maid_activity.ai-maid.stay": "Staying",
+    "maid_activity.ai-maid.pick_up_item": "Picking Up Item"
 }

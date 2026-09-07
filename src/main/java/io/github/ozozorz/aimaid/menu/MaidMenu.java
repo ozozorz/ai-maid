@@ -10,8 +10,10 @@ import io.github.ozozorz.aimaid.entity.inventory.MaidInventory;
 import io.github.ozozorz.aimaid.entity.maidcommand.MaidCommand;
 import io.github.ozozorz.aimaid.entity.maidcommand.MaidCommandMenu;
 import io.github.ozozorz.aimaid.registries.ModBuiltInRegistries;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.DataSlot;
 import net.minecraft.world.inventory.Slot;
@@ -49,6 +51,8 @@ public class MaidMenu extends AbstractContainerMenu {
 
     private DataSlot selectedCommandData;
 
+    private DataSlot activeActivityData;
+
     // 客户端构造器，ExtendedMenuType 会调用这个构造器
     public MaidMenu(int containerId, Inventory playerInventory, MaidMenuData data) {
         // 客户端创建一个“镜像容器”。真正内容随后由 AbstractContainerMenu 的标准 Slot 同步填进来。
@@ -77,6 +81,8 @@ public class MaidMenu extends AbstractContainerMenu {
         for (MaidCommand command : this.visiableCommands) {
             this.commandSelectableData.add(this.addDataSlot(createSelectableCommandData(serverMaid, playerInventory.player, command)));
         }
+
+        this.activeActivityData = this.addDataSlot(createActiveActivityData(serverMaid));
 
         // 通知 Container: 玩家开始打开它。
         // SimpleContainer 当前没有特殊逻辑，但遵守 Vanilla Container 生命周期。
@@ -162,6 +168,14 @@ public class MaidMenu extends AbstractContainerMenu {
 
     public @Nullable MaidCommand getSelectedCommand() {
         return ModBuiltInRegistries.MAID_COMMAND.byId(this.selectedCommandData.get());
+    }
+
+    public Activity getActiveActivity() {
+        Activity activity = BuiltInRegistries.ACTIVITY.byId(this.activeActivityData.get());
+        if (activity == null) {
+            return Activity.IDLE;
+        }
+        return activity;
     }
 
     // Shift + 点击 基本按照 Vanilla ChestMenu 的语义：Maid -> Player / Player -> Maid
@@ -265,6 +279,33 @@ public class MaidMenu extends AbstractContainerMenu {
         this.serverMaid.selecetMaidCommand(command);
         
         return true;
+    }
+
+    private static DataSlot createActiveActivityData(@Nullable AiMaidEntity serverMaid) {
+        // Client: 只是服务器同步值的镜像。
+        if (serverMaid == null) {
+            return DataSlot.standalone();
+        }
+
+        // Sever: 不自己保存 Activity。每次 DataSlot.get() 都直接读取 Maid 真正的 Server Brain。
+        return new DataSlot() {
+            @Override
+            public int get() {
+                Activity activity = serverMaid.getBrain().getActiveNonCoreActivity().orElse(Activity.IDLE);
+                int rawId = BuiltInRegistries.ACTIVITY.getId(activity);
+                // 正常情况下 Activity 一定已经注册。防御性 fallback 到 IDLE。
+                if (rawId < 0) {
+                    return BuiltInRegistries.ACTIVITY.getId(Activity.IDLE);
+                }
+                return rawId;
+            }
+
+            @Override
+            public void set(int value) {
+                // Server 不允许通过 DataSlot 反向修改 Brain。
+            }
+        };
+        
     }
 
 }

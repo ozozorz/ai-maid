@@ -13,9 +13,12 @@ import io.github.ozozorz.aimaid.registries.ModBuiltInRegistries;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.inventory.Slot;
 
 public class AiMaidScreen extends AbstractContainerScreen<MaidMenu> {
@@ -103,13 +106,17 @@ public class AiMaidScreen extends AbstractContainerScreen<MaidMenu> {
 
         String health = String.format(Locale.ROOT, "%.1f / %.1f", maid.getHealth(), maid.getMaxHealth());
 
-        graphics.text( this.font, Component.translatable("gui.ai-maid.health", health), STATUS_LEFT, STATUS_TOP + 12, 0x404040, false);
+        graphics.text(this.font, Component.translatable("gui.ai-maid.health", health), STATUS_LEFT, STATUS_TOP + 12, 0x404040, false);
         graphics.text(this.font, Component.translatable("gui.ai-maid.command"), STATUS_LEFT, STATUS_TOP + 36, 0x404040, false);
         graphics.text(this.font, maid.getMaidCommand().getDisplayName(), STATUS_LEFT, STATUS_TOP + 48, 0x404040, false);
 
         MaidCommand selected = this.menu.getSelectedCommand();
         Component selectedName = selected == null ? Component.translatable("gui.ai-maid.command_unknow") : selected.getDisplayName();
         graphics.text(this.font, Component.translatable("gui.ai-maid.command_value", selectedName), STATUS_LEFT, STATUS_TOP + 24, 0x404040, false);
+    
+        Activity activity = this.menu.getActiveActivity();
+        Component activityName = getActivityDisplayName(activity);
+        graphics.text(this.font, Component.translatable("gui.ai-maid.activity_value", activityName), STATUS_LEFT, STATUS_TOP + 36, 0x404040, false);
     }
 
     private @Nullable AiMaidEntity getClientMaid() {
@@ -220,6 +227,16 @@ public class AiMaidScreen extends AbstractContainerScreen<MaidMenu> {
         next.active = this.commandPage < maxPage;
 
         this.addRenderableWidget(next);
+    }
+
+    private Component getActivityDisplayName(Activity activity) {
+        Identifier id = BuiltInRegistries.ACTIVITY.getKey(activity);
+        if (id == null) {
+            return Component.translatable("gui.ai-maid.activity_unknown");
+        }
+
+        // ai-maid:pick_up_item -> maid_activity.ai-maid.pick_up_item
+        return Component.translatableWithFallback(id.toLanguageKey("maid_activity"), id.toString());
     }
 
     private record CommandButtonEntry(

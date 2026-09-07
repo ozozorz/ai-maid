@@ -1,4 +1,7 @@
 {
     "maid_command.testaddon.patrol": "巡逻",
-    "maid_command.testaddon.lumber": "伐木"
+    "maid_command.testaddon.lumber": "伐木",
+
+    "maid_activity.testaddon.patrol": "巡逻",
+    "maid_activity.testaddon.lumber": "伐木"
 }
