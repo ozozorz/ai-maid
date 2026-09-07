@@ -23,6 +23,8 @@ import net.minecraft.world.inventory.Slot;
 
 public class AiMaidScreen extends AbstractContainerScreen<MaidMenu> {
 
+    private static final int TEXT_COLOR = 0xFF404040;
+
     private static final int IMAGE_WIDTH = 250;
     private static final int IMAGE_HEIGHT = 222;
 
@@ -90,33 +92,33 @@ public class AiMaidScreen extends AbstractContainerScreen<MaidMenu> {
     @Override
     protected void extractLabels(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         // extractLabels 使用的是 Screen 内部局部坐标。
-        graphics.text(this.font, this.title, STATUS_LEFT, 7, 0x404040, false);
-        graphics.text(this.font, Component.translatable("gui.ai-maid.maid_inventory"), MaidMenu.MAID_INV_LEFT, 14, 0x404040, false);
-        graphics.text(this.font, this.playerInventoryTitle, MaidMenu.PLAYER_INV_LEFT, 126, 0x404040, false);
-        graphics.text(this.font, Component.translatable("gui.ai-maid.status"), STATUS_LEFT, STATUS_TOP, 0x404040, false);
+        graphics.text(this.font, this.title, STATUS_LEFT, 7, TEXT_COLOR, false);
+        graphics.text(this.font, Component.translatable("gui.ai-maid.maid_inventory"), MaidMenu.MAID_INV_LEFT, 14, TEXT_COLOR, false);
+        graphics.text(this.font, this.playerInventoryTitle, MaidMenu.PLAYER_INV_LEFT, 126, TEXT_COLOR, false);
+        graphics.text(this.font, Component.translatable("gui.ai-maid.status"), STATUS_LEFT, STATUS_TOP, TEXT_COLOR, false);
 
         AiMaidEntity maid = getClientMaid();
 
         // 很重要：
         // 不要默认客户端一定能找到实体。实体可能刚好死亡、unload、dimension change、packet timing 发生变化
         if (maid == null) {
-            graphics.text(this.font, Component.translatable("gui.ai-maid.entity_unavailable"), STATUS_LEFT, STATUS_TOP + 12, 0x404040, false);
+            graphics.text(this.font, Component.translatable("gui.ai-maid.entity_unavailable"), STATUS_LEFT, STATUS_TOP + 12, TEXT_COLOR, false);
             return;
         }
 
         String health = String.format(Locale.ROOT, "%.1f / %.1f", maid.getHealth(), maid.getMaxHealth());
 
-        graphics.text(this.font, Component.translatable("gui.ai-maid.health", health), STATUS_LEFT, STATUS_TOP + 12, 0x404040, false);
-        graphics.text(this.font, Component.translatable("gui.ai-maid.command"), STATUS_LEFT, STATUS_TOP + 36, 0x404040, false);
-        graphics.text(this.font, maid.getMaidCommand().getDisplayName(), STATUS_LEFT, STATUS_TOP + 48, 0x404040, false);
+        graphics.text(this.font, Component.translatable("gui.ai-maid.health", health), STATUS_LEFT, STATUS_TOP + 12, TEXT_COLOR, false);
+        graphics.text(this.font, Component.translatable("gui.ai-maid.command"), STATUS_LEFT, STATUS_TOP + 36, TEXT_COLOR, false);
+        graphics.text(this.font, maid.getMaidCommand().getDisplayName(), STATUS_LEFT, STATUS_TOP + 48, TEXT_COLOR, false);
 
         MaidCommand selected = this.menu.getSelectedCommand();
         Component selectedName = selected == null ? Component.translatable("gui.ai-maid.command_unknow") : selected.getDisplayName();
-        graphics.text(this.font, Component.translatable("gui.ai-maid.command_value", selectedName), STATUS_LEFT, STATUS_TOP + 24, 0x404040, false);
+        graphics.text(this.font, Component.translatable("gui.ai-maid.command_value", selectedName), STATUS_LEFT, STATUS_TOP + 24, TEXT_COLOR, false);
     
         Activity activity = this.menu.getActiveActivity();
         Component activityName = getActivityDisplayName(activity);
-        graphics.text(this.font, Component.translatable("gui.ai-maid.activity_value", activityName), STATUS_LEFT, STATUS_TOP + 36, 0x404040, false);
+        graphics.text(this.font, Component.translatable("gui.ai-maid.activity_value", activityName), STATUS_LEFT, STATUS_TOP + 36, TEXT_COLOR, false);
     }
 
     private @Nullable AiMaidEntity getClientMaid() {
