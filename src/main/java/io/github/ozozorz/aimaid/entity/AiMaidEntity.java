@@ -57,7 +57,9 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
     public static AttributeSupplier.Builder createAttributes() {
         return PathfinderMob.createMobAttributes()
             .add(Attributes.MAX_HEALTH, 20.0)
-            .add(Attributes.MOVEMENT_SPEED, 0.3);
+            .add(Attributes.MOVEMENT_SPEED, 0.3)
+            // 女仆自身的基础攻击伤害
+            .add(Attributes.ATTACK_DAMAGE, 2.0);
     }
 
     // Brain.Provider 不是 Brain。

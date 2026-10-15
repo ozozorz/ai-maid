@@ -9,7 +9,11 @@ import net.minecraft.world.entity.ai.sensing.Sensor;
 import net.minecraft.world.entity.ai.sensing.SensorType;
 
 public class TestAddonSensorTypes {
-    public static final SensorType<TestPatrolConfigSensor> PATROL_CONFIG = register("patrol_config", TestPatrolConfigSensor::new);
+    public static final SensorType<TestPatrolConfigSensor> PATROL_CONFIG = 
+        register("patrol_config", TestPatrolConfigSensor::new);
+
+    public static final SensorType<TestGuardSensor> GUARD =
+        register("guard", TestGuardSensor::new);
 
     private TestAddonSensorTypes() {
     }

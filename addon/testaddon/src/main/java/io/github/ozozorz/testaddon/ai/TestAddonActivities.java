@@ -12,6 +12,8 @@ public class TestAddonActivities {
     // TestAddon 自己的工作 Activity
     public static final Activity LUMBER = register("lumber");
 
+    public static final Activity GUARD_FIGHT = register("guard_fight");
+
     private static Activity register(String name) {
         Identifier id = Identifier.fromNamespaceAndPath("testaddon", name);
         return Registry.register(BuiltInRegistries.ACTIVITY, id, new Activity(id.toString()));

@@ -20,6 +20,13 @@ public class TestAddonCommands {
             Identifier.fromNamespaceAndPath("testaddon", "lumber"), 
             new TestLumberCommand()
         );
+    
+    public static final MaidCommand GUARD =
+        Registry.register(
+            ModBuiltInRegistries.MAID_COMMAND,
+            Identifier.fromNamespaceAndPath("testaddon", "guard"),
+            new TestGuardCommand()
+        );
 
     public static void initialize() {
 
