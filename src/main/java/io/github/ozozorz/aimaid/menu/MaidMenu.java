@@ -30,19 +30,19 @@ public class MaidMenu extends AbstractContainerMenu {
     public static final int MAID_ROWS = 5;
 
     // 35 格 MaidInventory
-    public static final int MAID_INV_LEFT = 172;
+    public static final int MAID_INV_LEFT = 182;
     public static final int MAID_INV_TOP = 38;
 
     // 6 格 Equipment：
     // HEAD     CHEST
     // LEGS     FEET
     // MAINHAND OFFHAND
-    public static final int EQUIPMENT_LEFT = 116;
+    public static final int EQUIPMENT_LEFT = 106;
     public static final int EQUIPMENT_TOP = 76;
 
     // Player inventory
-    public static final int PLAYER_INV_LEFT = 75;
-    public static final int PLAYER_INV_TOP = 158;
+    public static final int PLAYER_INV_LEFT = 146;
+    public static final int PLAYER_INV_TOP = 154 ;
 
     // 定义 Menu slot range
     // Menu slot 0 .. 34 = MaidInventory
@@ -89,15 +89,20 @@ public class MaidMenu extends AbstractContainerMenu {
 
     private MaidMenu(int containerId, Inventory playerInventory, MaidInventory maidInventory, Container equipmentContainer, int maidEntityId, @Nullable AiMaidEntity serverMaid) {
         super(ModMenuTypes.MAID, containerId);
+
         checkContainerSize(maidInventory, MaidInventory.STORAGE_SIZE);
         checkContainerSize(equipmentContainer, EQUIPMENT_SLOT_COUNT);
+
         this.maidInventory = maidInventory;
         this.equipmentContainer = equipmentContainer;
         this.maidEntityId = maidEntityId;
         this.serverMaid = serverMaid;
+
         this.maidInventory.startOpen(playerInventory.player);
+
         addMaidInventorySlots();
         addEquipmentSlots();
+
         this.addStandardInventorySlots(playerInventory, PLAYER_INV_LEFT, PLAYER_INV_TOP);
 
         // isVisibleInCommandMenu() + getMenuOrder()
@@ -113,14 +118,11 @@ public class MaidMenu extends AbstractContainerMenu {
 
         this.activeActivityData = this.addDataSlot(createActiveActivityData(serverMaid));
 
-        // 通知 Container: 玩家开始打开它。
-        // SimpleContainer 当前没有特殊逻辑，但遵守 Vanilla Container 生命周期。
-        this.maidInventory.startOpen(playerInventory.player);
-        
-        addMaidInventorySlots();
-        
-        // Vanilla 26.2 已经提供：27 格玩家 inventory + 9 格 hotbar
-        this.addStandardInventorySlots(playerInventory, PLAYER_INV_LEFT, PLAYER_INV_TOP);
+        // 当前结构必须是 35 + 6 + 36 = 77 个 Slot。
+        int expectedSlots = PLAYER_SLOT_START + 36;
+        if (this.slots.size() != expectedSlots) {
+            throw new IllegalStateException("MaidMenu slot count: " + this.slots.size() + ", expected: " + expectedSlots);
+        }
     }
 
     private void addEquipmentSlots() {
