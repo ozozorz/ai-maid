@@ -11,6 +11,7 @@ import io.github.ozozorz.testaddon.ai.TestAddonActivities;
 import io.github.ozozorz.testaddon.ai.TestAddonMemoryModuleTypes;
 import io.github.ozozorz.testaddon.ai.TestAddonSensorTypes;
 import io.github.ozozorz.testaddon.command.TestAddonCommands;
+import io.github.ozozorz.testaddon.combat.CombatProtection;
 import io.github.ozozorz.testaddon.data.TestAddonMaidData;
 
 
@@ -25,6 +26,8 @@ public class TestAddon implements ModInitializer {
 
 	@Override
 	public void onInitialize() {
+
+		CombatProtection.initialize();
 
 		TestAddonMemoryModuleTypes.initialize();
 		TestAddonSensorTypes.initialize();

@@ -28,6 +28,10 @@ public class TestAddonCommands {
             new TestGuardCommand()
         );
 
+    public static final MaidCommand ATTACK = Registry.register(
+        ModBuiltInRegistries.MAID_COMMAND,
+        Identifier.fromNamespaceAndPath("testaddon", "attack"), new TestAttackCommand());
+
     public static void initialize() {
 
     }

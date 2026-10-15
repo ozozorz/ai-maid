@@ -10,6 +10,11 @@ import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.HumanoidMobRenderer;
 import net.minecraft.client.renderer.entity.layers.HumanoidArmorLayer;
 import net.minecraft.resources.Identifier;
+import net.minecraft.client.model.HumanoidModel;
+import net.minecraft.world.entity.HumanoidArm;
+import net.minecraft.world.item.BowItem;
+import net.minecraft.world.item.CrossbowItem;
+import net.minecraft.world.item.ItemStack;
 
 // AiMaidEntity
 // extends PathfinderMob
@@ -52,6 +57,22 @@ public class AiMaidEntityRenderer
     @Override
     public Identifier getTextureLocation(AiMaidEntityRenderState state) {
         return TEXTURE;
+    }
+
+    @Override
+    protected HumanoidModel.ArmPose getArmPose(AiMaidEntity maid, HumanoidArm arm) {
+        ItemStack held = maid.getItemHeldByArm(arm);
+        if (arm == maid.getMainArm()) {
+            if (maid.isUsingItem() && maid.getUseItem() == held) {
+                if (held.getItem() instanceof BowItem) return HumanoidModel.ArmPose.BOW_AND_ARROW;
+                if (held.getItem() instanceof CrossbowItem) return HumanoidModel.ArmPose.CROSSBOW_CHARGE;
+            }
+            if (held.getItem() instanceof CrossbowItem && CrossbowItem.isCharged(held)) {
+                return HumanoidModel.ArmPose.CROSSBOW_HOLD;
+            }
+        }
+        HumanoidModel.ArmPose vanilla = super.getArmPose(maid, arm);
+        return vanilla != HumanoidModel.ArmPose.EMPTY || held.isEmpty() ? vanilla : HumanoidModel.ArmPose.ITEM;
     }
 
 }

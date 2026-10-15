@@ -1,0 +1,7 @@
+{
+  "required": true,
+  "package": "io.github.ozozorz.aimaid.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "mixins": ["ProjectileWeaponItemInvoker"],
+  "injectors": {"defaultRequire": 1}
+}

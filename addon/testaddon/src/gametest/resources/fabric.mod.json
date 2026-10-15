@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "id": "testaddon-combat-tests",
+  "version": "1.0.0",
+  "name": "Ai Maid Combat Acceptance Tests",
+  "environment": "*",
+  "entrypoints": {
+    "fabric-gametest": ["io.github.ozozorz.testaddon.CombatGameTests"],
+    "fabric-client-gametest": ["io.github.ozozorz.testaddon.CombatClientGameTest"]
+  }
+}

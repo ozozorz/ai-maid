@@ -23,8 +23,14 @@ jobs:
         run: chmod +x ./gradlew
       - name: build
         run: ./gradlew build
+      - name: build addon and run server combat tests
+        run: ./gradlew -p addon/testaddon build
+      - name: build integration launcher
+        run: ./gradlew -p dev/devrun build
       - name: capture build artifacts
         uses: actions/upload-artifact@v7
         with:
           name: Artifacts
-          path: build/libs/
+          path: |
+            build/libs/
+            addon/testaddon/build/libs/

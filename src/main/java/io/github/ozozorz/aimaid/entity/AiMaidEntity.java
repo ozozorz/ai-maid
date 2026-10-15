@@ -21,6 +21,8 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.ai.Brain;
@@ -32,6 +34,9 @@ import net.minecraft.world.entity.npc.InventoryCarrier;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.BowItem;
+import net.minecraft.world.item.CrossbowItem;
+import net.minecraft.world.item.ProjectileWeaponItem;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
@@ -59,7 +64,8 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
             .add(Attributes.MAX_HEALTH, 20.0)
             .add(Attributes.MOVEMENT_SPEED, 0.3)
             // 女仆自身的基础攻击伤害
-            .add(Attributes.ATTACK_DAMAGE, 2.0);
+            .add(Attributes.ATTACK_DAMAGE, 2.0)
+            .add(Attributes.ATTACK_SPEED, 4.0);
     }
 
     // Brain.Provider 不是 Brain。
@@ -260,6 +266,44 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
     @Override
     public MaidInventory getInventory() {
         return this.inventory;
+    }
+
+    // 返回真实弹药栈，Vanilla 装填会直接拆分它，不凭空补箭。
+    @Override
+    public ItemStack getProjectile(ItemStack weapon) {
+        if (!(weapon.getItem() instanceof ProjectileWeaponItem projectileWeapon)) {
+            return ItemStack.EMPTY;
+        }
+        ItemStack held = ProjectileWeaponItem.getHeldProjectile(this,
+                projectileWeapon.getSupportedHeldProjectiles());
+        if (!held.isEmpty()) {
+            return held;
+        }
+        return this.inventory.findFirstMatchingSlot(projectileWeapon.getAllSupportedProjectiles())
+                .stream().mapToObj(this.inventory::getItem).findFirst().orElse(ItemStack.EMPTY);
+    }
+
+    @Override
+    public boolean canUseNonMeleeWeapon(ItemStack weapon) {
+        return weapon.getItem() instanceof BowItem || weapon.getItem() instanceof CrossbowItem;
+    }
+
+    // Brain 是攻击目标的权威来源；Core 单独运行时不一定注册了这个 Memory。
+    @Override
+    public @Nullable LivingEntity getTarget() {
+        return this.getBrain().hasMemoryValue(MemoryModuleType.ATTACK_TARGET)
+                ? this.getTargetFromBrain() : super.getTarget();
+    }
+
+    @Override
+    public boolean doHurtTarget(ServerLevel level, Entity target) {
+        ItemStack weapon = this.getMainHandItem();
+        boolean hit = super.doHurtTarget(level, target);
+        // 26.2 Mob 调用 hurtEnemy，但没有 Player 的 postHurtEnemy 耐久步骤。
+        if (hit && target instanceof LivingEntity livingTarget && !weapon.isEmpty()) {
+            weapon.postHurtEnemy(livingTarget, this);
+        }
+        return hit;
     }
 
     @Override

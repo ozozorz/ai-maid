@@ -1,10 +1,9 @@
 {
     "maid_command.testaddon.patrol": "Patrol",
     "maid_command.testaddon.lumber": "Lumber",
-
     "maid_activity.testaddon.patrol": "Patrolling",
     "maid_activity.testaddon.lumber": "Lumbering",
-
     "maid_command.testaddon.guard": "Guard",
-    "maid_activity.testaddon.guard_fight": "Defending"
+    "maid_activity.testaddon.guard_fight": "Fighting",
+    "maid_command.testaddon.attack": "Combat"
 }

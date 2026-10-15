@@ -97,3 +97,14 @@ publishing {
 		// retrieving dependencies.
 	}
 }
+
+// splitEnvironmentSourceSets 配置完成后再建立独立的测试模组。
+fabricApi {
+	configureTests {
+		createSourceSet = true
+		modId = 'testaddon-combat-tests'
+		enableGameTests = true
+		enableClientGameTests = true
+		eula = true
+	}
+}
