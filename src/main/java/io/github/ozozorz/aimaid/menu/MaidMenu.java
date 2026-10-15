@@ -10,7 +10,11 @@ import io.github.ozozorz.aimaid.entity.inventory.MaidInventory;
 import io.github.ozozorz.aimaid.entity.maidcommand.MaidCommand;
 import io.github.ozozorz.aimaid.entity.maidcommand.MaidCommandMenu;
 import io.github.ozozorz.aimaid.registries.ModBuiltInRegistries;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.Container;
+import net.minecraft.world.SimpleContainer;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.schedule.Activity;
@@ -18,24 +22,43 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.DataSlot;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.equipment.Equippable;
 
 public class MaidMenu extends AbstractContainerMenu {
-
-    public static final int MAID_SLOT_COUNT = MaidInventory.STORAGE_SIZE;
-
     // 35 格：7 x 5
     public static final int MAID_COLUMNS = 7;
     public static final int MAID_ROWS = 5;
 
-    // 整个 Screen 计划宽 250。左侧留给 Maid 信息、以后的人物模型、MaidCommand。右上放 MaidInventory。
-    public static final int MAID_INV_LEFT = 108;
-    public static final int MAID_INV_TOP = 26;
+    // 35 格 MaidInventory
+    public static final int MAID_INV_LEFT = 172;
+    public static final int MAID_INV_TOP = 38;
 
-    // 玩家 9 x 3 + hotbar 放在整个窗口下半部分。
-    public static final int PLAYER_INV_LEFT = 44;
-    public static final int PLAYER_INV_TOP = 138;
+    // 6 格 Equipment：
+    // HEAD     CHEST
+    // LEGS     FEET
+    // MAINHAND OFFHAND
+    public static final int EQUIPMENT_LEFT = 116;
+    public static final int EQUIPMENT_TOP = 76;
+
+    // Player inventory
+    public static final int PLAYER_INV_LEFT = 75;
+    public static final int PLAYER_INV_TOP = 158;
+
+    // 定义 Menu slot range
+    // Menu slot 0 .. 34 = MaidInventory
+    // 35 .. 40 = Equipment
+    // 41 .. 76 = Player
+    public static final int MAID_SLOT_COUNT = MaidInventory.STORAGE_SIZE;
+    public static final int EQUIPMENT_SLOT_COUNT = 6;
+    public static final int MAID_SLOT_START = 0;
+    public static final int MAID_SLOT_END = MAID_SLOT_START + MAID_SLOT_COUNT;
+    public static final int EQUIPMENT_SLOT_START = MAID_SLOT_END;
+    public static final int EQUIPMENT_SLOT_END = EQUIPMENT_SLOT_START + EQUIPMENT_SLOT_COUNT;
+    public static final int PLAYER_SLOT_START = EQUIPMENT_SLOT_END;
 
     private MaidInventory maidInventory;
+    
+    private Container equipmentContainer;
 
     // opening data 里的实体 ID。Server / Client 两边都有
     private int maidEntityId;
@@ -56,20 +79,26 @@ public class MaidMenu extends AbstractContainerMenu {
     // 客户端构造器，ExtendedMenuType 会调用这个构造器
     public MaidMenu(int containerId, Inventory playerInventory, MaidMenuData data) {
         // 客户端创建一个“镜像容器”。真正内容随后由 AbstractContainerMenu 的标准 Slot 同步填进来。
-        this(containerId, playerInventory, new MaidInventory(), data.maidEntityId(), null);
+        this(containerId, playerInventory, new MaidInventory(), new SimpleContainer(EQUIPMENT_SLOT_COUNT), data.maidEntityId(), null);
     }
 
     // 服务器构造器，这里直接引用真实 MaidInventory
     public MaidMenu(int containerId, Inventory playerInventory, AiMaidEntity maid) {
-        this(containerId, playerInventory, maid.getInventory(), maid.getId(), maid);
+        this(containerId, playerInventory, maid.getInventory(), new MaidEquipmentContainer(maid), maid.getId(), maid);
     }
 
-    private MaidMenu(int containerId, Inventory playerInventory, MaidInventory maidInventory, int maidEntityId, @Nullable AiMaidEntity serverMaid) {
+    private MaidMenu(int containerId, Inventory playerInventory, MaidInventory maidInventory, Container equipmentContainer, int maidEntityId, @Nullable AiMaidEntity serverMaid) {
         super(ModMenuTypes.MAID, containerId);
         checkContainerSize(maidInventory, MaidInventory.STORAGE_SIZE);
+        checkContainerSize(equipmentContainer, EQUIPMENT_SLOT_COUNT);
         this.maidInventory = maidInventory;
+        this.equipmentContainer = equipmentContainer;
         this.maidEntityId = maidEntityId;
         this.serverMaid = serverMaid;
+        this.maidInventory.startOpen(playerInventory.player);
+        addMaidInventorySlots();
+        addEquipmentSlots();
+        this.addStandardInventorySlots(playerInventory, PLAYER_INV_LEFT, PLAYER_INV_TOP);
 
         // isVisibleInCommandMenu() + getMenuOrder()
         this.visiableCommands = MaidCommandMenu.getVisibleCommands();
@@ -92,6 +121,17 @@ public class MaidMenu extends AbstractContainerMenu {
         
         // Vanilla 26.2 已经提供：27 格玩家 inventory + 9 格 hotbar
         this.addStandardInventorySlots(playerInventory, PLAYER_INV_LEFT, PLAYER_INV_TOP);
+    }
+
+    private void addEquipmentSlots() {
+        for (int index = 0; index < EQUIPMENT_SLOT_COUNT; index++) {
+            EquipmentSlot equipmentSlot = MaidEquipmentContainer.getEquipmentSlot(index);
+            int column = index % 2;
+            int row = index / 2;
+            int x = EQUIPMENT_LEFT + column * SLOT_SIZE;
+            int y = EQUIPMENT_TOP + row * SLOT_SIZE;
+            this.addSlot(new MaidEquipmentSlot(equipmentContainer, index, equipmentSlot, serverMaid, x, y));
+        }
     }
 
     private static DataSlot createSelectedCommandData(@Nullable AiMaidEntity serverMaid) {
@@ -193,16 +233,45 @@ public class MaidMenu extends AbstractContainerMenu {
         ItemStack stack = slot.getItem();
         ItemStack original = stack.copy();
 
-        // 前 35 个 Slot：MaidInventory；后面：Player Inventory
-        if (slotIndex < MAID_SLOT_COUNT) {
-            // Maid -> Player
-            if (!this.moveItemStackTo(stack, MAID_SLOT_COUNT, this.slots.size(), true)) {
+        /*
+         * ============================
+         * MaidInventory -> Player
+         * ============================
+         */
+        if (slotIndex >= MAID_SLOT_START && slotIndex < MAID_SLOT_END) {
+            if (!this.moveItemStackTo(stack, PLAYER_SLOT_START, this.slots.size(), true)) {
                 return ItemStack.EMPTY;
             }
+
+        /*
+         * ============================
+         * Equipment -> MaidInventory
+         *
+         * Maid 背包满时再尝试给 Player。
+         * ============================
+         */
+        } else if (slotIndex >= EQUIPMENT_SLOT_START && slotIndex < EQUIPMENT_SLOT_END) {
+            if (!this.moveItemStackTo(stack, MAID_SLOT_START, MAID_SLOT_END, false)) {
+                if (!this.moveItemStackTo(stack, PLAYER_SLOT_START, this.slots.size(), true)) {
+                    return ItemStack.EMPTY;
+                }
+            }
+
+        /*
+         * ============================
+         * Player -> Maid
+         * ============================
+         */
         } else {
-            // Player -> Maid
-            if (!this.moveItemStackTo(stack, 0, MAID_SLOT_COUNT, false)) {
-                return ItemStack.EMPTY;
+            // 先尝试 Vanilla-style：
+            // 如果物品明确有 EQUIPPABLE component，
+            // 并且对应装备槽为空，
+            // Shift 点击直接装备。
+            if (!tryMoveToEquipment(stack)) {
+                // 不能自动装备 → 普通放进 MaidInventory。
+                if (!this.moveItemStackTo(stack, MAID_SLOT_START, MAID_SLOT_END, false)) {
+                    return ItemStack.EMPTY;
+                }
             }
         }
 
@@ -211,7 +280,46 @@ public class MaidMenu extends AbstractContainerMenu {
         } else {
             slot.setChanged();
         }
+
+        // 和 ChestMenu 一样：如果完全没有实际移动，返回 EMPTY。
+        if (stack.getCount() == original.getCount()) {
+            return ItemStack.EMPTY;
+        }
+
         return original;
+    }
+
+    private boolean tryMoveToEquipment(ItemStack stack) {
+        Equippable equippable = stack.get(DataComponents.EQUIPPABLE);
+        // 非 Equippable：
+        // axe / apple 等不要因为 
+        // getEquipmentSlotForItem() fallback MAINHAND
+        // 就被 Shift 点击自动拿到手上。
+        if (equippable == null) {
+            return false;
+        }
+
+        EquipmentSlot equipmentSlot = equippable.slot();
+        int relativeIndex = findEquipmentSlotIndex(equipmentSlot);
+        if (relativeIndex < 0) {
+            // BODY / SADDLE 等不属于 AiMaid GUI 支持范围。
+            return false;
+        }
+        int menuSlotIndex = EQUIPMENT_SLOT_START + relativeIndex;
+        Slot target = this.slots.get(menuSlotIndex);
+        if (target.hasItem() || !target.mayPlace(stack)) {
+            return false;
+        }
+        return this.moveItemStackTo(stack, menuSlotIndex, menuSlotIndex + 1, false);
+    }
+
+    private int findEquipmentSlotIndex(EquipmentSlot equipmentSlot) {
+        for (int index = 0; index < MaidEquipmentContainer.EQUIPMENT_SLOTS.length; index++) {
+            if (MaidEquipmentContainer.EQUIPMENT_SLOTS[index] == equipmentSlot) {
+                return index;
+            }
+        }
+        return -1;
     }
 
     // 这个方法不是单纯 UI 判断。ServerPlayer 每 tick 都会检查当前 Menu 是否仍然有效。 

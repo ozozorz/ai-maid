@@ -25,5 +25,11 @@
     "maid_activity.minecraft.idle": "空闲",
     "maid_activity.ai-maid.follow_owner": "跟随主人",
     "maid_activity.ai-maid.stay": "待命",
-    "maid_activity.ai-maid.pick_up_item": "拾取物品"
+    "maid_activity.ai-maid.pick_up_item": "拾取物品",
+    
+    "entity.ai-maid.ai_maid": "女仆",
+    "gui.ai-maid.commands": "命令",
+    "gui.ai-maid.equipment": "装备",
+    "gui.ai-maid.main_hand_short": "主",
+    "gui.ai-maid.off_hand_short": "副"
 }

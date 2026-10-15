@@ -25,8 +25,8 @@ public class AiMaidScreen extends AbstractContainerScreen<MaidMenu> {
 
     private static final int TEXT_COLOR = 0xFF404040;
 
-    private static final int IMAGE_WIDTH = 250;
-    private static final int IMAGE_HEIGHT = 222;
+    private static final int IMAGE_WIDTH = 312;
+    private static final int IMAGE_HEIGHT = 244;
 
     private static final int STATUS_LEFT = 10;
     private static final int STATUS_TOP = 26;
@@ -37,8 +37,8 @@ public class AiMaidScreen extends AbstractContainerScreen<MaidMenu> {
 
     private static final int COMMANDS_PER_PAGE = COMMAND_COLUMNS * COMMAND_ROWS;
 
-    private static final int COMMAND_LEFT = 9;
-    private static final int COMMAND_TOP = 64;
+    private static final int COMMAND_LEFT = 10;
+    private static final int COMMAND_TOP = 76;
 
     private static final int COMMAND_BUTTON_WIDTH = 43;
     private static final int COMMAND_BUTTON_HEIGHT = 16;
@@ -62,21 +62,19 @@ public class AiMaidScreen extends AbstractContainerScreen<MaidMenu> {
         int x = this.leftPos;
         int y = this.topPos;
 
-        // 整个窗口背景。第一版只验证布局，以后再换正式 texture。
+        // 总背景
         graphics.fill(x, y, x + this.imageWidth, y + this.imageHeight, 0xFFC6C6C6);
 
-        // 左上：Maid 状态区域。
-        // 以后这里可以放：3D Maid 模型\HP\MaidCommand\其他状态
-        graphics.fill(x + 6, y + 20, x + 100, y + 118, 0xFFE0E0E0);
+        // 左上：status、commands、equipment
+        graphics.fill(x + 6, y + 20, x + 158, y + 134, 0xFFE0E0E0);
 
         // 右上：35 格 MaidInventory。
-        graphics.fill(x + 104, y + 20, x + 238, y + 118, 0xFFE0E0E0);
+        graphics.fill(x + 164, y + 20, x + 306, y + 134, 0xFFE0E0E0);
         
         // 下方：玩家背包。
-        graphics.fill(x + 38, y + 132, x + 212, y + 216, 0xFFE0E0E0);
+        graphics.fill(x + 69, y + 142, x + 243, y + 238, 0xFFE0E0E0);
 
-        // 暂时给所有 Slot 画一个简单槽位背景。
-        // 真正 ItemStack 图标仍由 AbstractContainerScreen 自动绘制。
+        // 所有普通 Slot 背景。
         for (Slot slot : this.menu.slots) {
             int slotX = x + slot.x;
             int slotY = y + slot.y;
@@ -91,12 +89,6 @@ public class AiMaidScreen extends AbstractContainerScreen<MaidMenu> {
 
     @Override
     protected void extractLabels(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
-        // extractLabels 使用的是 Screen 内部局部坐标。
-        graphics.text(this.font, this.title, STATUS_LEFT, 7, TEXT_COLOR, false);
-        graphics.text(this.font, Component.translatable("gui.ai-maid.maid_inventory"), MaidMenu.MAID_INV_LEFT, 14, TEXT_COLOR, false);
-        graphics.text(this.font, this.playerInventoryTitle, MaidMenu.PLAYER_INV_LEFT, 126, TEXT_COLOR, false);
-        graphics.text(this.font, Component.translatable("gui.ai-maid.status"), STATUS_LEFT, STATUS_TOP, TEXT_COLOR, false);
-
         AiMaidEntity maid = getClientMaid();
 
         // 很重要：
@@ -106,19 +98,34 @@ public class AiMaidScreen extends AbstractContainerScreen<MaidMenu> {
             return;
         }
 
+        // 生命
         String health = String.format(Locale.ROOT, "%.1f / %.1f", maid.getHealth(), maid.getMaxHealth());
+        graphics.text(this.font, Component.translatable("gui.ai-maid.health", health), STATUS_LEFT, STATUS_TOP, TEXT_COLOR, false);
 
-        graphics.text(this.font, Component.translatable("gui.ai-maid.health", health), STATUS_LEFT, STATUS_TOP + 12, TEXT_COLOR, false);
-        graphics.text(this.font, Component.translatable("gui.ai-maid.command"), STATUS_LEFT, STATUS_TOP + 36, TEXT_COLOR, false);
-        graphics.text(this.font, maid.getMaidCommand().getDisplayName(), STATUS_LEFT, STATUS_TOP + 48, TEXT_COLOR, false);
-
+        // Command
         MaidCommand selected = this.menu.getSelectedCommand();
         Component selectedName = selected == null ? Component.translatable("gui.ai-maid.command_unknow") : selected.getDisplayName();
-        graphics.text(this.font, Component.translatable("gui.ai-maid.command_value", selectedName), STATUS_LEFT, STATUS_TOP + 24, TEXT_COLOR, false);
+        graphics.text(this.font, Component.translatable("gui.ai-maid.command_value", selectedName), STATUS_LEFT, STATUS_TOP + 12, TEXT_COLOR, false);
     
+        // Activity
         Activity activity = this.menu.getActiveActivity();
         Component activityName = getActivityDisplayName(activity);
-        graphics.text(this.font, Component.translatable("gui.ai-maid.activity_value", activityName), STATUS_LEFT, STATUS_TOP + 36, TEXT_COLOR, false);
+        graphics.text(this.font, Component.translatable("gui.ai-maid.activity_value", activityName), STATUS_LEFT, STATUS_TOP + 24, TEXT_COLOR, false);
+
+        // 分组标题
+        graphics.text(this.font, Component.translatable("gui.ai-maid.commands"), COMMAND_LEFT, 64, TEXT_COLOR, false);
+        graphics.text(this.font, Component.translatable("gui.ai-maid.equipment"), MaidMenu.EQUIPMENT_LEFT, 64, TEXT_COLOR, false);
+
+        // MaidInventory
+        graphics.text(this.font, Component.translatable("gui.ai-maid.maid_inventory"), MaidMenu.MAID_INV_LEFT, 26, TEXT_COLOR, false);
+        // Player
+        graphics.text(this.font, this.playerInventoryTitle, MaidMenu.PLAYER_INV_LEFT, 146, TEXT_COLOR, false);
+        // 标题 Maid 名字
+        graphics.text(this.font, this.title, 10, 7, TEXT_COLOR, false);
+
+        // 主手、副手图标
+        graphics.text(this.font, Component.translatable("gui.ai-maid.main_hand_short"), MaidMenu.EQUIPMENT_LEFT + 5, MaidMenu.EQUIPMENT_TOP + 2 * 18 + 4, 0xFF606060, false);
+        graphics.text(this.font, Component.translatable("gui.ai-maid.off_hand_short"), MaidMenu.EQUIPMENT_LEFT + 18 + 5, MaidMenu.EQUIPMENT_TOP + 2 * 18 + 4, 0xFF606060, false);
     }
 
     private @Nullable AiMaidEntity getClientMaid() {

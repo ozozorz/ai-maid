@@ -23,5 +23,11 @@
     "maid_activity.minecraft.idle": "Idle",
     "maid_activity.ai-maid.follow_owner": "Following Owner",
     "maid_activity.ai-maid.stay": "Staying",
-    "maid_activity.ai-maid.pick_up_item": "Picking Up Item"
+    "maid_activity.ai-maid.pick_up_item": "Picking Up Item",
+    
+    "entity.ai-maid.ai_maid": "AI Maid",
+    "gui.ai-maid.commands": "Commands",
+    "gui.ai-maid.equipment": "Equipment",
+    "gui.ai-maid.main_hand_short": "M",
+    "gui.ai-maid.off_hand_short": "O"
 }
