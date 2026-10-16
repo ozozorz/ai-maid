@@ -70,7 +70,7 @@ public class WorkDefenseGameTests {
     }
 
     private void single(AiMaidEntity maid) {
-        maid.selecetMaidCommand(TestAddonCommands.LUMBER);
+        maid.selectMaidCommand(TestAddonCommands.LUMBER);
         maid.getBrain().setMemory(TestAddonMemoryModuleTypes.LUMBER_REQUEST, true);
     }
 
@@ -104,7 +104,7 @@ public class WorkDefenseGameTests {
                     .setValue(LeavesBlock.PERSISTENT, false).setValue(LeavesBlock.DISTANCE, 1));
         }
         for (int slot = 1; slot < 35; slot++) s.maid().getInventory().setItem(slot, new ItemStack(Items.DIRT, 64));
-        s.maid().selecetMaidCommand(TestAddonCommands.LUMBER);
+        s.maid().selectMaidCommand(TestAddonCommands.LUMBER);
         LumberJob[] interrupted = {null};
         boolean[] fought = {false};
         h.onEachTick(() -> {
@@ -164,7 +164,7 @@ public class WorkDefenseGameTests {
         h.onEachTick(() -> {
             if (!cancelled[0] && target(s.maid()) != null) {
                 cancelled[0] = true;
-                s.maid().selecetMaidCommand(MaidCommands.STAY);
+                s.maid().selectMaidCommand(MaidCommands.STAY);
                 h.assertTrue(target(s.maid()) == null && job(s.maid()) == null, "Explicit selection must release the old target and queue immediately");
                 h.kill(s.enemy());
                 h.runAfterDelay(60, () -> {
@@ -301,7 +301,7 @@ public class WorkDefenseGameTests {
     @GameTest(maxTicks = 280)
     public void patrolKeepsCenterRadiusAndWaypointAndRestoresTool(GameTestHelper h) {
         var s = scene(h);
-        s.maid().selecetMaidCommand(TestAddonCommands.PATROL);
+        s.maid().selectMaidCommand(TestAddonCommands.PATROL);
         TestAddonMaidData.setPatrolRadius(s.maid(), 6);
         var center = TestAddonMaidData.getPatrolCenter(s.maid());
         var waypoint = h.absolutePos(new BlockPos(6, 1, 6));
@@ -335,7 +335,7 @@ public class WorkDefenseGameTests {
         var patrol = h.spawn(ModEntityTypes.AI_MAID, 6.5F, 1, 6.5F);
         patrol.setTame(true, true); patrol.setOwner(s.owner());
         patrol.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.WOODEN_AXE));
-        patrol.selecetMaidCommand(TestAddonCommands.PATROL);
+        patrol.selectMaidCommand(TestAddonCommands.PATROL);
         h.runAfterDelay(5, () -> {
             h.hurt(s.owner(), h.getLevel().damageSources().mobAttack(s.enemy()), 1);
             s.owner().setLastHurtMob(s.enemy());

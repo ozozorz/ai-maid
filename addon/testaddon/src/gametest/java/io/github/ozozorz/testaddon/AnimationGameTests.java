@@ -32,7 +32,7 @@ public class AnimationGameTests {
         var maid = h.spawn(ModEntityTypes.AI_MAID, 2.5F, 1, z);
         maid.setTame(true, true);
         maid.setNoAi(true);
-        maid.selecetMaidCommand(MaidCommands.STAY);
+        maid.selectMaidCommand(MaidCommands.STAY);
         return maid;
     }
 
@@ -66,7 +66,7 @@ public class AnimationGameTests {
     public void commandDeathAndUnloadClearPlayback(GameTestHelper h) {
         var maid = maid(h, 3.5F);
         maid.playAnimationAction(TestAddonAnimationIds.LUMBER, 100);
-        maid.selecetMaidCommand(MaidCommands.STAY);
+        maid.selectMaidCommand(MaidCommands.STAY);
         h.assertTrue(maid.getAnimationAction().id().equals(MaidAnimationAction.NONE), "Re-selecting the same command must stop its old action");
         maid.playAnimationAction(TestAddonAnimationIds.LUMBER, 100);
         maid.hurtServer(h.getLevel(), h.getLevel().damageSources().fall(), 1000);
@@ -105,7 +105,7 @@ public class AnimationGameTests {
                 && maid.getAnimationAction().id().equals(MaidAnimationAction.BOW_RELEASE)
                 && maid.getInventory().getItem(0).getCount() == 1 && maid.getMainHandItem().getDamageValue() == 1,
                 "Bow release must accompany the actual ammo/durability transaction");
-        maid.selecetMaidCommand(MaidCommands.STAY);
+        maid.selectMaidCommand(MaidCommands.STAY);
         var crossbow = new ItemStack(Items.CROSSBOW);
         maid.setItemSlot(EquipmentSlot.MAINHAND, crossbow);
         h.assertTrue(!MaidRangedAttack.shootCrossbow(h.getLevel(), maid, target)
@@ -123,11 +123,11 @@ public class AnimationGameTests {
         maid.setNoAi(false);
         maid.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.WOODEN_AXE));
         h.setBlock(4, 1, 4, Blocks.OAK_LOG);
-        maid.selecetMaidCommand(TestAddonCommands.LUMBER);
+        maid.selectMaidCommand(TestAddonCommands.LUMBER);
         maid.getBrain().setMemory(TestAddonMemoryModuleTypes.LUMBER_REQUEST, true);
         h.runAfterDelay(10, () -> {
             h.assertTrue(maid.getAnimationAction().id().equals(TestAddonAnimationIds.LUMBER), "Real mining must start the Addon animation");
-            maid.selecetMaidCommand(MaidCommands.STAY);
+            maid.selectMaidCommand(MaidCommands.STAY);
         });
         h.runAfterDelay(65, () -> {
             h.assertTrue(maid.getAnimationAction().id().equals(MaidAnimationAction.NONE), "Cancel must stop the looping animation");

@@ -1,5 +1,7 @@
 package io.github.ozozorz.aimaid.entity.inventory;
 
+import io.github.ozozorz.aimaid.entity.MaidServerAccess;
+
 import java.util.Objects;
 import java.util.OptionalInt;
 import java.util.function.Predicate;
@@ -19,10 +21,11 @@ public class MaidEquipmentHelper {
     // 如果不满足，就尝试在背包里找物品，找到就交换，找不到就返回false
     public static boolean ensureEquipment(AiMaidEntity maid, EquipmentSlot equipmentSlot,
             Predicate<ItemStack> predicate) {
+        MaidServerAccess.requireServerThread(maid);
         Objects.requireNonNull(maid);
         Objects.requireNonNull(equipmentSlot);
         Objects.requireNonNull(predicate);
-        if (!MaidItemTransfer.supportsEquipmentSlot(equipmentSlot)) {
+        if (!maid.isAlive() || !MaidItemTransfer.supportsEquipmentSlot(equipmentSlot) || !maid.canUseSlot(equipmentSlot)) {
             return false;
         }
 

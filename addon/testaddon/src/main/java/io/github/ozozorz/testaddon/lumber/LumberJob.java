@@ -73,6 +73,8 @@ public final class LumberJob {
         maid.getBrain().eraseMemory(TestAddonMemoryModuleTypes.LUMBER_JOB);
         maid.getBrain().eraseMemory(TestAddonMemoryModuleTypes.LUMBER_REQUEST);
         maid.getBrain().setMemory(TestAddonMemoryModuleTypes.LUMBER_DONE, Unit.INSTANCE);
+        maid.getBrain().setMemory(TestAddonMemoryModuleTypes.LUMBER_RESULT,
+                Component.translatable("status.testaddon.lumber." + reason, broken, skipped));
         if (maid.getOwner() instanceof ServerPlayer owner) {
             owner.sendSystemMessage(Component.translatable("message.testaddon.lumber.finished", maid.getDisplayName(),
                     broken, skipped, Component.translatable("message.testaddon.lumber." + reason)));

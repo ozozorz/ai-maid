@@ -16,6 +16,15 @@ public class MaidInventory extends SimpleContainer {
         super(STORAGE_SIZE);
     }
 
+    /** 所有位置都达到各自堆叠上限时，任何普通物品都无法继续存入。 */
+    public boolean isCompletelyFull() {
+        for (int i = 0; i < getContainerSize(); i++) {
+            ItemStack stack = getItem(i);
+            if (stack.isEmpty() || stack.getCount() < Math.min(getMaxStackSize(), stack.getMaxStackSize())) return false;
+        }
+        return true;
+    }
+
     // 第一份符合条件的东西在哪里？
     public OptionalInt findFirstMatchingSlot(Predicate<ItemStack> predicate) {
         Objects.requireNonNull(predicate);

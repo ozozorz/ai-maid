@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "id": "ai-maid-core-tests",
+  "version": "1.0.0",
+  "name": "AI Maid Core Acceptance Tests",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["io.github.ozozorz.aimaid.CoreTestCommands"],
+    "ai-maid-addon": ["io.github.ozozorz.aimaid.CoreTestContributors$First", "io.github.ozozorz.aimaid.CoreTestContributors$Second"],
+    "fabric-gametest": ["io.github.ozozorz.aimaid.CoreGameTests"],
+    "fabric-client-gametest": ["io.github.ozozorz.aimaid.CoreClientGameTest", "io.github.ozozorz.aimaid.CoreReloadClientGameTest"]
+  }
+}

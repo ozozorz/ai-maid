@@ -36,7 +36,7 @@ public class LumberGameTests {
     }
 
     private void single(AiMaidEntity maid) {
-        maid.selecetMaidCommand(TestAddonCommands.LUMBER);
+        maid.selectMaidCommand(TestAddonCommands.LUMBER);
         maid.getBrain().setMemory(TestAddonMemoryModuleTypes.LUMBER_REQUEST, true);
     }
 
@@ -113,7 +113,7 @@ public class LumberGameTests {
         single(maid);
         h.runAfterDelay(10, () -> {
             h.assertTrue(maid.swinging, "Cancellation must interrupt actual mining");
-            maid.selecetMaidCommand(MaidCommands.STAY);
+            maid.selectMaidCommand(MaidCommands.STAY);
         });
         h.runAfterDelay(65, () -> {
             h.assertBlockPresent(Blocks.OAK_LOG, new BlockPos(4, 1, 4));
@@ -157,7 +157,7 @@ public class LumberGameTests {
     public void entireReachableTreeIsProcessedSequentially(GameTestHelper h) {
         var maid = worker(h, Items.IRON_AXE, 2.5F, 4.5F);
         tree(h, 4, 4, 4, false);
-        maid.selecetMaidCommand(TestAddonCommands.LUMBER);
+        maid.selectMaidCommand(TestAddonCommands.LUMBER);
         h.runAfterDelay(6, () -> h.assertTrue(logs(h, maid) == 0, "Tree must not disappear in one instant"));
         h.succeedWhen(() -> {
             h.assertTrue(done(maid), "Tree job did not finish");
@@ -170,7 +170,7 @@ public class LumberGameTests {
     public void unreachableCanopyIsSkippedWithoutRemoteBreaking(GameTestHelper h) {
         var maid = worker(h, Items.IRON_AXE, 2.5F, 4.5F);
         tree(h, 4, 4, 12, false);
-        maid.selecetMaidCommand(TestAddonCommands.LUMBER);
+        maid.selectMaidCommand(TestAddonCommands.LUMBER);
         h.succeedWhen(() -> {
             h.assertTrue(done(maid), "Unreachable canopy must not hang the job");
             for (int y = 1; y <= 6; y++) h.assertBlockPresent(Blocks.AIR, new BlockPos(4, y, 4));
@@ -183,7 +183,7 @@ public class LumberGameTests {
     public void artificialLeafCanopyDoesNotAuthorizeTreeFelling(GameTestHelper h) {
         var maid = worker(h, Items.IRON_AXE, 2.5F, 4.5F);
         tree(h, 4, 4, 4, true);
-        maid.selecetMaidCommand(TestAddonCommands.LUMBER);
+        maid.selectMaidCommand(TestAddonCommands.LUMBER);
         h.succeedWhen(() -> {
             h.assertTrue(done(maid), "No natural tree must end the request");
             h.assertBlockPresent(Blocks.OAK_LOG, new BlockPos(4, 1, 4));
@@ -249,7 +249,7 @@ public class LumberGameTests {
         maid.getMainHandItem().setDamageValue(maid.getMainHandItem().getMaxDamage() - 1);
         maid.getInventory().setItem(34, new ItemStack(Items.IRON_AXE));
         tree(h, 4, 4, 4, false);
-        maid.selecetMaidCommand(TestAddonCommands.LUMBER);
+        maid.selectMaidCommand(TestAddonCommands.LUMBER);
         h.succeedWhen(() -> {
             h.assertTrue(done(maid), "Replacement axe job did not finish");
             h.assertTrue(logs(h, maid) == 4, "Tool breaking lost the remaining tree queue");

@@ -1,5 +1,8 @@
 package io.github.ozozorz.aimaid;
 
+import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
+import io.github.ozozorz.aimaid.menu.MaidStatusPayload;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,13 +48,15 @@ public class AIMaid implements ModInitializer {
 		// 其他原有初始化
 		ModItems.initialize();
 		ModMenuTypes.initialize();
+		PayloadTypeRegistry.clientboundPlay().register(
+				MaidStatusPayload.TYPE, MaidStatusPayload.STREAM_CODEC);
 		// 实体初始化
 		ModEntityTypes.registerModEntityTypes();
 		ModEntityTypes.registerAttributes();
 		// 指令初始化
 		ModServerCommands.initialize();
 
-		LOGGER.info("Hello Fabric world!");
+		LOGGER.info("AI Maid Core initialized");
 	}
 
 	public static Identifier id(String path) {

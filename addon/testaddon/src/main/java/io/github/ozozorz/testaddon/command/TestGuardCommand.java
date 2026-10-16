@@ -1,5 +1,9 @@
 package io.github.ozozorz.testaddon.command;
 
+import net.minecraft.network.chat.Component;
+import io.github.ozozorz.aimaid.entity.ai.behavior.FollowOwner;
+import io.github.ozozorz.testaddon.combat.CombatStatus;
+
 import java.util.List;
 import java.util.Set;
 import com.google.common.collect.ImmutableList;
@@ -34,10 +38,15 @@ public class TestGuardCommand implements MaidCommand {
     @Override
     public List<Activity> getActivityCandidates(AiMaidEntity maid) {
         if (maid.getOwner() == null || maid.distanceToSqr(maid.getOwner()) > 64.0) {
-            return List.of(TestAddonActivities.GUARD_FIGHT, ModActivities.FOLLOW_OWNER, Activity.IDLE);
+            return List.of(TestAddonActivities.GUARD_FIGHT, ModActivities.FOLLOW_OWNER, ModActivities.WAIT_FOR_OWNER, Activity.IDLE);
         }
         return List.of(TestAddonActivities.GUARD_FIGHT, ModActivities.PICK_UP_ITEM,
-                ModActivities.FOLLOW_OWNER, Activity.IDLE);
+                ModActivities.FOLLOW_OWNER, ModActivities.WAIT_FOR_OWNER, Activity.IDLE);
+    }
+
+    @Override public Component getStatus(AiMaidEntity maid) {
+        if (maid.getTarget() != null) return CombatStatus.describe(maid);
+        return FollowOwner.status(maid);
     }
 
     @Override

@@ -4,6 +4,7 @@ import org.jspecify.annotations.Nullable;
 
 import io.github.ozozorz.aimaid.entity.AiMaidEntity;
 import io.github.ozozorz.aimaid.entity.inventory.MaidItemTransfer;
+import io.github.ozozorz.aimaid.entity.inventory.MaidEquipmentRules;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.Container;
@@ -12,8 +13,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.enchantment.EnchantmentEffectComponents;
-import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.equipment.Equippable;
 
 class MaidEquipmentSlot extends Slot {
@@ -53,19 +52,13 @@ class MaidEquipmentSlot extends Slot {
     public int getMaxStackSize() {
         // 和 Vanilla ArmorSlot 一样：护甲槽最多一个。
         // MAINHAND / OFFHAND 则保留现有 EntityEquipment 的 stack 语义。
-        return isArmorSlot() ? 1 : super.getMaxStackSize();
+        return MaidEquipmentRules.slotLimit(equipmentSlot);
     }
 
     @Override
     public boolean mayPickup(Player player) {
-        // 对 armor 复用 Vanilla PREVENT_ARMOR_CHANGE 语义。
-        if (isArmorSlot()) {
-            ItemStack stack = this.getItem();
-            if (!stack.isEmpty() && EnchantmentHelper.has(stack, EnchantmentEffectComponents.PREVENT_ARMOR_CHANGE)) {
-                return false;
-            }
-        }
-        return super.mayPickup(player);
+        return (maid == null ? MaidEquipmentRules.canRemove(getItem(), player)
+                : MaidEquipmentRules.canRemove(maid, equipmentSlot, player)) && super.mayPickup(player);
     }
 
     @Override

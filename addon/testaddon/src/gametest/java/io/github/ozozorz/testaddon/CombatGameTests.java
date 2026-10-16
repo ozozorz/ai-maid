@@ -36,7 +36,7 @@ public class CombatGameTests {
         AiMaidEntity maid = h.spawn(ModEntityTypes.AI_MAID, 1.5F, 1.0F, 3.5F);
         maid.setTame(true, true);
         maid.setOwner(owner);
-        maid.selecetMaidCommand(TestAddonCommands.GUARD);
+        maid.selectMaidCommand(TestAddonCommands.GUARD);
         Mob enemy = h.spawn(EntityTypes.ZOMBIE, 6.5F, 1.0F, 3.5F);
         enemy.setNoAi(true);
         enemy.setPersistenceRequired();
@@ -88,7 +88,7 @@ public class CombatGameTests {
     @GameTest(maxTicks = 180)
     public void combatCommandHuntsHostiles(GameTestHelper h) {
         Arena a = arena(h);
-        a.maid().selecetMaidCommand(TestAddonCommands.ATTACK);
+        a.maid().selectMaidCommand(TestAddonCommands.ATTACK);
         h.succeedWhen(() -> h.assertTrue(a.enemy().getHealth() < 100, "Combat command must acquire a visible hostile"));
     }
 
@@ -196,7 +196,7 @@ public class CombatGameTests {
         h.onEachTick(() -> {
             if (!switched[0] && a.maid().isUsingItem()) {
                 switched[0] = true;
-                a.maid().selecetMaidCommand(MaidCommands.STAY);
+                a.maid().selectMaidCommand(MaidCommands.STAY);
                 h.runAfterDelay(35, () -> {
                     h.assertTrue(!a.maid().isUsingItem() && target(a.maid()) == null, "Leaving combat must cancel charge and target");
                     h.assertTrue(a.maid().getInventory().getItem(0).getCount() == 8, "Cancelled draw consumed ammo: " + a.maid().getInventory().getItem(0));
@@ -213,7 +213,7 @@ public class CombatGameTests {
         ItemStack crossbow = new ItemStack(Items.CROSSBOW);
         crossbow.set(DataComponents.CHARGED_PROJECTILES, ChargedProjectiles.ofNonEmpty(List.of(new ItemStack(Items.ARROW))));
         a.maid().setItemSlot(EquipmentSlot.MAINHAND, crossbow);
-        h.runAfterDelay(10, () -> a.maid().selecetMaidCommand(MaidCommands.STAY));
+        h.runAfterDelay(10, () -> a.maid().selectMaidCommand(MaidCommands.STAY));
         h.runAfterDelay(30, () -> {
             h.assertTrue(!crossbow.getOrDefault(DataComponents.CHARGED_PROJECTILES, ChargedProjectiles.EMPTY).isEmpty(), "Paid ammunition stays inside the stopped crossbow");
             h.succeed();
@@ -254,7 +254,7 @@ public class CombatGameTests {
         AiMaidEntity second = h.spawn(ModEntityTypes.AI_MAID, 1.5F, 1.0F, 6.5F);
         second.setTame(true, true);
         second.setOwner(a.owner());
-        second.selecetMaidCommand(TestAddonCommands.GUARD);
+        second.selectMaidCommand(TestAddonCommands.GUARD);
         Mob otherEnemy = h.spawn(EntityTypes.ZOMBIE, 6.5F, 1.0F, 6.5F);
         otherEnemy.setNoAi(true);
         provoke(h, a);
@@ -326,9 +326,9 @@ public class CombatGameTests {
     @GameTest(maxTicks = 70)
     public void oldInjuryDoesNotStartNewGuardSession(GameTestHelper h) {
         Arena a = arena(h);
-        a.maid().selecetMaidCommand(MaidCommands.STAY);
+        a.maid().selectMaidCommand(MaidCommands.STAY);
         h.runAfterDelay(5, () -> h.hurt(a.maid(), h.getLevel().damageSources().mobAttack(a.enemy()), 1.0F));
-        h.runAfterDelay(10, () -> a.maid().selecetMaidCommand(TestAddonCommands.GUARD));
+        h.runAfterDelay(10, () -> a.maid().selectMaidCommand(TestAddonCommands.GUARD));
         h.runAfterDelay(40, () -> {
             h.assertTrue(target(a.maid()) == null, "Entering guard must not replay earlier injury");
             h.succeed();
@@ -341,7 +341,7 @@ public class CombatGameTests {
         for (int x = 5; x < 8; x++) for (int z = 2; z < 5; z++) h.setBlock(x, 4, z, Blocks.STONE);
         Vec3 high = h.absoluteVec(new Vec3(6.5, 5, 3.5));
         a.enemy().snapTo(high.x, high.y, high.z, 0, 0);
-        a.maid().selecetMaidCommand(TestAddonCommands.ATTACK);
+        a.maid().selectMaidCommand(TestAddonCommands.ATTACK);
         boolean[] acquired = {false};
         h.onEachTick(() -> { if (target(a.maid()) == a.enemy()) acquired[0] = true; });
         h.runAfterDelay(220, () -> {

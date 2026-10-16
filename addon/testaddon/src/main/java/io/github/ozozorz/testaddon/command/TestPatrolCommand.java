@@ -1,5 +1,9 @@
 package io.github.ozozorz.testaddon.command;
 
+import net.minecraft.network.chat.Component;
+import io.github.ozozorz.aimaid.entity.inventory.MaidEquipmentRules;
+import io.github.ozozorz.testaddon.combat.CombatStatus;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -53,6 +57,20 @@ public class TestPatrolCommand implements MaidCommand {
         return 400;
     }
 
+    @Override public Component getStatus(AiMaidEntity maid) {
+        if (maid.getTarget() != null) return CombatStatus.describe(maid);
+        if (!maid.getMainHandItem().is(ItemTags.AXES)) {
+            if (!MaidEquipmentRules.canRemove(maid, EquipmentSlot.MAINHAND, null))
+                return Component.translatable("status.testaddon.equipment_locked");
+            if (maid.getInventory().findFirstMatchingSlot(s -> s.is(ItemTags.AXES)).isEmpty())
+                return Component.translatable("status.testaddon.patrol.no_tool");
+        }
+        if (maid.getBrain().getMemory(MemoryModuleType.CANT_REACH_WALK_TARGET_SINCE)
+                .map(t -> maid.level().getGameTime() - t > 40).orElse(false))
+            return Component.translatable("status.testaddon.target_unreachable");
+        return Component.empty();
+    }
+
     @Override
     public void buildServerCommand(LiteralArgumentBuilder<CommandSourceStack> node, CommandBuildContext buildContext,
                                    MaidTargetResolver targetResolver) {
@@ -77,9 +95,9 @@ public class TestPatrolCommand implements MaidCommand {
                             AiMaidEntity maid = MaidCommandCommandApi.resolveSelectableTarget(context, targetResolver,
                                     this);
 
-                            TestAddonMaidData.setPatrolRadius(maid, radius);
-
-                            return MaidCommandCommandApi.finishSelection(context, maid, this);
+                            int result = MaidCommandCommandApi.finishSelection(context, maid, this);
+                            if (result > 0) TestAddonMaidData.setPatrolRadius(maid, radius);
+                            return result;
                         })
         );
 

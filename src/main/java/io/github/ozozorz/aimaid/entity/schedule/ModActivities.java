@@ -9,6 +9,7 @@ import net.minecraft.world.entity.schedule.Activity;
 public class ModActivities {
 
     public static final Activity FOLLOW_OWNER = register("follow_owner");
+    public static final Activity WAIT_FOR_OWNER = register("wait_for_owner");
 
     public static final Activity STAY = register("stay");
 

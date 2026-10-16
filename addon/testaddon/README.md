@@ -1,13 +1,9 @@
 # TestAddon
 
-战斗模式的使用方法、Core / Addon 分工和本轮验收记录见 [战斗系统说明](../../docs/COMBAT.md)。
+AI Maid 的独立参考 Addon，提供巡逻、单块/有限整树伐木、近战和弓弩 PvE、自卫护主，以及工作中自卫和战后恢复。
 
-在本目录运行 `gradlew runClient` 体验 Core + TestAddon；`gradlew build` 编译并执行服务端战斗测试，`gradlew runClientGameTest` 执行客户端验收。
+当前版本 1.1.0，需要 Core 1.1.0。具体规则见 [战斗](../../docs/COMBAT.md)、[伐木](../../docs/LUMBER_AND_DEATH.md)、[动画](../../docs/ANIMATION.md)、[工作自卫](../../docs/WORK_DEFENSE.md) 和 [Core 接入约定](../../docs/ADDON_API.md)。
 
-## Setup
+在本目录执行 `gradlew.bat runClient` 加载 Core + TestAddon，`gradlew.bat build` 构建并执行服务端验收，`gradlew.bat runClientGameTest` 执行真实客户端验收。它通过 Maven coordinate 消费 Core，settings.gradle 将本地依赖替换为 Core 源码。
 
-For setup instructions, please see the [Fabric Documentation page](https://docs.fabricmc.net/develop/getting-started/creating-a-project#setting-up) related to the IDE that you are using.
-
-## License
-
-This template is available under the CC0 license. Feel free to learn from it and incorporate it in your own projects.
+本 Addon 同时作为 Core 集成回归用例；测试源码位于 src/gametest，不打入发布 JAR。沿用现有 CC0-1.0 许可。

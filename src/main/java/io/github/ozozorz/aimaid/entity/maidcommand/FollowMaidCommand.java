@@ -1,5 +1,8 @@
 package io.github.ozozorz.aimaid.entity.maidcommand;
 
+import net.minecraft.network.chat.Component;
+import io.github.ozozorz.aimaid.entity.ai.behavior.FollowOwner;
+
 import java.util.List;
 
 import io.github.ozozorz.aimaid.entity.AiMaidEntity;
@@ -17,7 +20,13 @@ public class FollowMaidCommand implements MaidCommand {
 
     @Override
     public List<Activity> getActivityCandidates(AiMaidEntity maid) {
-        return List.of(ModActivities.FOLLOW_OWNER, Activity.IDLE);
+        return maid.isTame() ? List.of(ModActivities.FOLLOW_OWNER, ModActivities.WAIT_FOR_OWNER, Activity.IDLE)
+                : List.of(Activity.IDLE);
+    }
+
+    @Override public Component getStatus(AiMaidEntity maid) {
+        return maid.isTame() ? FollowOwner.status(maid)
+                : Component.empty();
     }
 
     @Override

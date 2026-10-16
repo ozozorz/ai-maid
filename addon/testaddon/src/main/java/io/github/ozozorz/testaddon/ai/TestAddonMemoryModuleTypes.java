@@ -1,5 +1,7 @@
 package io.github.ozozorz.testaddon.ai;
 
+import net.minecraft.network.chat.Component;
+
 import java.util.Optional;
 
 import com.mojang.datafixers.util.Unit;
@@ -33,6 +35,7 @@ public class TestAddonMemoryModuleTypes {
     // false = 整树，true = 明确请求的一块原木；无值表示未请求/重载后不自动续工。
     public static final MemoryModuleType<Boolean> LUMBER_REQUEST = register("lumber_request");
     public static final MemoryModuleType<LumberJob> LUMBER_JOB = register("lumber_job");
+    public static final MemoryModuleType<Component> LUMBER_RESULT = register("lumber_result");
 
 
     private static <T> MemoryModuleType<T> register(String name) {

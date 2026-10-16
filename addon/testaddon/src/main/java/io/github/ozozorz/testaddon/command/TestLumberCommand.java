@@ -1,5 +1,11 @@
 package io.github.ozozorz.testaddon.command;
 
+import net.minecraft.network.chat.Component;
+import io.github.ozozorz.aimaid.entity.inventory.MaidEquipmentRules;
+import io.github.ozozorz.testaddon.combat.CombatStatus;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.tags.ItemTags;
+
 import java.util.List;
 import java.util.Set;
 import com.google.common.collect.ImmutableList;
@@ -53,6 +59,7 @@ public class TestLumberCommand implements MaidCommand {
         LumberJob.clearTarget(maid);
         var brain = maid.getBrain();
         brain.eraseMemory(TestAddonMemoryModuleTypes.LUMBER_DONE);
+        brain.eraseMemory(TestAddonMemoryModuleTypes.LUMBER_RESULT);
         brain.eraseMemory(TestAddonMemoryModuleTypes.LUMBER_JOB);
         brain.setMemory(TestAddonMemoryModuleTypes.LUMBER_REQUEST, false);
     }
@@ -65,6 +72,19 @@ public class TestLumberCommand implements MaidCommand {
         brain.eraseMemory(TestAddonMemoryModuleTypes.LUMBER_JOB);
         brain.eraseMemory(TestAddonMemoryModuleTypes.LUMBER_REQUEST);
         brain.eraseMemory(TestAddonMemoryModuleTypes.LUMBER_DONE);
+        brain.eraseMemory(TestAddonMemoryModuleTypes.LUMBER_RESULT);
+    }
+
+    @Override public Component getStatus(AiMaidEntity maid) {
+        if (maid.getTarget() != null) return CombatStatus.describe(maid);
+        var result = maid.getBrain().getMemory(TestAddonMemoryModuleTypes.LUMBER_RESULT);
+        if (result.isPresent()) return result.get();
+        if (maid.getBrain().hasMemoryValue(TestAddonMemoryModuleTypes.LUMBER_DONE))
+            return Component.translatable("status.testaddon.lumber.reselect");
+        if (!MaidEquipmentRules.canRemove(maid, EquipmentSlot.MAINHAND, null)
+                && !maid.getMainHandItem().is(ItemTags.AXES))
+            return Component.translatable("status.testaddon.equipment_locked");
+        return Component.empty();
     }
 
     @Override
@@ -75,7 +95,7 @@ public class TestLumberCommand implements MaidCommand {
         node.then(Commands.literal("single").executes(command -> {
             AiMaidEntity maid = MaidCommandCommandApi.resolveSelectableTarget(command, resolver, this);
             int result = MaidCommandCommandApi.finishSelection(command, maid, this);
-            maid.getBrain().setMemory(TestAddonMemoryModuleTypes.LUMBER_REQUEST, true);
+            if (result > 0) maid.getBrain().setMemory(TestAddonMemoryModuleTypes.LUMBER_REQUEST, true);
             return result;
         }));
     }

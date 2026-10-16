@@ -23,6 +23,8 @@ jobs:
         run: chmod +x ./gradlew
       - name: build
         run: ./gradlew build
+      - name: verify independent addon registrations
+        run: ./gradlew runGameTest -PaddonFixtures
       - name: build addon and run server acceptance tests
         run: ./gradlew -p addon/testaddon build
       - name: build integration launcher

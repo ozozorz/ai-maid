@@ -41,7 +41,7 @@ public class CombatClientGameTest implements FabricClientGameTest {
                 maid.setTame(true, true);
                 maid.setOwner(owner);
                 maid.setNoAi(true);
-                maid.selecetMaidCommand(TestAddonCommands.GUARD);
+                maid.selectMaidCommand(TestAddonCommands.GUARD);
                 maid.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.BOW));
                 maid.getInventory().setItem(0, new ItemStack(Items.ARROW, 16));
                 level.addFreshEntity(maid);
@@ -101,7 +101,7 @@ public class CombatClientGameTest implements FabricClientGameTest {
                 owner.setGameMode(GameType.SURVIVAL);
                 var maid = (AiMaidEntity) level.getEntity(id);
                 maid.setNoAi(false);
-                maid.selecetMaidCommand(TestAddonCommands.GUARD);
+                maid.selectMaidCommand(TestAddonCommands.GUARD);
                 var enemy = EntityTypes.ZOMBIE.create(level, net.minecraft.world.entity.EntitySpawnReason.COMMAND);
                 enemy.setPos(maid.getX() + 5, maid.getY(), maid.getZ());
                 enemy.setNoAi(true);
@@ -143,7 +143,7 @@ public class CombatClientGameTest implements FabricClientGameTest {
 
             server.runOnServer(minecraftServer -> {
                 var maid = (AiMaidEntity) connection.getServerLevel().getEntity(id);
-                maid.selecetMaidCommand(TestAddonCommands.GUARD);
+                maid.selectMaidCommand(TestAddonCommands.GUARD);
             });
             context.waitTicks(3);
             server.runOnServer(minecraftServer -> {

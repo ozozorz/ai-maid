@@ -1,7 +1,7 @@
 {
-	"schemaVersion": 1,
-	"id": "aimaid-devrun",
-	"version": "1.0.0",
-	"name": "AiMaid Development Runner",
-	"environment": "*"
+  "schemaVersion": 1,
+  "id": "aimaid-devrun",
+  "version": "1.1.0",
+  "name": "AiMaid Development Runner",
+  "environment": "*"
 }

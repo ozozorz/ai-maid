@@ -1,5 +1,8 @@
 package io.github.ozozorz.aimaid.menu;
 
+import net.minecraft.server.level.ServerPlayer;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,6 +14,7 @@ import io.github.ozozorz.aimaid.entity.maidcommand.MaidCommand;
 import io.github.ozozorz.aimaid.entity.maidcommand.MaidCommandMenu;
 import io.github.ozozorz.aimaid.registries.ModBuiltInRegistries;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.chat.Component;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
@@ -31,14 +35,14 @@ public class MaidMenu extends AbstractContainerMenu {
 
     // 35 格 MaidInventory
     public static final int MAID_INV_LEFT = 182;
-    public static final int MAID_INV_TOP = 38;
+    public static final int MAID_INV_TOP = 34;
 
     // 6 格 Equipment：
     // HEAD     CHEST
     // LEGS     FEET
     // MAINHAND OFFHAND
     public static final int EQUIPMENT_LEFT = 106;
-    public static final int EQUIPMENT_TOP = 76;
+    public static final int EQUIPMENT_TOP = 70;
 
     // Player inventory
     public static final int PLAYER_INV_LEFT = 146;
@@ -75,6 +79,9 @@ public class MaidMenu extends AbstractContainerMenu {
     private DataSlot selectedCommandData;
 
     private DataSlot activeActivityData;
+    private final Player viewer;
+    private Component status = Component.empty();
+    private @Nullable Component lastSentStatus;
 
     // 客户端构造器，ExtendedMenuType 会调用这个构造器
     public MaidMenu(int containerId, Inventory playerInventory, MaidMenuData data) {
@@ -97,6 +104,7 @@ public class MaidMenu extends AbstractContainerMenu {
         this.equipmentContainer = equipmentContainer;
         this.maidEntityId = maidEntityId;
         this.serverMaid = serverMaid;
+        this.viewer = playerInventory.player;
 
         this.maidInventory.startOpen(playerInventory.player);
 
@@ -107,6 +115,11 @@ public class MaidMenu extends AbstractContainerMenu {
 
         // isVisibleInCommandMenu() + getMenuOrder()
         this.visiableCommands = MaidCommandMenu.getVisibleCommands();
+        // 26.2 ContainerSetData 的索引和值均为有符号 short；按钮包则是 VarInt。
+        if (ModBuiltInRegistries.MAID_COMMAND.size() > 32768 || BuiltInRegistries.ACTIVITY.size() > 32768
+                || this.visiableCommands.size() + 2 > 32768) {
+            throw new IllegalStateException("Maid menu registry/data IDs exceed the 26.2 signed-short protocol range");
+        }
 
         // DataSlot #0：当前选中的 MaidCommand。
         this.selectedCommandData = this.addDataSlot(createSelectedCommandData(serverMaid));
@@ -188,6 +201,30 @@ public class MaidMenu extends AbstractContainerMenu {
         return maidEntityId;
     }
 
+    public Component getStatusMessage() {
+        return serverMaid == null ? status.copy() : serverMaid.getMaidStatus();
+    }
+
+    /** 仅修改客户端菜单镜像。 */
+    public void acceptStatus(MaidStatusPayload payload) {
+        if (serverMaid == null && payload.containerId() == containerId && payload.entityId() == maidEntityId) {
+            status = payload.message().copy();
+        }
+    }
+
+    @Override public void broadcastChanges() {
+        super.broadcastChanges();
+        if (serverMaid == null || !(viewer instanceof ServerPlayer player)
+                || player.containerMenu != this || !stillValid(player)) return;
+        var message = serverMaid.getMaidStatus();
+        if (!message.equals(lastSentStatus)
+                && ServerPlayNetworking.canSend(player, MaidStatusPayload.TYPE)) {
+            ServerPlayNetworking.send(player,
+                    new MaidStatusPayload(containerId, maidEntityId, message));
+            lastSentStatus = message.copy();
+        }
+    }
+
     public List<MaidCommand> getVisibleCommands() {
         return this.visiableCommands;
     }
@@ -223,12 +260,13 @@ public class MaidMenu extends AbstractContainerMenu {
     // Shift + 点击 基本按照 Vanilla ChestMenu 的语义：Maid -> Player / Player -> Maid
     @Override
     public ItemStack quickMoveStack(Player player, int slotIndex) {
+        if (!stillValid(player)) return ItemStack.EMPTY;
         if (slotIndex < 0 || slotIndex >= this.slots.size()) {
             return ItemStack.EMPTY;
         }
 
         Slot slot = this.slots.get(slotIndex);
-        if (!slot.hasItem()) {
+        if (!slot.hasItem() || !slot.mayPickup(player)) {
             return ItemStack.EMPTY;
         }
 
@@ -386,7 +424,7 @@ public class MaidMenu extends AbstractContainerMenu {
         }
 
         // 终于进入现有 MaidCommand mechanism。
-        this.serverMaid.selecetMaidCommand(command);
+        this.serverMaid.selectMaidCommand(command);
         
         return true;
     }

@@ -6,6 +6,7 @@ import java.util.OptionalInt;
 import java.util.function.Predicate;
 
 import io.github.ozozorz.aimaid.entity.AiMaidEntity;
+import io.github.ozozorz.aimaid.entity.MaidServerAccess;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
 
@@ -16,6 +17,7 @@ public class MaidItemTransfer {
 
     // 将物品从背包移到装备槽位
     public static int moveInventoryToEquipment(AiMaidEntity maid, int inventorySlot, EquipmentSlot equipmentSlot) {
+        MaidServerAccess.requireServerThread(maid);
         Objects.requireNonNull(maid);
         Objects.requireNonNull(equipmentSlot);
         MaidInventory inventory = maid.getInventory();
@@ -34,7 +36,7 @@ public class MaidItemTransfer {
         if (!canPlaceInEquipmentSlot(maid, source, equipmentSlot)) {
             return 0;
         }
-        ItemStack removed = inventory.removeItem(inventorySlot, source.getCount());
+        ItemStack removed = inventory.removeItem(inventorySlot, MaidEquipmentRules.maxCount(equipmentSlot, source));
         if (removed.isEmpty()) {
             return 0;
         }
@@ -45,9 +47,10 @@ public class MaidItemTransfer {
 
     // 将物品从装备槽位移到背包
     public static int moveEquipmentToInventory(AiMaidEntity maid, EquipmentSlot equipmentSlot) {
+        MaidServerAccess.requireServerThread(maid);
         Objects.requireNonNull(maid);
         Objects.requireNonNull(equipmentSlot);
-        if (!supportsEquipmentSlot(equipmentSlot)) {
+        if (!MaidEquipmentRules.canRemove(maid, equipmentSlot, null)) {
             return 0;
         }
         ItemStack equipped = maid.getItemBySlot(equipmentSlot);
@@ -61,11 +64,13 @@ public class MaidItemTransfer {
             return 0;
         }
         maid.setItemSlot(equipmentSlot, remainder);
+        maid.stopUsingItem();
         return movedCount;
     }
 
     // 自动将物品转移到对应装备槽
     public static int moveInventoryToPreferredEquipmentSlot(AiMaidEntity maid, int inventorySlot) {
+        MaidServerAccess.requireServerThread(maid);
         Objects.requireNonNull(maid);
         MaidInventory inventory = maid.getInventory();
         Objects.checkIndex(inventorySlot, inventory.getContainerSize());
@@ -83,6 +88,7 @@ public class MaidItemTransfer {
     // 自动将第一个匹配的物品转移到对应装备槽
     public static int moveFirstMatchingInventoryItemToPreferredEquipmentSlot(AiMaidEntity maid,
             Predicate<ItemStack> predicate) {
+        MaidServerAccess.requireServerThread(maid);
         Objects.requireNonNull(maid);
         Objects.requireNonNull(predicate);
 
@@ -96,6 +102,7 @@ public class MaidItemTransfer {
     // 自动将最佳匹配的物品转移到对应装备槽
     public static int moveBestMatchingInventoryItemToPreferredEquipmentSlot(AiMaidEntity maid,
             Predicate<ItemStack> predicate, Comparator<ItemStack> comparator) {
+        MaidServerAccess.requireServerThread(maid);
         Objects.requireNonNull(maid);
         Objects.requireNonNull(predicate);
         Objects.requireNonNull(comparator);
@@ -110,16 +117,7 @@ public class MaidItemTransfer {
     // 装备槽位是不是女仆支持的槽
     public static boolean supportsEquipmentSlot(EquipmentSlot slot) {
         Objects.requireNonNull(slot);
-        return switch (slot) {
-            case MAINHAND,
-                    OFFHAND,
-                    HEAD,
-                    CHEST,
-                    LEGS,
-                    FEET ->
-                true;
-            default -> false;
-        };
+        return MaidEquipmentRules.supports(slot);
     }
 
     // 能否放进装备槽
@@ -128,30 +126,19 @@ public class MaidItemTransfer {
         Objects.requireNonNull(itemStack);
         Objects.requireNonNull(slot);
 
-        if (!supportsEquipmentSlot(slot)) {
-            return false;
-        }
-
-        if (itemStack.isEmpty()) {
-            return false;
-        }
-
-        return switch (slot) {
-            case MAINHAND, OFFHAND -> true;
-            case HEAD, CHEST, LEGS, FEET -> maid.isEquippableInSlot(itemStack, slot);
-            default -> false;
-        };
+        return MaidEquipmentRules.canPlace(maid, itemStack, slot);
     }
 
     // 交换背包一格的物品和装备槽
     public static boolean swapInventoryWithEquipment(AiMaidEntity maid, int inventorySlot,
             EquipmentSlot equipmentSlot) {
+        MaidServerAccess.requireServerThread(maid);
         // 变量合法性判断
         Objects.requireNonNull(maid);
         Objects.requireNonNull(equipmentSlot);
         MaidInventory inventory = maid.getInventory();
         Objects.checkIndex(inventorySlot, inventory.getContainerSize());
-        if (!supportsEquipmentSlot(equipmentSlot)) {
+        if (!MaidEquipmentRules.canRemove(maid, equipmentSlot, null)) {
             return false;
         }
         ItemStack inventoryStack = inventory.getItem(inventorySlot);
@@ -168,11 +155,41 @@ public class MaidItemTransfer {
             return moveInventoryToEquipment(maid, inventorySlot, equipmentSlot) > 0;
         }
 
+        int limit = MaidEquipmentRules.maxCount(equipmentSlot, inventoryStack);
+        if (inventoryStack.getCount() > limit) {
+            // 可堆叠护甲只装备一件。先模拟剩余空间，失败时两端完全不动。
+            MaidInventory trial = new MaidInventory();
+            for (int i = 0; i < inventory.getContainerSize(); i++) trial.setItem(i, inventory.getItem(i).copy());
+            trial.removeItem(inventorySlot, limit);
+            if (!trial.addItem(equippedStack.copy()).isEmpty()) return false;
+            ItemStack incoming = inventory.removeItem(inventorySlot, limit);
+            inventory.addItem(equippedStack);
+            maid.stopUsingItem();
+            maid.setItemSlot(equipmentSlot, incoming);
+            return true;
+        }
+        if (equippedStack.getCount() > Math.min(inventory.getMaxStackSize(), equippedStack.getMaxStackSize())) return false;
         // 交换
         // 先让inventory接住旧装备
         // 然后再正式更新 equipment
         inventory.setItem(inventorySlot, equippedStack);
+        maid.stopUsingItem();
         maid.setItemSlot(equipmentSlot, inventoryStack);
+        return true;
+    }
+
+    /** 战斗和工作恢复共用双手交换；不复制或重建武器。 */
+    public static boolean swapHands(AiMaidEntity maid) {
+        MaidServerAccess.requireServerThread(maid);
+        if (!MaidEquipmentRules.canRemove(maid, EquipmentSlot.MAINHAND, null)
+                || !MaidEquipmentRules.canRemove(maid, EquipmentSlot.OFFHAND, null)) return false;
+        ItemStack main = maid.getMainHandItem(), off = maid.getOffhandItem();
+        if (main.isEmpty() && off.isEmpty()) return false;
+        if (!main.isEmpty() && main.getCount() > MaidEquipmentRules.maxCount(EquipmentSlot.OFFHAND, main)
+                || !off.isEmpty() && off.getCount() > MaidEquipmentRules.maxCount(EquipmentSlot.MAINHAND, off)) return false;
+        maid.stopUsingItem();
+        maid.setItemSlot(EquipmentSlot.MAINHAND, off);
+        maid.setItemSlot(EquipmentSlot.OFFHAND, main);
         return true;
     }
 

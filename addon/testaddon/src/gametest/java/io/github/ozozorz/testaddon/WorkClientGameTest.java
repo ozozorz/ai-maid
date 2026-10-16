@@ -67,7 +67,7 @@ public class WorkClientGameTest implements FabricClientGameTest {
             context.takeScreenshot("lumber-progress");
             server.runOnServer(minecraftServer -> {
                 var maid = (AiMaidEntity) connection.getServerLevel().getEntity(scene.maidId());
-                maid.selecetMaidCommand(MaidCommands.STAY);
+                maid.selectMaidCommand(MaidCommands.STAY);
             });
             waitForCracks(context, scene, false);
             server.runOnServer(minecraftServer -> {
@@ -160,7 +160,7 @@ public class WorkClientGameTest implements FabricClientGameTest {
     }
 
     private void single(AiMaidEntity maid) {
-        maid.selecetMaidCommand(TestAddonCommands.LUMBER);
+        maid.selectMaidCommand(TestAddonCommands.LUMBER);
         maid.getBrain().setMemory(TestAddonMemoryModuleTypes.LUMBER_REQUEST, true);
     }
 

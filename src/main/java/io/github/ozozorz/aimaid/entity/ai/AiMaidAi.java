@@ -1,5 +1,7 @@
 package io.github.ozozorz.aimaid.entity.ai;
 
+import net.minecraft.world.entity.ai.behavior.declarative.BehaviorBuilder;
+
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,6 +48,7 @@ public class AiMaidAi {
         LinkedHashMap<Activity, ActivityData<AiMaidEntity>> activities = new LinkedHashMap<>();
         addActivity(activities, initCoreActivity(), "built-in CORE");
         addActivity(activities, initIdleActivity(), "built-in IDLE");
+        addActivity(activities, initWaitForOwnerActivity(), "built-in WAIT_FOR_OWNER");
         addActivity(activities, initPickUpItemActivity(), "built-in PICK_UP_ITEM");
         for (MaidCommand maidCommand : ModBuiltInRegistries.MAID_COMMAND) {
             Identifier maidCommandId = ModBuiltInRegistries.MAID_COMMAND.getKey(maidCommand);
@@ -105,6 +108,19 @@ public class AiMaidAi {
                         Pair.of(RandomStroll.stroll(1.0F), 2),
                         Pair.of(new RandomLookAround(UniformInt.of(40, 80), 45.0F, -15.0F, 20.0F), 2),
                         Pair.of(new DoNothing(30, 60), 1)));
+    }
+
+    private static ActivityData<AiMaidEntity> initWaitForOwnerActivity() {
+        var wait = BehaviorBuilder.<AiMaidEntity>create(i -> i.group(
+                i.registered(MemoryModuleType.WALK_TARGET)).apply(i, walk -> (level, maid, now) -> {
+                    walk.erase();
+                    maid.getNavigation().stop();
+                    return true;
+                }));
+        return ActivityData.create(ModActivities.WAIT_FOR_OWNER,
+                ActivityData.createPriorityPairs(10, ImmutableList.of(wait, new RandomLookAround(UniformInt.of(40, 80), 45, -15, 20))),
+                Set.of(Pair.of(ModMemoryModuleTypes.OWNER, MemoryStatus.VALUE_ABSENT)),
+                Set.of(MemoryModuleType.WALK_TARGET, MemoryModuleType.LOOK_TARGET));
     }
 
     public static ActivityData<AiMaidEntity> createFollowOwnerActivity() {

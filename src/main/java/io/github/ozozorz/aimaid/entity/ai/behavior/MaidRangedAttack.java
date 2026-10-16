@@ -1,5 +1,7 @@
 package io.github.ozozorz.aimaid.entity.ai.behavior;
 
+import io.github.ozozorz.aimaid.entity.MaidServerAccess;
+
 import java.util.List;
 import io.github.ozozorz.aimaid.entity.AiMaidEntity;
 import io.github.ozozorz.aimaid.entity.animation.MaidAnimationAction;
@@ -17,6 +19,8 @@ public final class MaidRangedAttack {
     private MaidRangedAttack() {}
 
     public static boolean shootBow(ServerLevel level, AiMaidEntity maid, LivingEntity target, int drawTicks) {
+        MaidServerAccess.requireServerThread(maid);
+        if (maid.level() != level || target.level() != level || !maid.isAlive() || !target.isAlive()) return false;
         ItemStack weapon = maid.getMainHandItem();
         if (!(weapon.getItem() instanceof BowItem bow) || drawTicks < BowItem.MAX_DRAW_DURATION) {
             return false;
@@ -44,6 +48,8 @@ public final class MaidRangedAttack {
     }
 
     public static boolean shootCrossbow(ServerLevel level, AiMaidEntity maid, LivingEntity target) {
+        MaidServerAccess.requireServerThread(maid);
+        if (maid.level() != level || target.level() != level || !maid.isAlive() || !target.isAlive()) return false;
         ItemStack weapon = maid.getMainHandItem();
         if (!(weapon.getItem() instanceof CrossbowItem crossbow) || !CrossbowItem.isCharged(weapon)) {
             return false;

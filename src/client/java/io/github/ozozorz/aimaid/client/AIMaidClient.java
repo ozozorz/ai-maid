@@ -1,5 +1,9 @@
 package io.github.ozozorz.aimaid.client;
 
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import io.github.ozozorz.aimaid.menu.MaidStatusPayload;
+import io.github.ozozorz.aimaid.menu.MaidMenu;
+
 import io.github.ozozorz.aimaid.client.entity.model.ModEntityModelLayers;
 import io.github.ozozorz.aimaid.client.entity.renderer.AiMaidEntityRenderer;
 import io.github.ozozorz.aimaid.client.entity.renderer.MiniGolemEntityRenderer;
@@ -20,5 +24,9 @@ public class AIMaidClient implements ClientModInitializer {
 		EntityRenderers.register(ModEntityTypes.AI_MAID, AiMaidEntityRenderer::new);
 
 		MenuScreens.register(ModMenuTypes.MAID, AiMaidScreen::new);
+		ClientPlayNetworking.registerGlobalReceiver(
+				MaidStatusPayload.TYPE, (payload, context) -> {
+					if (context.player().containerMenu instanceof MaidMenu menu) menu.acceptStatus(payload);
+				});
 	}
 }

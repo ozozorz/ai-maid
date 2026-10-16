@@ -107,6 +107,11 @@ public interface MaidCommand {
 
     }
 
+    /** 服务端菜单查询：便宜、无副作用；返回空文本表示没有额外提示，不读取客户端 Brain。 */
+    default Component getStatus(AiMaidEntity maid) {
+        return Component.empty();
+    }
+
     /** 玩家选择命令时释放旧任务；重选同一个命令也调用，临时 Activity 切换不调用。 */
     default void onDeselected(AiMaidEntity maid) {
 

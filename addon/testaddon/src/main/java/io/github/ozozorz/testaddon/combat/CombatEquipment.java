@@ -3,6 +3,7 @@ package io.github.ozozorz.testaddon.combat;
 import java.util.function.Predicate;
 import io.github.ozozorz.aimaid.entity.AiMaidEntity;
 import io.github.ozozorz.aimaid.entity.inventory.MaidItemTransfer;
+import io.github.ozozorz.aimaid.entity.inventory.MaidEquipmentRules;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -11,8 +12,6 @@ import net.minecraft.world.item.CrossbowItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ProjectileWeaponItem;
 import net.minecraft.world.item.component.ChargedProjectiles;
-import net.minecraft.world.item.enchantment.EnchantmentEffectComponents;
-import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.tags.ItemTags;
 
 /** 武器选择属于 Addon；真实栈转移复用 Core。 */
@@ -40,7 +39,7 @@ public final class CombatEquipment {
 
     public static boolean selectWeapon(AiMaidEntity maid, double distanceSqr) {
         ItemStack held = maid.getMainHandItem();
-        if (EnchantmentHelper.has(held, EnchantmentEffectComponents.PREVENT_ARMOR_CHANGE)) return false;
+        if (!MaidEquipmentRules.canRemove(maid, EquipmentSlot.MAINHAND, null)) return false;
         // 两个切换距离避免目标在边界移动时反复换武器。
         boolean preferRanged = distanceSqr > (isRanged(held) ? 9.0 : 36.0);
         Predicate<ItemStack> ranged = stack -> canShoot(maid, stack);
@@ -69,13 +68,7 @@ public final class CombatEquipment {
 
     static boolean swapOffhand(AiMaidEntity maid, Predicate<ItemStack> predicate) {
         ItemStack offhand = maid.getOffhandItem();
-        if (!predicate.test(offhand)
-                || EnchantmentHelper.has(maid.getMainHandItem(), EnchantmentEffectComponents.PREVENT_ARMOR_CHANGE)
-                || EnchantmentHelper.has(offhand, EnchantmentEffectComponents.PREVENT_ARMOR_CHANGE)) return false;
-        ItemStack main = maid.getMainHandItem();
-        maid.setItemSlot(EquipmentSlot.MAINHAND, offhand);
-        maid.setItemSlot(EquipmentSlot.OFFHAND, main);
-        return true;
+        return predicate.test(offhand) && MaidItemTransfer.swapHands(maid);
     }
 
     private static double score(ItemStack stack) {

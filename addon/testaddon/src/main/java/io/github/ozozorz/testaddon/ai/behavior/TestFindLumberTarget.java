@@ -21,8 +21,9 @@ public final class TestFindLumberTarget {
                 i.absent(TestAddonMemoryModuleTypes.LUMBER_WORK_POS),
                 i.absent(TestAddonMemoryModuleTypes.LUMBER_DONE),
                 i.registered(TestAddonMemoryModuleTypes.LUMBER_JOB),
-                i.registered(TestAddonMemoryModuleTypes.LUMBER_REQUEST)
-        ).apply(i, (target, work, done, jobMemory, request) -> (level, maid, now) -> {
+                i.registered(TestAddonMemoryModuleTypes.LUMBER_REQUEST),
+                i.registered(TestAddonMemoryModuleTypes.LUMBER_RESULT)
+        ).apply(i, (target, work, done, jobMemory, request, result) -> (level, maid, now) -> {
             if (!LumberJob.isWorking(maid)) return false;
             var job = maid.getBrain().getMemory(TestAddonMemoryModuleTypes.LUMBER_JOB).orElse(null);
             if (job == null && !maid.getBrain().hasMemoryValue(TestAddonMemoryModuleTypes.LUMBER_REQUEST)) {

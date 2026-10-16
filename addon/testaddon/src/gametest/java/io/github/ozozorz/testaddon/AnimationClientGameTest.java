@@ -52,7 +52,7 @@ public class AnimationClientGameTest implements FabricClientGameTest {
                 maid.setPos(base.getX() - 1, base.getY() + 1, base.getZ() + 2.5);
                 maid.setTame(true, true); maid.setOwner(owner); maid.setNoAi(true);
                 maid.setYRot(180); maid.setYBodyRot(180); maid.setYHeadRot(180);
-                maid.selecetMaidCommand(MaidCommands.STAY);
+                maid.selectMaidCommand(MaidCommands.STAY);
                 maid.setCustomName(Component.literal("Animation / armored"));
                 maid.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_AXE));
                 maid.setItemSlot(EquipmentSlot.CHEST, new ItemStack(Items.IRON_CHESTPLATE));
@@ -64,7 +64,7 @@ public class AnimationClientGameTest implements FabricClientGameTest {
                 other.setTame(true, true); other.setOwner(owner); other.setNoAi(true);
                 other.setYRot(180); other.setYBodyRot(180); other.setYHeadRot(180);
                 other.setCustomName(Component.literal("Independent / idle"));
-                other.selecetMaidCommand(MaidCommands.STAY);
+                other.selectMaidCommand(MaidCommands.STAY);
                 level.addFreshEntity(other);
                 var target = EntityTypes.ZOMBIE.create(level, EntitySpawnReason.COMMAND);
                 target.setPos(base.getX() - 1, base.getY() + 1, base.getZ() + 11);
@@ -173,7 +173,7 @@ public class AnimationClientGameTest implements FabricClientGameTest {
             context.runOnClient(client -> check(state(client, scene.maid()).animation.layers().isEmpty(), "Unknown action must use the locomotion fallback"));
             server.runOnServer(minecraftServer -> {
                 var maid = (AiMaidEntity) connection.getServerLevel().getEntity(scene.maid());
-                maid.selecetMaidCommand(MaidCommands.STAY);
+                maid.selectMaidCommand(MaidCommands.STAY);
                 maid.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_SWORD));
             });
             context.waitTicks(3);
@@ -236,7 +236,7 @@ public class AnimationClientGameTest implements FabricClientGameTest {
                         scene.base().getY() + 1, scene.base().getZ() - 14.5, 0, 8);
                 maid.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED).setBaseValue(0.15);
                 maid.setNoAi(false);
-                maid.selecetMaidCommand(MaidCommands.FOLLOW);
+                maid.selectMaidCommand(MaidCommands.FOLLOW);
             });
             float[] maximumSpeed = {0};
             try {
@@ -263,7 +263,7 @@ public class AnimationClientGameTest implements FabricClientGameTest {
             context.takeScreenshot("animation-fast-movement");
             server.runOnServer(minecraftServer -> {
                 var maid = (AiMaidEntity) connection.getServerLevel().getEntity(scene.maid());
-                maid.selecetMaidCommand(MaidCommands.STAY);
+                maid.selectMaidCommand(MaidCommands.STAY);
                 connection.getServerPlayer().connection.teleport(maid.getX(), maid.getY(), maid.getZ() - 5, 0, 8);
                 // NoAI 会连原版运动模拟一起关闭；此处要实际起跳并落地。
                 maid.setNoAi(false);

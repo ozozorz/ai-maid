@@ -1,5 +1,7 @@
 package io.github.ozozorz.aimaid.entity.ai.behavior;
 
+import io.github.ozozorz.aimaid.entity.MaidServerAccess;
+
 import io.github.ozozorz.aimaid.entity.AiMaidEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -33,7 +35,7 @@ public final class MaidBlockBreaking {
     }
 
     public static boolean canBreak(ServerLevel level, AiMaidEntity maid, BlockPos pos, BlockState state, ItemStack tool) {
-        return maid.isAlive() && level.hasChunkAt(pos) && level.getWorldBorder().isWithinBounds(pos)
+        return maid.level() == level && maid.isAlive() && level.hasChunkAt(pos) && level.getWorldBorder().isWithinBounds(pos)
                 && level.getGameRules().get(GameRules.MOB_GRIEFING) && !state.isAir()
                 && state.getDestroySpeed(level, pos) >= 0
                 && tool.getItem().canDestroyBlock(tool, state, level, pos, maid);
@@ -63,6 +65,7 @@ public final class MaidBlockBreaking {
     }
 
     public static boolean destroy(ServerLevel level, AiMaidEntity maid, BlockPos pos, BlockState expected, ItemStack tool) {
+        MaidServerAccess.requireServerThread(maid);
         // 完成时仍重查真实世界、距离、视线和政策，不能凭旧进度远程破坏。
         if (level.getBlockState(pos) != expected || !canReach(level, maid, pos)
                 || !canBreak(level, maid, pos, expected, tool)) return false;

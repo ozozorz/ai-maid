@@ -38,11 +38,11 @@ public class AiMaidScreen extends AbstractContainerScreen<MaidMenu> {
     private static final int PREVIEW_LEFT = 10;
     private static final int PREVIEW_TOP = 26;
     private static final int PREVIEW_WIDTH = 56;
-    private static final int PREVIEW_HEIGHT = 100;
-    private static final int PREVIEW_SCALE = 40;
+    private static final int PREVIEW_HEIGHT = 94;
+    private static final int PREVIEW_SCALE = 38;
 
     private static final int STATUS_LEFT = 80;
-    private static final int STATUS_TOP = 28;
+    private static final int STATUS_TOP = 26;
     private static final int STATUS_WIDTH = 88;
 
     private static final int COMMAND_COLUMNS = 2;
@@ -91,9 +91,9 @@ public class AiMaidScreen extends AbstractContainerScreen<MaidMenu> {
 
         // 仅绘制背景；不在这里改变任何 Maid 状态。
         drawPanel(graphics, x, y, IMAGE_WIDTH, IMAGE_HEIGHT, 0xFFC6C6C6);
-        drawPanel(graphics, x + 6, y + 22, 64, 110, 0xFF515965);
-        drawPanel(graphics, x + 74, y + 22, 100, 110, 0xFFE0E0E0);
-        drawPanel(graphics, x + 178, y + 22, 134, 110, 0xFFE0E0E0);
+        drawPanel(graphics, x + 6, y + 22, 64, 104, 0xFF515965);
+        drawPanel(graphics, x + 74, y + 22, 100, 104, 0xFFE0E0E0);
+        drawPanel(graphics, x + 178, y + 22, 134, 104, 0xFFE0E0E0);
         drawPanel(graphics, x + 6, y + 140, 128, 90, 0xFFE0E0E0);
         drawPanel(graphics, x + 140, y + 140, 172, 92, 0xFFE0E0E0);
 
@@ -157,11 +157,11 @@ public class AiMaidScreen extends AbstractContainerScreen<MaidMenu> {
         // 父类已经平移到 leftPos / topPos；下面使用容器局部坐标。
         drawTextLine(graphics, this.title, 10, 7, IMAGE_WIDTH - 20, mouseX, mouseY);
         drawTextLine(graphics, Component.translatable("gui.ai-maid.maid_inventory"),
-                MaidMenu.MAID_INV_LEFT, 26, 124, mouseX, mouseY);
+                MaidMenu.MAID_INV_LEFT, 24, 124, mouseX, mouseY);
         drawTextLine(graphics, this.playerInventoryTitle,
                 MaidMenu.PLAYER_INV_LEFT, 142, 160, mouseX, mouseY);
         drawTextLine(graphics, Component.translatable("gui.ai-maid.equipment"),
-                STATUS_LEFT, 64, STATUS_WIDTH, mouseX, mouseY);
+                STATUS_LEFT, 59, STATUS_WIDTH, mouseX, mouseY);
 
         var commandsTitle = Component.translatable("gui.ai-maid.commands");
         if (getMaxCommandPage() > 0) {
@@ -185,12 +185,17 @@ public class AiMaidScreen extends AbstractContainerScreen<MaidMenu> {
                 ? Component.translatable("gui.ai-maid.command_unknown")
                 : selected.getDisplayName();
         drawTextLine(graphics, Component.translatable("gui.ai-maid.command_value", selectedName),
-                STATUS_LEFT, STATUS_TOP + 12, STATUS_WIDTH, mouseX, mouseY);
+                STATUS_LEFT, STATUS_TOP + 11, STATUS_WIDTH, mouseX, mouseY);
         drawTextLine(graphics, Component.translatable("gui.ai-maid.activity_value",
                         getActivityDisplayName(this.menu.getActiveActivity())),
-                STATUS_LEFT, STATUS_TOP + 24, STATUS_WIDTH, mouseX, mouseY);
+                STATUS_LEFT, STATUS_TOP + 22, STATUS_WIDTH, mouseX, mouseY);
 
         drawEmptyHandLabel(graphics, MaidMenu.EQUIPMENT_SLOT_START + 4, "gui.ai-maid.main_hand_short");
+        Component status = this.menu.getStatusMessage();
+        if (status.equals(Component.empty())) status = Component.translatable("status.ai-maid.ready");
+        // 两排面板之间的独立状态行，长提示仍可悬停查看全文。
+        drawTextLine(graphics, Component.translatable("gui.ai-maid.detail", status),
+                10, 129, IMAGE_WIDTH - 20, mouseX, mouseY);
         drawEmptyHandLabel(graphics, MaidMenu.EQUIPMENT_SLOT_START + 5, "gui.ai-maid.off_hand_short");
         extractEmptyEquipmentTooltip(graphics, mouseX, mouseY);
     }
@@ -220,7 +225,8 @@ public class AiMaidScreen extends AbstractContainerScreen<MaidMenu> {
         if (shortened && this.menu.getCarried().isEmpty()
                 && isOverLocalRect(mouseX, mouseY, x, y, maxWidth, this.font.lineHeight)) {
             // Tooltip 用屏幕鼠标坐标；不要再给 mouseX / mouseY 加 leftPos / topPos。
-            graphics.setTooltipForNextFrame(this.font, text, mouseX, mouseY);
+            graphics.setTooltipForNextFrame(this.font,
+                    this.font.split(text, Math.max(40, Math.min(240, this.width - 20))), mouseX, mouseY);
         }
     }
 

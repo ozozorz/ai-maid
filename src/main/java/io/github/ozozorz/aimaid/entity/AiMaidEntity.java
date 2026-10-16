@@ -1,5 +1,8 @@
 package io.github.ozozorz.aimaid.entity;
 
+import net.minecraft.network.chat.Component;
+import io.github.ozozorz.aimaid.entity.ai.memory.ModMemoryModuleTypes;
+
 import org.jspecify.annotations.Nullable;
 
 import io.github.ozozorz.aimaid.entity.ai.AiMaidAi;
@@ -68,7 +71,7 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
         this.setCanPickUpLoot(true);
     }
 
-    // 定义女仆实例化出来有哪些默认属性：最大生命值20，移动速度3
+    // 女仆默认属性：最大生命值 20，移动速度 0.3。
     public static AttributeSupplier.Builder createAttributes() {
         return PathfinderMob.createMobAttributes()
             .add(Attributes.MAX_HEALTH, 20.0)
@@ -165,7 +168,7 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
 
         // ==============================
         // 已驯服：
-        // Owner Shift + 空手右键
+        // Owner Shift + 右键（任意手持物品）
         // 打开 Maid GUI。
         // ==============================
         if (this.isTame() && this.isOwnedBy(player) && player.isShiftKeyDown()) {
@@ -182,6 +185,11 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
             return InteractionResult.SUCCESS;
         }
         
+        if (!player.isShiftKeyDown() && isAlive() && isTame() && isOwnedBy(player)
+                && !player.isSpectator() && stack.is(MaidFeeding.HEALING_FOODS)) {
+            if (!this.level().isClientSide()) MaidFeeding.feed(this, player, hand);
+            return InteractionResult.SUCCESS;
+        }
         return super.mobInteract(player, hand);
     }
 
@@ -212,7 +220,7 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
 
     /** 返回本次播放的 token；同 tick 重播也能被客户端区分。 */
     public int playAnimationAction(Identifier id, int durationTicks) {
-        if (this.level().isClientSide()) throw new IllegalStateException("Animation actions start on the server");
+        MaidServerAccess.requireServerThread(this);
         if (id == null || id.equals(MaidAnimationAction.NONE) || durationTicks < 1 || durationTicks > MaidAnimationAction.MAX_DURATION) {
             throw new IllegalArgumentException("Invalid maid animation action or duration");
         }
@@ -226,7 +234,8 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
     }
 
     public void stopAnimationAction(Identifier id, int token) {
-        if (!this.level().isClientSide() && this.getAnimationAction().id().equals(id)
+        MaidServerAccess.requireServerThread(this);
+        if (this.getAnimationAction().id().equals(id)
                 && this.entityData.get(ANIMATION_SEQUENCE) == token) clearAnimationAction();
     }
 
@@ -265,25 +274,47 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
         return ModBuiltInRegistries.MAID_COMMAND.getOptional(id).orElse(MaidCommands.FOLLOW);
     }
 
+    /** 状态由真实服务器状态派生，不保存第二份 Command/Activity。 */
+    public Component getMaidStatus() {
+        MaidServerAccess.requireServerThread(this);
+        if (ModBuiltInRegistries.MAID_COMMAND.getOptional(getMaidCommandId()).isEmpty()) {
+            return Component.translatable("status.ai-maid.missing_command", getMaidCommandId().toString());
+        }
+        var message = getMaidCommand().getStatus(this);
+        if (inventory.isCompletelyFull()) {
+            var full = Component.translatable("status.ai-maid.storage_full");
+            return message.equals(Component.empty()) ? full : message.copy().append("; ").append(full);
+        }
+        return message;
+    }
+
     // 设置MaidCommand时，规则是：能成为 Maid 当前命令的 MaidCommand，必须先进入 Registry。
-    public void selecetMaidCommand(MaidCommand maidCommand) {
+    public void selectMaidCommand(MaidCommand maidCommand) {
+        ServerLevel level = MaidServerAccess.requireServerThread(this);
+        if (!isAlive()) throw new IllegalStateException("Cannot select a command for a dead maid");
         Identifier id = ModBuiltInRegistries.MAID_COMMAND.getKey(maidCommand);
         if (id == null) {
             throw new IllegalArgumentException("Unregistered MaidCommand: " + maidCommand);
         }
         // 先停止旧行为，让持续动作能清理裂纹、蓄力和导航；重选也会重新开始。
-        if (this.level() instanceof ServerLevel level) {
-            this.getBrain().stopAll(level, this);
-            clearAnimationAction();
-            this.getMaidCommand().onDeselected(this);
-        }
+        this.getBrain().stopAll(level, this);
+        this.getNavigation().stop();
+        this.stopUsingItem();
+        clearAnimationAction();
+        this.getMaidCommand().onDeselected(this);
         // ① 先真正切换状态
         this.entityData.set(MAID_COMMAND_ENTITY_DATA_ACCESSOR, id.toString());
         // ② 再通知新 Command：
         // “你现在已经被选中了”
-        if (!this.level().isClientSide()) {
-            maidCommand.onSelected(this);
-        }
+        this.getBrain().setMemory(ModMemoryModuleTypes.MAID_COMMAND, maidCommand);
+        maidCommand.onSelected(this);
+        AiMaidAi.updateActivity(this);
+    }
+
+    /** @deprecated 拼写兼容入口；使用 {@link #selectMaidCommand(MaidCommand)}。 */
+    @Deprecated(forRemoval = false)
+    public void selecetMaidCommand(MaidCommand command) {
+        selectMaidCommand(command);
     }
 
     // 持久化命令ID

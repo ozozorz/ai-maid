@@ -89,3 +89,20 @@ publishing {
 		// retrieving dependencies.
 	}
 }
+
+// Core 独立测试模组；不会打入发布 JAR，也不依赖 TestAddon。
+fabricApi {
+	configureTests {
+		createSourceSet = true
+		modId = 'ai-maid-core-tests'
+		enableGameTests = true
+		enableClientGameTests = true
+		eula = true
+	}
+}
+
+if (providers.gradleProperty('addonFixtures').isPresent()) {
+	loom.runs.configureEach {
+		if (name.toLowerCase().contains('gametest')) vmArg '-Dai-maid.testContributors=true'
+	}
+}

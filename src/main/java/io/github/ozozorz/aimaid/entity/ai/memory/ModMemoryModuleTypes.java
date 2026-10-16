@@ -19,6 +19,7 @@ public class ModMemoryModuleTypes {
 
     // 正在跟随主人的记忆
     public static final MemoryModuleType<Unit> FOLLOWING_OWNER = register("following_owner");
+    public static final MemoryModuleType<Unit> FOLLOW_BLOCKED = register("follow_blocked");
 
     public static final MemoryModuleType<MaidCommand> MAID_COMMAND = register("maid_command");
 

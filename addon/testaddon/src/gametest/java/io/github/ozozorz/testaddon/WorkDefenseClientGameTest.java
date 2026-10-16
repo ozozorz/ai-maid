@@ -64,7 +64,7 @@ public class WorkDefenseClientGameTest implements FabricClientGameTest {
                 level.addFreshEntity(enemy);
                 var log = base.offset(4, 1, 3);
                 level.setBlockAndUpdate(log, Blocks.OAK_LOG.defaultBlockState());
-                maid.selecetMaidCommand(TestAddonCommands.LUMBER);
+                maid.selectMaidCommand(TestAddonCommands.LUMBER);
                 maid.getBrain().setMemory(TestAddonMemoryModuleTypes.LUMBER_REQUEST, true);
                 return new Scene(maid.getId(), enemy.getId(), log);
             });
@@ -96,6 +96,7 @@ public class WorkDefenseClientGameTest implements FabricClientGameTest {
             context.waitFor(client -> client.player.containerMenu instanceof MaidMenu menu
                     && menu.getSelectedCommand() == TestAddonCommands.LUMBER
                     && menu.getActiveActivity() == TestAddonActivities.GUARD_FIGHT
+                    && menu.getStatusMessage().equals(Component.translatable("status.testaddon.defending_work"))
                     && menu.getSlot(39).getItem().is(Items.NETHERITE_SWORD)
                     && menu.getSlot(0).getItem().is(Items.WOODEN_AXE));
             waitForSelectedWorkButton(context);
@@ -121,6 +122,7 @@ public class WorkDefenseClientGameTest implements FabricClientGameTest {
             context.waitFor(client -> client.player.containerMenu instanceof MaidMenu menu
                     && menu.getSelectedCommand() == TestAddonCommands.LUMBER
                     && menu.getActiveActivity() == TestAddonActivities.LUMBER
+                    && menu.getStatusMessage().equals(Component.empty())
                     && menu.getSlot(39).getItem().is(Items.WOODEN_AXE)
                     && menu.getSlot(0).getItem().is(Items.NETHERITE_SWORD));
             waitForSelectedWorkButton(context);

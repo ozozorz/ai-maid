@@ -1,5 +1,7 @@
 package io.github.ozozorz.aimaid.menu;
 
+import io.github.ozozorz.aimaid.entity.MaidServerAccess;
+
 import io.github.ozozorz.aimaid.entity.AiMaidEntity;
 import net.fabricmc.fabric.api.menu.v1.ExtendedMenuProvider;
 import net.minecraft.network.chat.Component;
@@ -29,6 +31,7 @@ public class MaidMenuOpener {
     }
 
     public static boolean open(ServerPlayer player, AiMaidEntity maid) {
+        MaidServerAccess.requireServerThread(maid);
         if (!canOpen(player, maid)) {
             return false;
         }
@@ -46,7 +49,7 @@ public class MaidMenuOpener {
                 if (!(openingPlayer instanceof ServerPlayer serverPlayer)) {
                     return null;
                 }
-                if (!canOpen(player, maid)) {
+                if (!canOpen(serverPlayer, maid)) {
                     return null;
                 }
                 return new MaidMenu(containerId, inventory, maid);
