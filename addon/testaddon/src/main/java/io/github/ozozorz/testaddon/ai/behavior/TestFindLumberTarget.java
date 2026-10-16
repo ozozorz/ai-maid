@@ -46,7 +46,7 @@ public final class TestFindLumberTarget {
                 job = new LumberJob(tree.get(), now);
                 jobMemory.set(job);
             }
-            if (now - job.startedAt > 6000) { LumberJob.finish(maid, "timeout"); return true; }
+            if (job.activeTicks(now) > 6000) { LumberJob.finish(maid, "timeout"); return true; }
             if (job.remaining().isEmpty()) { LumberJob.finish(maid, "complete"); return true; }
             // 刚生成/下落时 GroundPathNavigation 尚不能寻路，null 不代表目标不可达。
             if (!maid.onGround()) return false;

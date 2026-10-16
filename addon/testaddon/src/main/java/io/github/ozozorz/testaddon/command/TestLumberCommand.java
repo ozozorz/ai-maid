@@ -16,6 +16,7 @@ import io.github.ozozorz.testaddon.ai.behavior.TestBreakLumberTarget;
 import io.github.ozozorz.testaddon.ai.behavior.TestFindLumberTarget;
 import io.github.ozozorz.testaddon.ai.behavior.TestWalkToLumberTarget;
 import io.github.ozozorz.testaddon.lumber.LumberJob;
+import io.github.ozozorz.testaddon.combat.WorkDefense;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -32,16 +33,17 @@ public class TestLumberCommand implements MaidCommand {
         return List.of(ActivityData.create(TestAddonActivities.LUMBER,
                 ActivityData.createPriorityPairs(10, ImmutableList.of(TestFindLumberTarget.create(),
                         TestWalkToLumberTarget.create(0.7F), new TestBreakLumberTarget())),
-                Set.of(Pair.of(TestAddonMemoryModuleTypes.LUMBER_DONE, MemoryStatus.VALUE_ABSENT)),
+                Set.of(Pair.of(TestAddonMemoryModuleTypes.LUMBER_DONE, MemoryStatus.VALUE_ABSENT),
+                        Pair.of(MemoryModuleType.ATTACK_TARGET, MemoryStatus.VALUE_ABSENT)),
                 Set.of(TestAddonMemoryModuleTypes.LUMBER_TARGET, TestAddonMemoryModuleTypes.LUMBER_WORK_POS,
-                        TestAddonMemoryModuleTypes.LUMBER_JOB, TestAddonMemoryModuleTypes.LUMBER_REQUEST,
                         MemoryModuleType.WALK_TARGET, MemoryModuleType.LOOK_TARGET,
                         MemoryModuleType.CANT_REACH_WALK_TARGET_SINCE)));
     }
 
     @Override
     public List<Activity> getActivityCandidates(AiMaidEntity maid) {
-        return List.of(TestAddonActivities.LUMBER, ModActivities.PICK_UP_ITEM, Activity.IDLE);
+        return List.of(TestAddonActivities.GUARD_FIGHT, TestAddonActivities.LUMBER,
+                ModActivities.PICK_UP_ITEM, Activity.IDLE);
     }
 
     @Override public int getMenuOrder() { return 500; }
@@ -53,6 +55,16 @@ public class TestLumberCommand implements MaidCommand {
         brain.eraseMemory(TestAddonMemoryModuleTypes.LUMBER_DONE);
         brain.eraseMemory(TestAddonMemoryModuleTypes.LUMBER_JOB);
         brain.setMemory(TestAddonMemoryModuleTypes.LUMBER_REQUEST, false);
+    }
+
+    @Override
+    public void onDeselected(AiMaidEntity maid) {
+        WorkDefense.clearCombat(maid);
+        LumberJob.clearTarget(maid);
+        var brain = maid.getBrain();
+        brain.eraseMemory(TestAddonMemoryModuleTypes.LUMBER_JOB);
+        brain.eraseMemory(TestAddonMemoryModuleTypes.LUMBER_REQUEST);
+        brain.eraseMemory(TestAddonMemoryModuleTypes.LUMBER_DONE);
     }
 
     @Override
@@ -68,5 +80,7 @@ public class TestLumberCommand implements MaidCommand {
         }));
     }
 
-    @Override public boolean allowsItemPickup(AiMaidEntity maid, ServerLevel level, ItemStack stack) { return true; }
+    @Override public boolean allowsItemPickup(AiMaidEntity maid, ServerLevel level, ItemStack stack) {
+        return !maid.getBrain().hasMemoryValue(MemoryModuleType.ATTACK_TARGET);
+    }
 }

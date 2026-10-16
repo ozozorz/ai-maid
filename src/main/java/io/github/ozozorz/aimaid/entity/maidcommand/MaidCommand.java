@@ -107,6 +107,11 @@ public interface MaidCommand {
 
     }
 
+    /** 玩家选择命令时释放旧任务；重选同一个命令也调用，临时 Activity 切换不调用。 */
+    default void onDeselected(AiMaidEntity maid) {
+
+    }
+
     default boolean allowsItemPickup(AiMaidEntity maid, ServerLevel level, ItemStack itemStack) {
         return false;
     }

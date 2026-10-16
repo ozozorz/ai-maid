@@ -2,6 +2,8 @@
 
 本轮从 `5e35289` 的近战护卫版本继续开发。战斗策略仍在 TestAddon，Core 只新增实体攻击、真实弹药与投射物发射支持。需要同时加载 Core 和 TestAddon；根目录 `runClient` 只加载 Core，日常体验战斗可在 `addon/testaddon` 中运行 `gradlew runClient`，或使用 `dev/devrun`。
 
+后续已接入[工作中自卫与战后恢复](WORK_DEFENSE.md)：伐木、巡逻复用同一个战斗 Activity，仅因自身遇袭中断，命令和任务保持不变。下文的验收数量是最初战斗里程碑的记录；最新增量验收见该文档。
+
 GUI 可以选择“护卫”和“战斗”；命令也支持原有 nearest、selector、uuid、name 入口：
 
 ```text
@@ -65,7 +67,7 @@ flowchart TD
 
 每只女仆创建 Brain 时，SensorType 创建自己的 `TestGuardSensor`，`createActivities(maid)` 创建自己的 `TestCombatBehavior`。Sensor 保存受伤时间戳、追击进展和失败目标冷却，Behavior 保存本次蓄力武器和目标；这些运行状态没有放在 Command singleton 中，也不持久化为永久仇恨。Sensor 在切换模式和主人时更新事件基线，所以切回护卫不会重放以前的一次受伤。
 
-Sensor 决定“打谁”，写入 `ATTACK_TARGET`。`AiMaidAi.updateActivity` 依照命令候选选择 Activity；它在 Brain.tick 之后执行，因此不要假设写入 Memory 与新行为启动必然发生在同一 tick。Behavior 再决定靠近、近战、拉弓、装弩或射击。移动只写 `WALK_TARGET`，实际导航仍由 Core 的 `MoveToTargetSink` 执行。
+Sensor 决定“打谁”，写入 `ATTACK_TARGET`。现在进入/退出战斗时，Sensor 会先停止旧行为并按当前命令切换 Activity，让工作中断发生在行为执行前；`AiMaidAi.updateActivity` 仍在 Brain.tick 之后做常规候选更新。Behavior 再决定靠近、近战、拉弓、装弩或射击。移动只写 `WALK_TARGET`，实际导航仍由 Core 的 `MoveToTargetSink` 执行。
 
 近战调用 `AiMaidEntity.doHurtTarget`，父类 Mob 负责攻击属性、附魔、击退和伤害。26.2 的 Mob 缺少玩家攻击链末尾的 `postHurtEnemy` 耐久步骤，所以实体补上它。攻击冷却放在本只 Brain 的 `ATTACK_COOLING_DOWN`，由攻击速度决定且至少间隔 10 tick；重新点命令不能绕过冷却。
 

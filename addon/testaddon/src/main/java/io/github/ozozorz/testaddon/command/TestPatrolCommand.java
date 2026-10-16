@@ -20,6 +20,7 @@ import io.github.ozozorz.testaddon.ai.TestAddonMemoryModuleTypes;
 import io.github.ozozorz.testaddon.ai.behavior.TestChoosePatrolTarget;
 import io.github.ozozorz.testaddon.ai.behavior.TestWalkToPatrolTarget;
 import io.github.ozozorz.testaddon.data.TestAddonMaidData;
+import io.github.ozozorz.testaddon.combat.WorkDefense;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -44,7 +45,7 @@ public class TestPatrolCommand implements MaidCommand {
 
     @Override
     public List<Activity> getActivityCandidates(AiMaidEntity maid) {
-        return List.of(TestAddonActivities.PATROL, Activity.IDLE);
+        return List.of(TestAddonActivities.GUARD_FIGHT, TestAddonActivities.PATROL, Activity.IDLE);
     }
 
     @Override
@@ -89,6 +90,13 @@ public class TestPatrolCommand implements MaidCommand {
         TestAddonMaidData.setPatrolCenter(maid);
     }
 
+    @Override
+    public void onDeselected(AiMaidEntity maid) {
+        WorkDefense.clearCombat(maid);
+        maid.getBrain().eraseMemory(TestAddonMemoryModuleTypes.PATROL_TARGET);
+        maid.getBrain().eraseMemory(TestAddonMemoryModuleTypes.PATROL_PAUSE);
+    }
+
     private ActivityData<AiMaidEntity> createPatrolActivity() {
         return ActivityData.create(
                 TestAddonActivities.PATROL,
@@ -102,11 +110,9 @@ public class TestPatrolCommand implements MaidCommand {
                         )
                 ),
 
-                Set.of(),
+                Set.of(Pair.of(MemoryModuleType.ATTACK_TARGET, MemoryStatus.VALUE_ABSENT)),
 
                 Set.of(
-                        TestAddonMemoryModuleTypes.PATROL_TARGET,
-                        TestAddonMemoryModuleTypes.PATROL_PAUSE,
                         MemoryModuleType.WALK_TARGET,
                         MemoryModuleType.LOOK_TARGET
                 )

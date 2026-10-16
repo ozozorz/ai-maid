@@ -35,7 +35,7 @@ public final class TestWalkToLumberTarget {
             var feet = i.get(work);
             var job = i.get(jobMemory);
             var expected = job.remaining().get(pos);
-            if (now - job.startedAt > 6000) { LumberJob.finish(maid, "timeout"); return true; }
+            if (job.activeTicks(now) > 6000) { LumberJob.finish(maid, "timeout"); return true; }
             boolean pathFailed = maid.getBrain().getMemory(MemoryModuleType.CANT_REACH_WALK_TARGET_SINCE)
                     .map(since -> now - since > 200).orElse(false);
             if (expected == null || !level.hasChunkAt(pos) || level.getBlockState(pos) != expected

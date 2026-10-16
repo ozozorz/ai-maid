@@ -5,6 +5,8 @@ import io.github.ozozorz.aimaid.entity.AiMaidEntity;
 import io.github.ozozorz.aimaid.entity.ai.behavior.MaidRangedAttack;
 import io.github.ozozorz.testaddon.combat.CombatEquipment;
 import io.github.ozozorz.testaddon.combat.CombatRules;
+import io.github.ozozorz.testaddon.combat.WorkDefense;
+import io.github.ozozorz.testaddon.ai.TestAddonActivities;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.LivingEntity;
@@ -38,8 +40,14 @@ public class TestCombatBehavior extends Behavior<AiMaidEntity> {
     protected boolean timedOut(long time) { return false; }
 
     @Override
+    protected boolean checkExtraStartConditions(ServerLevel level, AiMaidEntity maid) {
+        return canStillUse(level, maid, level.getGameTime());
+    }
+
+    @Override
     protected boolean canStillUse(ServerLevel level, AiMaidEntity maid, long time) {
-        return CombatRules.isEnabled(maid) && maid.getBrain().getMemory(MemoryModuleType.ATTACK_TARGET)
+        return CombatRules.isEnabled(maid) && maid.getBrain().isActive(TestAddonActivities.GUARD_FIGHT)
+                && maid.getBrain().getMemory(MemoryModuleType.ATTACK_TARGET)
                 .filter(target -> CombatRules.canTarget(maid, target)).isPresent();
     }
 
@@ -95,7 +103,8 @@ public class TestCombatBehavior extends Behavior<AiMaidEntity> {
         if (distanceSqr < 9.0 && time % 10 == 0) {
             Vec3 retreat = DefaultRandomPos.getPosAway(maid, 4, 2, target.position());
             LivingEntity owner = CombatRules.owner(maid);
-            if (retreat != null && (owner == null || owner.position().distanceToSqr(retreat) < 400.0)) {
+            if (retreat != null && (WorkDefense.supports(maid.getMaidCommand())
+                    || owner == null || owner.position().distanceToSqr(retreat) < 400.0)) {
                 maid.getBrain().setMemory(MemoryModuleType.WALK_TARGET, new WalkTarget(retreat, 1.0F, 1));
             }
         } else if (distanceSqr >= 9.0) {

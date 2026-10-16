@@ -17,6 +17,7 @@ import net.minecraft.world.phys.Vec3;
 public final class CombatRules {
     public static final double SEARCH_RANGE = 16.0;
     public static final double LEASH_RANGE = 24.0;
+    public static final double WORK_DEFENSE_RANGE = 12.0;
     public static final double RANGED_RANGE = 12.0;
     public static final int LOST_SIGHT_TICKS = 100;
     public static final int NO_PROGRESS_TICKS = 160;
@@ -29,7 +30,8 @@ public final class CombatRules {
     private CombatRules() {}
 
     public static boolean isEnabled(AiMaidEntity maid) {
-        return maid.isTame() && maid.getMaidCommand() instanceof TestGuardCommand;
+        return maid.isAlive() && maid.isTame() && (maid.getMaidCommand() instanceof TestGuardCommand
+                || WorkDefense.supports(maid.getMaidCommand()));
     }
 
     public static LivingEntity owner(AiMaidEntity maid) {
@@ -56,6 +58,13 @@ public final class CombatRules {
     }
 
     public static boolean inBounds(AiMaidEntity maid, LivingEntity target, Vec3 fallbackAnchor) {
+        if (WorkDefense.supports(maid.getMaidCommand())) {
+            // 工作可以远离主人；以遇袭处为固定中心，换敌也不把追击圈向外推。
+            double limit = WORK_DEFENSE_RANGE * WORK_DEFENSE_RANGE;
+            return maid.position().distanceToSqr(fallbackAnchor) <= limit
+                    && target.position().distanceToSqr(fallbackAnchor) <= limit
+                    && maid.distanceToSqr(target) <= limit;
+        }
         LivingEntity owner = owner(maid);
         Vec3 anchor = owner == null ? fallbackAnchor : owner.position();
         double limit = LEASH_RANGE * LEASH_RANGE;

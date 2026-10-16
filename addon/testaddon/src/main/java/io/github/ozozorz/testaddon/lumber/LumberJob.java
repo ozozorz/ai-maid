@@ -19,6 +19,8 @@ public final class LumberJob {
     public long targetSince;
     public int broken;
     public int skipped;
+    private long pausedAt = -1;
+    private long pausedTicks;
 
     public LumberJob(Map<BlockPos, BlockState> blocks, long now) {
         remaining = new LinkedHashMap<>(blocks);
@@ -26,6 +28,21 @@ public final class LumberJob {
     }
 
     public Map<BlockPos, BlockState> remaining() { return remaining; }
+
+    public void pause(long now) {
+        if (pausedAt < 0) pausedAt = now;
+    }
+
+    public void resume(long now) {
+        if (pausedAt >= 0) {
+            pausedTicks += now - pausedAt;
+            pausedAt = -1;
+        }
+    }
+
+    public long activeTicks(long now) {
+        return (pausedAt < 0 ? now : pausedAt) - startedAt - pausedTicks;
+    }
     public void complete(BlockPos pos, boolean success) {
         if (remaining.remove(pos) != null) {
             if (success) broken++; else skipped++;
@@ -34,6 +51,7 @@ public final class LumberJob {
 
     public static boolean isWorking(AiMaidEntity maid) {
         return maid.isAlive() && maid.isTame() && maid.getMaidCommand() instanceof TestLumberCommand
+                && !maid.getBrain().hasMemoryValue(MemoryModuleType.ATTACK_TARGET)
                 && !maid.getBrain().hasMemoryValue(TestAddonMemoryModuleTypes.LUMBER_DONE);
     }
 
@@ -52,6 +70,8 @@ public final class LumberJob {
         int broken = job == null ? 0 : job.broken;
         int skipped = job == null ? 0 : job.skipped + job.remaining.size();
         clearTarget(maid);
+        maid.getBrain().eraseMemory(TestAddonMemoryModuleTypes.LUMBER_JOB);
+        maid.getBrain().eraseMemory(TestAddonMemoryModuleTypes.LUMBER_REQUEST);
         maid.getBrain().setMemory(TestAddonMemoryModuleTypes.LUMBER_DONE, Unit.INSTANCE);
         if (maid.getOwner() instanceof ServerPlayer owner) {
             owner.sendSystemMessage(Component.translatable("message.testaddon.lumber.finished", maid.getDisplayName(),

@@ -67,9 +67,10 @@ public final class CombatEquipment {
                 (first, second) -> Double.compare(score(first), score(second))).orElse(-1);
     }
 
-    private static boolean swapOffhand(AiMaidEntity maid, Predicate<ItemStack> predicate) {
+    static boolean swapOffhand(AiMaidEntity maid, Predicate<ItemStack> predicate) {
         ItemStack offhand = maid.getOffhandItem();
         if (!predicate.test(offhand)
+                || EnchantmentHelper.has(maid.getMainHandItem(), EnchantmentEffectComponents.PREVENT_ARMOR_CHANGE)
                 || EnchantmentHelper.has(offhand, EnchantmentEffectComponents.PREVENT_ARMOR_CHANGE)) return false;
         ItemStack main = maid.getMainHandItem();
         maid.setItemSlot(EquipmentSlot.MAINHAND, offhand);

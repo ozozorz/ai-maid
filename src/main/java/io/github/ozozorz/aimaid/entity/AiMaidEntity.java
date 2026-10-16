@@ -275,6 +275,7 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
         if (this.level() instanceof ServerLevel level) {
             this.getBrain().stopAll(level, this);
             clearAnimationAction();
+            this.getMaidCommand().onDeselected(this);
         }
         // ① 先真正切换状态
         this.entityData.set(MAID_COMMAND_ENTITY_DATA_ACCESSOR, id.toString());

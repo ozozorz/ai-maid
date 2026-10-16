@@ -9,6 +9,7 @@ import io.github.ozozorz.aimaid.entity.maidcommand.MaidCommand;
 import io.github.ozozorz.aimaid.entity.schedule.ModActivities;
 import io.github.ozozorz.testaddon.ai.TestAddonActivities;
 import io.github.ozozorz.testaddon.ai.behavior.TestCombatBehavior;
+import io.github.ozozorz.testaddon.combat.WorkDefense;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.ai.ActivityData;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
@@ -52,10 +53,11 @@ public class TestGuardCommand implements MaidCommand {
     @Override
     public void onSelected(AiMaidEntity maid) {
         // 重选命令也能主动结束当前目标，但不能跳过攻击冷却。
-        maid.getBrain().eraseMemory(MemoryModuleType.ATTACK_TARGET);
-        maid.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
-        maid.getBrain().eraseMemory(MemoryModuleType.LOOK_TARGET);
-        maid.stopUsingItem();
-        maid.setAggressive(false);
+        WorkDefense.clearCombat(maid);
+    }
+
+    @Override
+    public void onDeselected(AiMaidEntity maid) {
+        WorkDefense.clearCombat(maid);
     }
 }

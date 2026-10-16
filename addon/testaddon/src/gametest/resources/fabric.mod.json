@@ -5,7 +5,7 @@
   "name": "Ai Maid Acceptance Tests",
   "environment": "*",
   "entrypoints": {
-    "fabric-gametest": ["io.github.ozozorz.testaddon.CombatGameTests", "io.github.ozozorz.testaddon.DeathLootGameTests", "io.github.ozozorz.testaddon.LumberGameTests", "io.github.ozozorz.testaddon.AnimationGameTests"],
-    "fabric-client-gametest": ["io.github.ozozorz.testaddon.CombatClientGameTest", "io.github.ozozorz.testaddon.WorkClientGameTest", "io.github.ozozorz.testaddon.AnimationClientGameTest"]
+    "fabric-gametest": ["io.github.ozozorz.testaddon.CombatGameTests", "io.github.ozozorz.testaddon.DeathLootGameTests", "io.github.ozozorz.testaddon.LumberGameTests", "io.github.ozozorz.testaddon.AnimationGameTests", "io.github.ozozorz.testaddon.WorkDefenseGameTests"],
+    "fabric-client-gametest": ["io.github.ozozorz.testaddon.CombatClientGameTest", "io.github.ozozorz.testaddon.WorkClientGameTest", "io.github.ozozorz.testaddon.AnimationClientGameTest", "io.github.ozozorz.testaddon.WorkDefenseClientGameTest"]
   }
 }
