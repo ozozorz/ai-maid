@@ -2,6 +2,7 @@ package io.github.ozozorz.aimaid.entity.ai.behavior;
 
 import java.util.List;
 import io.github.ozozorz.aimaid.entity.AiMaidEntity;
+import io.github.ozozorz.aimaid.entity.animation.MaidAnimationAction;
 import io.github.ozozorz.aimaid.mixin.ProjectileWeaponItemInvoker;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
@@ -38,6 +39,7 @@ public final class MaidRangedAttack {
         level.playSound(null, maid.getX(), maid.getY(), maid.getZ(), SoundEvents.ARROW_SHOOT,
                 maid.getSoundSource(), 1.0F, 1.0F);
         maid.getInventory().setChanged();
+        maid.playAnimationAction(MaidAnimationAction.BOW_RELEASE, 8);
         return true;
     }
 
@@ -48,6 +50,7 @@ public final class MaidRangedAttack {
         }
         crossbow.performShooting(level, maid, InteractionHand.MAIN_HAND, weapon, 3.15F, 0.5F, target);
         maid.getInventory().setChanged();
+        maid.playAnimationAction(MaidAnimationAction.CROSSBOW_FIRE, 6);
         return true;
     }
 }

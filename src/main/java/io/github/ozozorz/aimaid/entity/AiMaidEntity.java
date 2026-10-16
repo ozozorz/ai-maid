@@ -3,6 +3,7 @@ package io.github.ozozorz.aimaid.entity;
 import org.jspecify.annotations.Nullable;
 
 import io.github.ozozorz.aimaid.entity.ai.AiMaidAi;
+import io.github.ozozorz.aimaid.entity.animation.MaidAnimationAction;
 import io.github.ozozorz.aimaid.entity.ai.sensing.MaidBrainSensors;
 import io.github.ozozorz.aimaid.entity.inventory.MaidInventory;
 import io.github.ozozorz.aimaid.entity.inventory.MaidItemTransfer;
@@ -53,6 +54,10 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
     // SynchedEntityData.defineId(...) 告诉 Minecraft：我要给某一种实体类型注册一个新的同步数据槽。
     // 给 AiMaidEntity 定义一个 String 类型的网络同步数据槽。
     private static final EntityDataAccessor<String> MAID_COMMAND_ENTITY_DATA_ACCESSOR = SynchedEntityData.defineId(AiMaidEntity.class, EntityDataSerializers.STRING);
+    private static final EntityDataAccessor<String> ANIMATION_ID = SynchedEntityData.defineId(AiMaidEntity.class, EntityDataSerializers.STRING);
+    private static final EntityDataAccessor<Long> ANIMATION_START = SynchedEntityData.defineId(AiMaidEntity.class, EntityDataSerializers.LONG);
+    private static final EntityDataAccessor<Integer> ANIMATION_DURATION = SynchedEntityData.defineId(AiMaidEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> ANIMATION_SEQUENCE = SynchedEntityData.defineId(AiMaidEntity.class, EntityDataSerializers.INT);
 
     public AiMaidEntity(Level level) {
         this(ModEntityTypes.AI_MAID, level);
@@ -192,6 +197,56 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
         // 在当前这只女仆的同步数据表里，创建 MAID_COMMAND_ENTITY_DATA_ACCESSOR 这一项，并把默认值设置为
         // "你的模组id:follow"。
         builder.define(MAID_COMMAND_ENTITY_DATA_ACCESSOR, MaidCommands.FOLLOW_ID.toString());
+        builder.define(ANIMATION_ID, MaidAnimationAction.NONE.toString());
+        builder.define(ANIMATION_START, 0L);
+        builder.define(ANIMATION_DURATION, 0);
+        builder.define(ANIMATION_SEQUENCE, 0);
+    }
+
+    public MaidAnimationAction getAnimationAction() {
+        Identifier id = Identifier.tryParse(this.entityData.get(ANIMATION_ID));
+        return new MaidAnimationAction(id == null ? MaidAnimationAction.NONE : id,
+                this.entityData.get(ANIMATION_START), this.entityData.get(ANIMATION_DURATION),
+                this.entityData.get(ANIMATION_SEQUENCE));
+    }
+
+    /** 返回本次播放的 token；同 tick 重播也能被客户端区分。 */
+    public int playAnimationAction(Identifier id, int durationTicks) {
+        if (this.level().isClientSide()) throw new IllegalStateException("Animation actions start on the server");
+        if (id == null || id.equals(MaidAnimationAction.NONE) || durationTicks < 1 || durationTicks > MaidAnimationAction.MAX_DURATION) {
+            throw new IllegalArgumentException("Invalid maid animation action or duration");
+        }
+        int token = this.entityData.get(ANIMATION_SEQUENCE) + 1;
+        if (!this.isAlive()) return token;
+        this.entityData.set(ANIMATION_ID, id.toString());
+        this.entityData.set(ANIMATION_START, this.level().getGameTime());
+        this.entityData.set(ANIMATION_DURATION, durationTicks);
+        this.entityData.set(ANIMATION_SEQUENCE, token);
+        return token;
+    }
+
+    public void stopAnimationAction(Identifier id, int token) {
+        if (!this.level().isClientSide() && this.getAnimationAction().id().equals(id)
+                && this.entityData.get(ANIMATION_SEQUENCE) == token) clearAnimationAction();
+    }
+
+    private void clearAnimationAction() {
+        this.entityData.set(ANIMATION_ID, MaidAnimationAction.NONE.toString());
+        this.entityData.set(ANIMATION_DURATION, 0);
+    }
+
+    @Override
+    public void tick() {
+        super.tick();
+        if (!this.level().isClientSide() && !getAnimationAction().isActive(this.level().getGameTime())) clearAnimationAction();
+    }
+
+    @Override
+    public void aiStep() {
+        // 26.2 的 Animal/TamableAnimal 不调用此方法；人形女仆需要像 Monster/Player
+        // 一样在两端推进挥手计时，否则 swing 包只会设置 swinging 而没有 attackAnim。
+        this.updateSwingTime();
+        super.aiStep();
     }
 
     // 这个方法回答：这只 Maid 当前记录的命令 ID 是什么？
@@ -219,6 +274,7 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
         // 先停止旧行为，让持续动作能清理裂纹、蓄力和导航；重选也会重新开始。
         if (this.level() instanceof ServerLevel level) {
             this.getBrain().stopAll(level, this);
+            clearAnimationAction();
         }
         // ① 先真正切换状态
         this.entityData.set(MAID_COMMAND_ENTITY_DATA_ACCESSOR, id.toString());
@@ -249,6 +305,7 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
     @Override
     protected void readAdditionalSaveData(ValueInput input) {
         super.readAdditionalSaveData(input);
+        clearAnimationAction();
         // AiMaid 固有能力：
         // 始终启用 Vanilla Mob pickup infrastructure。
         // 是否实际接受某个物品由 wantsToPickUp / MaidCommand policy 决定。
@@ -284,6 +341,7 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
     @Override
     public void die(DamageSource source) {
         if (this.level() instanceof ServerLevel level) this.getBrain().stopAll(level, this);
+        if (!this.level().isClientSide()) clearAnimationAction();
         super.die(source);
     }
 
@@ -291,6 +349,7 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
     public void onRemoval(Entity.RemovalReason reason) {
         // 卸载/跨维度也要停止持续动作，但它们不属于死亡，不掉落携带物。
         if (this.level() instanceof ServerLevel level) this.getBrain().stopAll(level, this);
+        if (!this.level().isClientSide()) clearAnimationAction();
         super.onRemoval(reason);
     }
 

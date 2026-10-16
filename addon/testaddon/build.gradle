@@ -44,9 +44,13 @@ dependencies {
 	def aiMaid = "io.github.ozozorz.aimaid:ai-maid:${project.aimaid_version}"
 	implementation aiMaid
 	
-	// splitEnvironmentSourceSets下
-	// client source set 也明确声明依赖
-	clientImplementation aiMaid
+	// 客户端扩展 API 在同一个模组 jar 中。组合构建默认的 classes 变体只有 main，
+	// 明确消费完整 jar，保持本地源码替换与 Maven 消费的内容一致。
+	clientImplementation(aiMaid) {
+		attributes {
+			attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, objects.named(LibraryElements, LibraryElements.JAR))
+		}
+	}
 }
 
 processResources {

@@ -5,6 +5,7 @@ import io.github.ozozorz.aimaid.entity.AiMaidEntity;
 import io.github.ozozorz.aimaid.entity.ai.behavior.MaidBlockBreaking;
 import io.github.ozozorz.testaddon.ai.TestAddonMemoryModuleTypes;
 import io.github.ozozorz.testaddon.lumber.LumberJob;
+import io.github.ozozorz.testaddon.animation.TestAddonAnimationIds;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.ItemTags;
@@ -23,6 +24,7 @@ public class TestBreakLumberTarget extends Behavior<AiMaidEntity> {
     private float progress;
     private int lastStage = -1;
     private long startedAt;
+    private int animationToken;
 
     public TestBreakLumberTarget() {
         super(Map.of(TestAddonMemoryModuleTypes.LUMBER_TARGET, MemoryStatus.VALUE_PRESENT,
@@ -54,6 +56,7 @@ public class TestBreakLumberTarget extends Behavior<AiMaidEntity> {
         toolSnapshot = tool.copy();
         progress = 0;
         startedAt = now;
+        animationToken = maid.playAnimationAction(TestAddonAnimationIds.LUMBER, 1200);
     }
 
     @Override
@@ -95,6 +98,7 @@ public class TestBreakLumberTarget extends Behavior<AiMaidEntity> {
 
     @Override
     protected void stop(ServerLevel level, AiMaidEntity maid, long now) {
+        maid.stopAnimationAction(TestAddonAnimationIds.LUMBER, animationToken);
         if (breaking != null) level.destroyBlockProgress(maid.getId(), breaking, -1);
         breaking = null;
         tool = toolSnapshot = ItemStack.EMPTY;

@@ -3,6 +3,8 @@ package io.github.ozozorz.aimaid.client.entity.renderer;
 import io.github.ozozorz.aimaid.AIMaid;
 import io.github.ozozorz.aimaid.client.entity.model.AiMaidEntityModel;
 import io.github.ozozorz.aimaid.client.entity.state.AiMaidEntityRenderState;
+import io.github.ozozorz.aimaid.client.entity.animation.MaidAnimationController;
+import io.github.ozozorz.aimaid.client.entity.animation.MaidAnimations;
 import io.github.ozozorz.aimaid.entity.AiMaidEntity;
 import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraft.client.renderer.entity.ArmorModelSet;
@@ -43,6 +45,7 @@ public class AiMaidEntityRenderer
 
     public AiMaidEntityRenderer(EntityRendererProvider.Context context) {
         super(context, new AiMaidEntityModel(context.bakeLayer(ModelLayers.PLAYER_SLIM)), 0.5f);
+        MaidAnimations.freeze();
         // 渲染护甲
         this.addLayer(new HumanoidArmorLayer<>(this,
                 ArmorModelSet.bake(ModelLayers.PLAYER_SLIM_ARMOR, context.getModelSet(), AiMaidEntityModel::new),
@@ -55,6 +58,12 @@ public class AiMaidEntityRenderer
     }
 
     @Override
+    public void extractRenderState(AiMaidEntity maid, AiMaidEntityRenderState state, float partialTick) {
+        super.extractRenderState(maid, state, partialTick);
+        state.animation = MaidAnimationController.extract(maid, state, partialTick);
+    }
+
+    @Override
     public Identifier getTextureLocation(AiMaidEntityRenderState state) {
         return TEXTURE;
     }
@@ -62,14 +71,12 @@ public class AiMaidEntityRenderer
     @Override
     protected HumanoidModel.ArmPose getArmPose(AiMaidEntity maid, HumanoidArm arm) {
         ItemStack held = maid.getItemHeldByArm(arm);
-        if (arm == maid.getMainArm()) {
-            if (maid.isUsingItem() && maid.getUseItem() == held) {
-                if (held.getItem() instanceof BowItem) return HumanoidModel.ArmPose.BOW_AND_ARROW;
-                if (held.getItem() instanceof CrossbowItem) return HumanoidModel.ArmPose.CROSSBOW_CHARGE;
-            }
-            if (held.getItem() instanceof CrossbowItem && CrossbowItem.isCharged(held)) {
-                return HumanoidModel.ArmPose.CROSSBOW_HOLD;
-            }
+        if (maid.isUsingItem() && maid.getUseItem() == held) {
+            if (held.getItem() instanceof BowItem) return HumanoidModel.ArmPose.BOW_AND_ARROW;
+            if (held.getItem() instanceof CrossbowItem) return HumanoidModel.ArmPose.CROSSBOW_CHARGE;
+        }
+        if (held.getItem() instanceof CrossbowItem && CrossbowItem.isCharged(held)) {
+            return HumanoidModel.ArmPose.CROSSBOW_HOLD;
         }
         HumanoidModel.ArmPose vanilla = super.getArmPose(maid, arm);
         return vanilla != HumanoidModel.ArmPose.EMPTY || held.isEmpty() ? vanilla : HumanoidModel.ArmPose.ITEM;
