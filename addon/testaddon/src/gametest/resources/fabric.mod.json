@@ -2,10 +2,10 @@
   "schemaVersion": 1,
   "id": "testaddon-combat-tests",
   "version": "1.0.0",
-  "name": "Ai Maid Combat Acceptance Tests",
+  "name": "Ai Maid Acceptance Tests",
   "environment": "*",
   "entrypoints": {
-    "fabric-gametest": ["io.github.ozozorz.testaddon.CombatGameTests"],
-    "fabric-client-gametest": ["io.github.ozozorz.testaddon.CombatClientGameTest"]
+    "fabric-gametest": ["io.github.ozozorz.testaddon.CombatGameTests", "io.github.ozozorz.testaddon.DeathLootGameTests", "io.github.ozozorz.testaddon.LumberGameTests"],
+    "fabric-client-gametest": ["io.github.ozozorz.testaddon.CombatClientGameTest", "io.github.ozozorz.testaddon.WorkClientGameTest"]
   }
 }

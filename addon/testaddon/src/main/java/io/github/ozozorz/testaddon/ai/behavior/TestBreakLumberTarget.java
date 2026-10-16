@@ -1,140 +1,104 @@
 package io.github.ozozorz.testaddon.ai.behavior;
 
-import com.mojang.datafixers.util.Unit;
-
+import java.util.Map;
 import io.github.ozozorz.aimaid.entity.AiMaidEntity;
+import io.github.ozozorz.aimaid.entity.ai.behavior.MaidBlockBreaking;
 import io.github.ozozorz.testaddon.ai.TestAddonMemoryModuleTypes;
+import io.github.ozozorz.testaddon.lumber.LumberJob;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.ItemTags;
-import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.ai.behavior.BehaviorControl;
-import net.minecraft.world.entity.ai.behavior.declarative.BehaviorBuilder;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.ai.behavior.Behavior;
+import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.gamerules.GameRules;
 
-public class TestBreakLumberTarget {
+/** 一个运行中的 Behavior 保存本只女仆的一次破坏进度；停止必清除裂纹。 */
+public class TestBreakLumberTarget extends Behavior<AiMaidEntity> {
+    private BlockPos breaking;
+    private BlockState state;
+    private ItemStack tool = ItemStack.EMPTY;
+    private ItemStack toolSnapshot = ItemStack.EMPTY;
+    private float progress;
+    private int lastStage = -1;
+    private long startedAt;
 
-    private TestBreakLumberTarget() {
+    public TestBreakLumberTarget() {
+        super(Map.of(TestAddonMemoryModuleTypes.LUMBER_TARGET, MemoryStatus.VALUE_PRESENT,
+                TestAddonMemoryModuleTypes.LUMBER_WORK_POS, MemoryStatus.VALUE_PRESENT,
+                TestAddonMemoryModuleTypes.LUMBER_JOB, MemoryStatus.VALUE_PRESENT,
+                TestAddonMemoryModuleTypes.LUMBER_DONE, MemoryStatus.VALUE_ABSENT));
     }
 
-    public static BehaviorControl<AiMaidEntity> create() {
-        return BehaviorBuilder.create(i -> {
-            var memories = i.group(
-                // 真正准备破坏的原木
-                i.present(TestAddonMemoryModuleTypes.LUMBER_TARGET),
-                // 计划好的工作站位
-                i.present(TestAddonMemoryModuleTypes.LUMBER_WORK_POS),
-                i.absent(TestAddonMemoryModuleTypes.LUMBER_DONE)
-            );
-            return memories.apply(i, (lumberTarget, lumberWorkPos, lumberDone) -> {
-                return (level, maid, timestamp) -> {
-                    
-                    BlockPos targetPos = i.get(lumberTarget);
-                    BlockPos workPos = i.get(lumberWorkPos);
+    @Override protected boolean timedOut(long now) { return false; }
 
-                    BlockState state = level.getBlockState(targetPos);
-
-                    // 作时再次验证世界状态
-                    if (!state.is(BlockTags.LOGS) || !level.getGameRules().get(GameRules.MOB_GRIEFING)) {
-                        lumberDone.set(Unit.INSTANCE);
-                        return true;
-                    }
-
-                    // 两个 Memory 必须表示：水平相邻的原木与站位。
-                    // 这也是对 Memory 数据一致性的保护。
-                    if (targetPos.distManhattan(workPos) != 1) {
-                        lumberDone.set(Unit.INSTANCE);
-                        return true;
-                    }
-
-                    // 不再使用模糊的 2 格球形距离。
-                    // Maid 必须真正站到规划出来的 LUMBER_WORK_POS。
-                    if (!workPos.equals(maid.blockPosition())) {
-                        return false;
-                    }
-
-                    ItemStack tool = maid.getItemBySlot(EquipmentSlot.MAINHAND);
-
-                    if (!tool.is(ItemTags.AXES)) {
-                        return false;
-                    }
-
-                    destroyWithLivingEntity(level, maid, targetPos, state, tool);
-
-                    // 一次 command 仍然只处理一块原木
-                    lumberDone.set(Unit.INSTANCE);
-
-                    return true;
-                };
-            });
-        });
+    @Override
+    protected boolean checkExtraStartConditions(ServerLevel level, AiMaidEntity maid) {
+        var pos = maid.getBrain().getMemory(TestAddonMemoryModuleTypes.LUMBER_TARGET).orElse(null);
+        var feet = maid.getBrain().getMemory(TestAddonMemoryModuleTypes.LUMBER_WORK_POS).orElse(null);
+        return LumberJob.isWorking(maid) && maid.onGround() && maid.blockPosition().equals(feet)
+                && maid.getMainHandItem().is(ItemTags.AXES) && pos != null
+                && MaidBlockBreaking.canReach(level, maid, pos);
     }
 
-    private static boolean destroyWithLivingEntity(ServerLevel level, AiMaidEntity maid, BlockPos pos,
-            BlockState state, ItemStack tool) {
-        // 不可破坏方块
-        if (state.getDestroySpeed(level, pos) < 0.0F) {
-            return false;
-        }
-
-        /*
-         * 26.2 Item 底层 API 接受 LivingEntity，
-         * 所以直接让真实 Maid 参与工具逻辑。
-         */
-        if (!tool.getItem().canDestroyBlock(tool, state, level, pos, maid)) {
-            return false;
-        }
-
-        Block block = state.getBlock();
-
-        BlockEntity blockEntity = state.hasBlockEntity() ? level.getBlockEntity(pos) : null;
-
-        /*
-         * Vanilla 玩家破坏链也是先保留一份工具状态，
-         * 后面拿它作为 loot context 中的 TOOL。
-         */
-        ItemStack destroyedWith = tool.copy();
-
-        boolean correctToolForDrops = tool.isCorrectToolForDrops(state);
-        
-        /*
-         * false：
-         * 不让 Level.destroyBlock 使用 ItemStack.EMPTY 自动掉落。
-         *
-         * 但仍复用 Vanilla 的：
-         * 方块移除
-         * neighbor update
-         * break effect
-         * BLOCK_DESTROY game event
-         */
-        boolean destroyed = level.destroyBlock(pos, false, maid);
-
-        if (!destroyed) {
-            return false;
-        }
-
-        // 对应 Vanilla block 被真正移除后的通用 callback。
-        block.destroy(level, pos, state);
-
-        /*
-         * 使用真实工具执行 mining 后处理。
-         * 当前 26.2 会根据 TOOL component 正常损耗耐久。
-         */
-        tool.getItem().mineBlock(tool, level, state, pos, maid);
-
-        /*
-         * 正确工具时，用破坏前复制的真实工具进入 loot context。
-         */
-        if (correctToolForDrops) {
-            Block.dropResources(state, level, pos, blockEntity, maid, destroyedWith);
-        }
-
-        return true;
+    @Override
+    protected void start(ServerLevel level, AiMaidEntity maid, long now) {
+        breaking = maid.getBrain().getMemory(TestAddonMemoryModuleTypes.LUMBER_TARGET).orElseThrow();
+        state = level.getBlockState(breaking);
+        resetTool(maid, now);
     }
 
+    private void resetTool(AiMaidEntity maid, long now) {
+        tool = maid.getMainHandItem();
+        toolSnapshot = tool.copy();
+        progress = 0;
+        startedAt = now;
+    }
+
+    @Override
+    protected boolean canStillUse(ServerLevel level, AiMaidEntity maid, long now) {
+        return breaking != null && checkExtraStartConditions(level, maid)
+                && maid.getBrain().isMemoryValue(TestAddonMemoryModuleTypes.LUMBER_TARGET, breaking)
+                && level.getBlockState(breaking) == state;
+    }
+
+    @Override
+    protected void tick(ServerLevel level, AiMaidEntity maid, long now) {
+        if (tool != maid.getMainHandItem() || !ItemStack.isSameItemSameComponents(tool, toolSnapshot)) {
+            level.destroyBlockProgress(maid.getId(), breaking, -1);
+            lastStage = -1;
+            resetTool(maid, now);
+        }
+        var job = maid.getBrain().getMemory(TestAddonMemoryModuleTypes.LUMBER_JOB).orElseThrow();
+        if (!MaidBlockBreaking.canBreak(level, maid, breaking, state, tool) || now - startedAt > 1200) {
+            job.complete(breaking, false);
+            LumberJob.clearTarget(maid);
+            doStop(level, maid, now);
+            return;
+        }
+        if ((now - startedAt) % 6 == 0) maid.swing(InteractionHand.MAIN_HAND);
+        progress += MaidBlockBreaking.progressPerTick(level, maid, breaking, state, tool);
+        if (progress >= 1) {
+            boolean destroyed = MaidBlockBreaking.destroy(level, maid, breaking, state, tool);
+            job.complete(breaking, destroyed);
+            LumberJob.clearTarget(maid);
+            doStop(level, maid, now);
+            return;
+        }
+        int stage = Math.min(9, (int) (progress * 10));
+        if (stage != lastStage) {
+            level.destroyBlockProgress(maid.getId(), breaking, stage);
+            lastStage = stage;
+        }
+    }
+
+    @Override
+    protected void stop(ServerLevel level, AiMaidEntity maid, long now) {
+        if (breaking != null) level.destroyBlockProgress(maid.getId(), breaking, -1);
+        breaking = null;
+        tool = toolSnapshot = ItemStack.EMPTY;
+        progress = 0;
+        lastStage = -1;
+    }
 }

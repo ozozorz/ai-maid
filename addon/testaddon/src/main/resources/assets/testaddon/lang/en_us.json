@@ -5,5 +5,11 @@
     "maid_activity.testaddon.lumber": "Lumbering",
     "maid_command.testaddon.guard": "Guard",
     "maid_activity.testaddon.guard_fight": "Fighting",
-    "maid_command.testaddon.attack": "Combat"
+    "maid_command.testaddon.attack": "Combat",
+    "message.testaddon.lumber.finished": "%s: lumber finished, %s logs cut, %s skipped (%s).",
+    "message.testaddon.lumber.complete": "targets processed",
+    "message.testaddon.lumber.no_tree": "no matching tree or log found",
+    "message.testaddon.lumber.no_tool": "no usable axe",
+    "message.testaddon.lumber.disabled": "mob block changes are disabled",
+    "message.testaddon.lumber.timeout": "job time limit reached"
 }

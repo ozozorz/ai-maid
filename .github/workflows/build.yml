@@ -23,7 +23,7 @@ jobs:
         run: chmod +x ./gradlew
       - name: build
         run: ./gradlew build
-      - name: build addon and run server combat tests
+      - name: build addon and run server acceptance tests
         run: ./gradlew -p addon/testaddon build
       - name: build integration launcher
         run: ./gradlew -p dev/devrun build

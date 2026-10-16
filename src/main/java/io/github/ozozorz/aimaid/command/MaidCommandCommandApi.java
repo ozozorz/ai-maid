@@ -46,8 +46,8 @@ public class MaidCommandCommandApi {
 
         maid.selecetMaidCommand(maidCommand);
 
-        context.getSource().sendSuccess(() -> Component.translatable("command.ai-maid.maid,command_changed",
-                maid.getDisplayName(), maidCommand.getDisplayName()), false);
+        context.getSource().sendSuccess(() -> Component.translatable("message.ai-maid.maid_command_changed",
+                maidCommand.getDisplayName()), false);
 
         return 1;
     }

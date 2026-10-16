@@ -1,143 +1,64 @@
 package io.github.ozozorz.testaddon.ai.behavior;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Optional;
-
 import com.mojang.datafixers.util.Unit;
-
 import io.github.ozozorz.aimaid.entity.AiMaidEntity;
+import io.github.ozozorz.aimaid.entity.inventory.MaidEquipmentHelper;
 import io.github.ozozorz.testaddon.ai.TestAddonMemoryModuleTypes;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.tags.BlockTags;
+import io.github.ozozorz.testaddon.lumber.LumberJob;
+import io.github.ozozorz.testaddon.lumber.LumberTreeFinder;
+import io.github.ozozorz.testaddon.lumber.LumberWorkPlanner;
+import net.minecraft.tags.ItemTags;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.behavior.BehaviorControl;
 import net.minecraft.world.entity.ai.behavior.declarative.BehaviorBuilder;
 import net.minecraft.world.level.gamerules.GameRules;
-import net.minecraft.world.level.pathfinder.Path;
 
-public class TestFindLumberTarget {
-
-    // 限制一次交给寻路器的原木数量
-    private static final int MAX_LOG_CANDIDATES = 32;
-
-
-    private TestFindLumberTarget() {
-    }
-
-    public static BehaviorControl<AiMaidEntity> create(int horizontalRadius, int verticalRadius) {
-        return BehaviorBuilder.create(instance ->
-            instance.group(
-                // 只有还没有目标时才搜索
-                instance.absent(TestAddonMemoryModuleTypes.LUMBER_TARGET),
-                // 还没选定Maid要站的位置
-                instance.absent(TestAddonMemoryModuleTypes.LUMBER_WORK_POS),
-                // 这轮工作还没结束
-                instance.absent(TestAddonMemoryModuleTypes.LUMBER_DONE)
-            ).apply(instance, (lumberTarget, lumberWorkPos, lumberDone) -> {
-                return (level, maid, timestamp) -> {
-
-                    // 和 Vanilla Villager 工作一致：
-                    // Mob 修改世界首先服从 mobGriefing。
-                    if (!level.getGameRules().get(GameRules.MOB_GRIEFING)) {
-                        lumberDone.set(Unit.INSTANCE);
-                        return true;
-                    }
-
-                    Optional<TargetSelection> selection = findReachableTarget(level, maid, horizontalRadius, verticalRadius);
-
-                    if (selection.isEmpty()) {
-                        // 附近没有具有可达站位的原木
-                        lumberDone.set(Unit.INSTANCE);
-                        return true;
-                    }
-
-                    TargetSelection selected = selection.get();
-
-                    // 保存“对什么工作”
-                    lumberTarget.set(selected.logPos());
-
-                    // 保存“站在哪里工作”
-                    lumberWorkPos.set(selected.workPos());
-
-                    return true;
-                };
-            })
-        );
-    }
-
-    private static Optional<TargetSelection> findReachableTarget(ServerLevel level, AiMaidEntity maid, int horizontalRadius, int verticalRadius) {
-        
-        // key = 可供 maid 站立的位置
-        // value = 从该位置准备破坏的原木
-        Map<BlockPos, BlockPos> logByWorkPos = new LinkedHashMap<>();
-
-        int candidateLogCount = 0;
-
-        for (BlockPos cursor : BlockPos.withinManhattan(maid.blockPosition(), horizontalRadius, verticalRadius, horizontalRadius)) {
-            
-            if (!level.getBlockState(cursor).is(BlockTags.LOGS)) {
-                continue;
+public final class TestFindLumberTarget {
+    private TestFindLumberTarget() {}
+    public static BehaviorControl<AiMaidEntity> create() {
+        return BehaviorBuilder.create(i -> i.group(
+                i.absent(TestAddonMemoryModuleTypes.LUMBER_TARGET),
+                i.absent(TestAddonMemoryModuleTypes.LUMBER_WORK_POS),
+                i.absent(TestAddonMemoryModuleTypes.LUMBER_DONE),
+                i.registered(TestAddonMemoryModuleTypes.LUMBER_JOB),
+                i.registered(TestAddonMemoryModuleTypes.LUMBER_REQUEST)
+        ).apply(i, (target, work, done, jobMemory, request) -> (level, maid, now) -> {
+            if (!LumberJob.isWorking(maid)) return false;
+            var job = maid.getBrain().getMemory(TestAddonMemoryModuleTypes.LUMBER_JOB).orElse(null);
+            if (job == null && !maid.getBrain().hasMemoryValue(TestAddonMemoryModuleTypes.LUMBER_REQUEST)) {
+                done.set(Unit.INSTANCE); return true;
             }
-
-            // withinManhattan 会复用 MutableBlockPos，所以长期保存前必须转成 immutable。
-            BlockPos logPos = cursor.immutable();
-
-            boolean addedWorkPos = false;
-
-            // 第一版只考虑与原木同高度的：北、东、南、西四个站位。
-            for (Direction direction : Direction.Plane.HORIZONTAL) {
-                BlockPos workPos = logPos.relative(direction);
-
-                // 这是一个廉价的初步过滤：workPos 下方至少要有可视为实心支撑的方块。
-                // 它不是完整的碰撞或可达性判断；最终判断仍交给 PathFinder。
-                if (!maid.getNavigation().isStableDestination(workPos)) {
-                    continue;
+            if (!level.getGameRules().get(GameRules.MOB_GRIEFING)) {
+                LumberJob.finish(maid, "disabled"); return true;
+            }
+            if (!MaidEquipmentHelper.ensureEquipment(maid, EquipmentSlot.MAINHAND, stack -> stack.is(ItemTags.AXES))) {
+                LumberJob.finish(maid, "no_tool"); return true;
+            }
+            if (job == null) {
+                var requested = maid.getBrain().getMemory(TestAddonMemoryModuleTypes.LUMBER_REQUEST);
+                if (requested.isEmpty()) {
+                    // 重载只恢复命令，不把旧的一次请求变成新一轮自动砍树。
+                    done.set(Unit.INSTANCE); return true;
                 }
-
-                // 一个站位可能同时邻接两块原木。保留搜索顺序中先遇到的那一块。
-                logByWorkPos.putIfAbsent(workPos, logPos);
-
-                addedWorkPos = true;
+                request.erase();
+                var tree = LumberTreeFinder.find(level, maid.blockPosition(), requested.get());
+                if (tree.isEmpty()) { LumberJob.finish(maid, "no_tree"); return true; }
+                job = new LumberJob(tree.get(), now);
+                jobMemory.set(job);
             }
-
-            if (addedWorkPos) {
-                candidateLogCount++;
-                
-                if (candidateLogCount >= MAX_LOG_CANDIDATES) {
-                    break;
-                }
+            if (now - job.startedAt > 6000) { LumberJob.finish(maid, "timeout"); return true; }
+            if (job.remaining().isEmpty()) { LumberJob.finish(maid, "complete"); return true; }
+            // 刚生成/下落时 GroundPathNavigation 尚不能寻路，null 不代表目标不可达。
+            if (!maid.onGround()) return false;
+            var selection = LumberWorkPlanner.choose(level, maid, job);
+            if (selection.isPresent()) {
+                target.set(selection.get().log());
+                work.set(selection.get().feet());
+                job.targetSince = now;
+            } else if (job.remaining().isEmpty()) {
+                LumberJob.finish(maid, "complete");
             }
-        }
-
-        if (logByWorkPos.isEmpty()) {
-            return Optional.empty();
-        }
-
-        // 一次把所有候选站位交给 Vanilla PathFinder。
-        // 这里只是在“询问能否到达”，并没有调用 navigation.moveTo()。
-        Path path = maid.getNavigation().createPath(logByWorkPos.keySet(), 0);
-
-        // path != null 仍可能只是部分路径。
-        // canReach() 才表示真正抵达了某个候选站位。
-        if (path == null || !path.canReach()) {
-            return Optional.empty();
-        }
-
-        // 多目标寻路完成后，getTarget() 告诉我们最终选中了哪个站位。
-        BlockPos selectedWorkPos = path.getTarget().immutable();
-        BlockPos selectedLogPos = logByWorkPos.get(selectedWorkPos);
-
-        if (selectedLogPos == null) {
-            // 理论上不应该发生。这里防止未来导航实现变化后出现空映射。
-            return Optional.empty();
-        }
-
-        return Optional.of(new TargetSelection(selectedLogPos, selectedWorkPos));
+            return true;
+        }));
     }
-
-    private record TargetSelection(BlockPos logPos, BlockPos workPos) {
-    }
-
 }

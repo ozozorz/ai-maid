@@ -5,6 +5,7 @@ import org.jspecify.annotations.Nullable;
 import io.github.ozozorz.aimaid.entity.ai.AiMaidAi;
 import io.github.ozozorz.aimaid.entity.ai.sensing.MaidBrainSensors;
 import io.github.ozozorz.aimaid.entity.inventory.MaidInventory;
+import io.github.ozozorz.aimaid.entity.inventory.MaidItemTransfer;
 import io.github.ozozorz.aimaid.entity.maidcommand.MaidCommand;
 import io.github.ozozorz.aimaid.entity.maidcommand.MaidCommands;
 import io.github.ozozorz.aimaid.menu.MaidMenuOpener;
@@ -23,6 +24,10 @@ import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.item.enchantment.EnchantmentEffectComponents;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.ai.Brain;
@@ -65,7 +70,11 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
             .add(Attributes.MOVEMENT_SPEED, 0.3)
             // 女仆自身的基础攻击伤害
             .add(Attributes.ATTACK_DAMAGE, 2.0)
-            .add(Attributes.ATTACK_SPEED, 4.0);
+            .add(Attributes.ATTACK_SPEED, 4.0)
+            .add(Attributes.BLOCK_BREAK_SPEED)
+            .add(Attributes.MINING_EFFICIENCY)
+            .add(Attributes.SUBMERGED_MINING_SPEED)
+            .add(Attributes.BLOCK_INTERACTION_RANGE);
     }
 
     // Brain.Provider 不是 Brain。
@@ -207,6 +216,10 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
         if (id == null) {
             throw new IllegalArgumentException("Unregistered MaidCommand: " + maidCommand);
         }
+        // 先停止旧行为，让持续动作能清理裂纹、蓄力和导航；重选也会重新开始。
+        if (this.level() instanceof ServerLevel level) {
+            this.getBrain().stopAll(level, this);
+        }
         // ① 先真正切换状态
         this.entityData.set(MAID_COMMAND_ENTITY_DATA_ACCESSOR, id.toString());
         // ② 再通知新 Command：
@@ -266,6 +279,49 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
     @Override
     public MaidInventory getInventory() {
         return this.inventory;
+    }
+
+    @Override
+    public void die(DamageSource source) {
+        if (this.level() instanceof ServerLevel level) this.getBrain().stopAll(level, this);
+        super.die(source);
+    }
+
+    @Override
+    public void onRemoval(Entity.RemovalReason reason) {
+        // 卸载/跨维度也要停止持续动作，但它们不属于死亡，不掉落携带物。
+        if (this.level() instanceof ServerLevel level) this.getBrain().stopAll(level, this);
+        super.onRemoval(reason);
+    }
+
+    @Override
+    protected void dropCustomDeathLoot(ServerLevel level, DamageSource source, boolean killedByPlayer) {
+        // Mob 的此实现会按概率掉装备并随机改变耐久。
+        // 女仆的携带物统一在 dropEquipment 转移；不要在这里再执行 Mob 的装备掉落。
+    }
+
+    @Override
+    protected void dropEquipment(ServerLevel level) {
+        super.dropEquipment(level);
+        // 先从源位置取走，再生成 ItemEntity。重复回调时源位置已经为空。
+        for (int slot = 0; slot < this.inventory.getContainerSize(); slot++) {
+            dropCarriedStack(level, this.inventory.removeItemNoUpdate(slot));
+        }
+        for (EquipmentSlot slot : EquipmentSlot.VALUES) {
+            if (!MaidItemTransfer.supportsEquipmentSlot(slot)) continue;
+            ItemStack stack = this.getItemBySlot(slot);
+            this.setItemSlot(slot, ItemStack.EMPTY);
+            dropCarriedStack(level, stack);
+        }
+        this.inventory.setChanged();
+    }
+
+    private void dropCarriedStack(ServerLevel level, ItemStack stack) {
+        // 与玩家背包相同，消失诅咒也作用于放在 storage 内的物品。
+        // keepInventory 只控制玩家；mobDrops 不应吞掉女仆已经携带的物品。
+        if (!stack.isEmpty() && !EnchantmentHelper.has(stack, EnchantmentEffectComponents.PREVENT_EQUIPMENT_DROP)) {
+            this.spawnAtLocation(level, stack);
+        }
     }
 
     // 返回真实弹药栈，Vanilla 装填会直接拆分它，不凭空补箭。

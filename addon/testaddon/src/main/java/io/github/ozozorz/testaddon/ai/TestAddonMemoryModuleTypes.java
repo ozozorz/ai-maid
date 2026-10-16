@@ -3,6 +3,7 @@ package io.github.ozozorz.testaddon.ai;
 import java.util.Optional;
 
 import com.mojang.datafixers.util.Unit;
+import io.github.ozozorz.testaddon.lumber.LumberJob;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
@@ -26,8 +27,12 @@ public class TestAddonMemoryModuleTypes {
     // Maid 工作时脚部所在的方块坐标
     public static final MemoryModuleType<BlockPos> LUMBER_WORK_POS = register("lumber_work_pos");
     
-    // 纯 runtime maker: 这一轮 lumber 已经结束
+    // 纯 runtime marker: 这一轮 lumber 已经结束
     public static final MemoryModuleType<Unit> LUMBER_DONE = register("lumber_done");
+
+    // false = 整树，true = 明确请求的一块原木；无值表示未请求/重载后不自动续工。
+    public static final MemoryModuleType<Boolean> LUMBER_REQUEST = register("lumber_request");
+    public static final MemoryModuleType<LumberJob> LUMBER_JOB = register("lumber_job");
 
 
     private static <T> MemoryModuleType<T> register(String name) {
