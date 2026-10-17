@@ -50,6 +50,11 @@ public class AiMaidAi {
         addActivity(activities, initIdleActivity(), "built-in IDLE");
         addActivity(activities, initWaitForOwnerActivity(), "built-in WAIT_FOR_OWNER");
         addActivity(activities, initPickUpItemActivity(), "built-in PICK_UP_ITEM");
+        addActivity(activities, ActivityData.create(ModActivities.FIGHT,
+                ActivityData.createPriorityPairs(10, ImmutableList.of(new io.github.ozozorz.aimaid.entity.combat.MaidCombatBehavior())),
+                Set.of(Pair.of(MemoryModuleType.ATTACK_TARGET, MemoryStatus.VALUE_PRESENT)),
+                Set.of(MemoryModuleType.ATTACK_TARGET, MemoryModuleType.WALK_TARGET,
+                        MemoryModuleType.LOOK_TARGET, MemoryModuleType.CANT_REACH_WALK_TARGET_SINCE)), "built-in FIGHT");
         for (MaidCommand maidCommand : ModBuiltInRegistries.MAID_COMMAND) {
             Identifier maidCommandId = ModBuiltInRegistries.MAID_COMMAND.getKey(maidCommand);
             for (ActivityData<AiMaidEntity> activityData : maidCommand.createActivities(maid)) {

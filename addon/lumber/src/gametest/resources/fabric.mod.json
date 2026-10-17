@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "id": "ai-maid-lumber-tests",
+  "version": "1.0.0",
+  "name": "ai-maid-lumber-tests",
+  "environment": "*",
+  "entrypoints": {
+    "fabric-gametest": [
+      "io.github.ozozorz.aimaid.lumber.LumberGameTests"
+    ],
+    "fabric-client-gametest": [
+      "io.github.ozozorz.aimaid.lumber.WorkClientGameTest"
+    ]
+  },
+  "mixins": [
+    "ai-maid-test-support.mixins.json"
+  ]
+}

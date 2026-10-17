@@ -1,6 +1,6 @@
 {
   "maid_command.ai-maid.free": "Free",
-  "maid_command.ai-maid.follow": "Follow",
+  "maid_command.ai-maid.follow": "Follow & protect",
   "maid_command.ai-maid.stay": "Stay",
   "message.ai-maid.maid_command_changed": "Maid Command: %s",
   "gui.ai-maid.maid_inventory": "Maid Inventory",
@@ -32,5 +32,13 @@
   "maid_activity.ai-maid.wait_for_owner": "Waiting for owner",
   "status.ai-maid.storage_full": "Storage is full; cannot collect more items",
   "command.ai-maid.maid.command_unavailable": "Command unavailable: %s",
-  "tag.item.ai-maid.healing_foods": "Maid healing foods"
+  "tag.item.ai-maid.healing_foods": "Maid healing foods",
+  "status.ai-maid.combat.target_unreachable": "Target cannot be reached",
+  "status.ai-maid.combat.no_ammo": "No usable arrows; falling back to melee",
+  "status.ai-maid.combat.unarmed": "No usable weapon; fighting unarmed",
+  "status.ai-maid.combat.defending_work": "Self-defense; work resumes after combat",
+  "status.ai-maid.combat.fighting": "Fighting",
+  "status.ai-maid.combat.equipment_locked": "Current equipment prevents switching tools",
+  "maid_command.ai-maid.attack": "Attack",
+  "maid_activity.ai-maid.fight": "Fighting"
 }

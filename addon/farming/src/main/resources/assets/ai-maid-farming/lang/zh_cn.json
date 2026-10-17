@@ -1,0 +1,15 @@
+{
+  "maid_command.ai-maid-farming.farm": "耕种",
+  "maid_activity.ai-maid-farming.farm": "耕种",
+  "status.ai-maid-farming.searching": "正在检查工作区域",
+  "status.ai-maid-farming.wrong_dimension": "工作区域不在当前维度；重新选择命令可重设中心",
+  "status.ai-maid-farming.disabled": "mobGriefing 已关闭，工作暂停",
+  "status.ai-maid-farming.restrained": "被拴住或正在乘坐，工作暂停",
+  "status.ai-maid-farming.walking": "正在前往工作目标",
+  "status.ai-maid-farming.unreachable": "目标暂不可达，稍后重新尝试",
+  "status.ai-maid-farming.full": "背包空间不足，等待腾出位置",
+  "status.ai-maid-farming.no_work": "等待作物成熟或可用耕地",
+  "status.ai-maid-farming.no_seeds": "没有可用种子，等待补给或作物成熟",
+  "status.ai-maid-farming.working": "已收获并补种／已完成播种",
+  "status.ai-maid-farming.preparing": "照料作物"
+}

@@ -31,14 +31,14 @@ dependencies {
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
 
-	def aiMaid = "io.github.ozozorz.aimaid:ai-maid:${project.aimaid_version}"
-	def testAddon = "io.github.ozozorz.aimaid:testaddon:${project.testaddon_version}"
+    ['ai-maid', 'ai-maid-lumber', 'ai-maid-farming', 'ai-maid-feeding', 'ai-maid-hauling'].each { name ->
+        def coordinate = "io.github.ozozorz.aimaid:${name}:${project.aimaid_version}"
+        implementation coordinate
+        clientImplementation(coordinate) {
+            attributes { attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, objects.named(LibraryElements, LibraryElements.JAR)) }
+        }
+    }
 
-	implementation aiMaid
-	clientImplementation aiMaid
-
-	implementation testAddon
-	clientImplementation testAddon
 }
 
 
@@ -51,3 +51,16 @@ java {
 	sourceCompatibility = JavaVersion.VERSION_25
 	targetCompatibility = JavaVersion.VERSION_25
 }
+
+fabricApi {
+    configureTests {
+        createSourceSet = true
+        modId = 'ai-maid-integration-tests'
+        enableGameTests = true
+        enableClientGameTests = true
+        eula = true
+    }
+}
+
+sourceSets.gametest.java.srcDir('../testsupport/java')
+sourceSets.gametest.resources.srcDir('../testsupport/resources')

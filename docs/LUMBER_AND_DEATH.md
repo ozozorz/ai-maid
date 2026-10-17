@@ -1,16 +1,14 @@
-# 死亡携带物与持续伐木（Minecraft 26.2）
+# 死亡携带物与持续伐木（Minecraft 26.2 / 1.2.1）
 
-本轮基于已验收的战斗版本 `4c8810c`。Core 管理死亡携带物、持续行为的生命周期和方块破坏机制；TestAddon 管理树的选择、站位、队列、工具要求与本轮作业规则。没有增加通用职业系统，也没有把伐木状态塞进共享的 Command。
-
-后续已加入[工作中自卫与战后恢复](WORK_DEFENSE.md)：临时战斗保留整树队列，当前未完成的一块重新积累进度，手动换命令仍取消任务。最新增量验收见该文档。
+Core 管理死亡物品、持续动作的生命周期和方块破坏机制；正式 Lumber Addon 管理树识别、站位、队列和工具要求。临时战斗保留有限队列，手动换命令取消任务，见[工作自卫](WORK_DEFENSE.md)。
 
 ## 使用与本轮边界
 
-同时加载 Core 和 TestAddon，在女仆主手或 storage 放入斧头。GUI 的“伐木”按钮现在会识别附近一棵树，逐块处理其中能够实际触及的原木。也可以使用：
+同时加载 Core 和 Lumber Addon，在女仆主手或 storage 放入斧头。GUI 的“伐木”按钮现在会识别附近一棵树，逐块处理其中能够实际触及的原木。也可以使用：
 
 ```text
-/maid nearest command testaddon:lumber
-/maid nearest command testaddon:lumber single
+/maid nearest command ai-maid-lumber:lumber
+/maid nearest command ai-maid-lumber:lumber single
 ```
 
 第一条对应 GUI 的整树模式；第二条明确只处理附近一块原木，不要求自然树形。两者沿用所有权授权和原有 nearest、selector、uuid、name 入口。再次选择会开始新一轮，切换到其他命令会立即停止旧动作。命令反馈中原有的翻译键拼写错误也已修复。
@@ -42,19 +40,19 @@
 ```mermaid
 flowchart TD
     A[玩家选择 LUMBER] --> B[onSelected 建立本只女仆的 LUMBER_REQUEST]
-    B --> C[TestFindLumberTarget 建立 LumberJob]
+    B --> C[FindLumberTarget 建立 LumberJob]
     C --> D[LumberTreeFinder 识别有限原木集合]
     D --> E[LumberWorkPlanner 选原木与站位]
-    E --> F[TestWalkToLumberTarget 写 WALK_TARGET]
+    E --> F[WalkToLumberTarget 写 WALK_TARGET]
     F --> G[Core MoveToTargetSink 执行导航]
-    G --> H[TestBreakLumberTarget 每 tick 累积进度]
+    G --> H[BreakLumberTarget 每 tick 累积进度]
     H --> I[MaidBlockBreaking 完成一次真实破坏]
     I --> J{还有待处理原木?}
     J -->|有| E
     J -->|没有| K[LUMBER_DONE → 拾取或待机]
 ```
 
-Registry 中的 `TestLumberCommand` 是共享的定义。每只女仆创建 Brain 时，通过 `createActivities(maid)` 创建自己的持续破坏 Behavior；一次工作启动时再创建自己的 `LumberJob`。因此队列、计数、破坏进度和工具引用不会在两名女仆之间共享。
+Registry 中的 `LumberCommand` 是共享的定义。每只女仆创建 Brain 时，通过 `createActivities(maid)` 创建自己的持续破坏 Behavior；一次工作启动时再创建自己的 `LumberJob`。因此队列、计数、破坏进度和工具引用不会在两名女仆之间共享。
 
 | 数据 | 含义与保存位置 |
 | --- | --- |
@@ -104,50 +102,16 @@ Registry 中的 `TestLumberCommand` 是共享的定义。每只女仆创建 Brai
 | 一轮作业 | 最多 6000 tick；后续工作自卫扩展已排除战斗暂停时间 |
 | 实际触及 | 默认眼睛到目标中心 4.5 格，且射线无遮挡 |
 
-可通过数据包扩展 `testaddon:lumber_logs` 与 `testaddon:lumber_soil` 两个方块标签；默认收录九种主世界普通原木，地面包括 dirt 标签及红树根。单块模式直接接受原版 logs 标签。
+可通过数据包扩展 `ai-maid-lumber:lumber_logs` 与 `ai-maid-lumber:lumber_soil` 两个方块标签；默认收录九种主世界普通原木，地面包括 dirt 标签及红树根。单块模式直接接受原版 logs 标签。
 
 这是保守的树形启发式。Minecraft 不为普通原木永久保存“来自世界生成还是玩家放置”的身份，因此不能保证排除所有仿树建筑。裸原木柱、持久树叶装饰、额外落地树干、超限连接会被拒绝；部分复杂树形也可能被拒绝。识别到整棵树，不代表地面女仆有能力到达树顶；高处剩余原木是本轮明确要求的结果。
 
-## 自动验收
+## 验收与阅读入口
 
-本轮新增 5 项死亡、17 项伐木服务端测试，与已有 23 项战斗和 1 项框架测试一起运行，共 46 项。测试执行真实服务端 tick，覆盖持续耗时、工具速度与效率附魔、实际移动、取消/换工具/换方块、损坏斧头替换、双女仆争用、存档重载、四块完整树、不可达树冠、2×2 树干、人工树冠与超限拒绝、墙体/距离/硬度/世界规则，以及死亡物品数量、组件、诅咒和无玩家击杀。
+Core 验证死亡物品；Lumber 独立验证有限伐木；`dev/devrun` 验证工作自卫、动画及组合加载。最新实际结果见 [验收记录](ACCEPTANCE.md)。
 
-客户端测试使用真实客户端与集成服务器：检查主人 Brigadier 单块命令、实际挥手和收到的裂纹阶段、完成破坏、取消/卸载/死亡清裂纹，以及打开容器并把物品拿到光标后死亡的数量守恒。原有战斗客户端测试一同回归。截图保存在本机忽略目录 `build/work-acceptance/`，没有使用日常开发存档。
-
-2026-10-16 本机执行结果：
-
-| 验收 | 结果 |
-| --- | --- |
-| Core 独立 build | 通过 |
-| TestAddon 独立 build 与服务端 GameTest | 46 / 46 通过 |
-| CombatClientGameTest + WorkClientGameTest | 两套实际客户端流程通过，截图已查看 |
-| devrun Composite Build | 通过 |
-| 发布 JAR | Core/Add-on 类与数据标签存在，JSON 可解析，不含 GameTest 代码 |
-
-其中高树用例明确验证十二格树干的下方六块可达原木被砍掉，上方六块仍完整保留；不仅仅检查“有一些原木留下”。死亡容器用例明确验证光标七颗钻石回到玩家、剩余十一颗绿宝石与一把无损斧头掉落，数量没有增加或减少。
-
-复现命令：
-
-```powershell
-# Core
-.\gradlew.bat build
-# TestAddon：构建与全部服务端测试
-.\gradlew.bat -p addon/testaddon build
-# 客户端图形验收
-.\gradlew.bat -p addon/testaddon runClientGameTest
-# Composite Build 集成入口
-.\gradlew.bat -p dev/devrun build
-```
-
-测试模组仍使用已有 `testaddon-combat-tests` ID，便于延续原有测试配置；显示名称已改成综合验收。`src/gametest` 不进入发布 JAR。CI 的常规 build 执行服务端测试，图形测试在本机显式运行。这些结果不等于多人长时间联机或任意第三方保护模组兼容审计。
-
-主要阅读入口：
-
-- [实体生命周期与死亡物品](../src/main/java/io/github/ozozorz/aimaid/entity/AiMaidEntity.java)
-- [Core 方块机制](../src/main/java/io/github/ozozorz/aimaid/entity/ai/behavior/MaidBlockBreaking.java)
-- [命令与 Activity 装配](../addon/testaddon/src/main/java/io/github/ozozorz/testaddon/command/TestLumberCommand.java)
-- [每只女仆的一次队列](../addon/testaddon/src/main/java/io/github/ozozorz/testaddon/lumber/LumberJob.java)
-- [树形识别](../addon/testaddon/src/main/java/io/github/ozozorz/testaddon/lumber/LumberTreeFinder.java)
-- [站位与路径](../addon/testaddon/src/main/java/io/github/ozozorz/testaddon/lumber/LumberWorkPlanner.java)
-- [持续破坏 Behavior](../addon/testaddon/src/main/java/io/github/ozozorz/testaddon/ai/behavior/TestBreakLumberTarget.java)
-- [死亡测试](../addon/testaddon/src/gametest/java/io/github/ozozorz/testaddon/DeathLootGameTests.java)、[伐木测试](../addon/testaddon/src/gametest/java/io/github/ozozorz/testaddon/LumberGameTests.java)、[客户端测试](../addon/testaddon/src/gametest/java/io/github/ozozorz/testaddon/WorkClientGameTest.java)
+- [实体生命周期与死亡物品](../src/main/java/io/github/ozozorz/aimaid/entity/AiMaidEntity.java)、[Core 方块机制](../src/main/java/io/github/ozozorz/aimaid/entity/ai/behavior/MaidBlockBreaking.java)
+- [伐木命令](../addon/lumber/src/main/java/io/github/ozozorz/aimaid/lumber/command/LumberCommand.java)
+- [有限队列](../addon/lumber/src/main/java/io/github/ozozorz/aimaid/lumber/lumber/LumberJob.java)、[树识别](../addon/lumber/src/main/java/io/github/ozozorz/aimaid/lumber/lumber/LumberTreeFinder.java)、[站位规划](../addon/lumber/src/main/java/io/github/ozozorz/aimaid/lumber/lumber/LumberWorkPlanner.java)
+- [持续破坏](../addon/lumber/src/main/java/io/github/ozozorz/aimaid/lumber/ai/behavior/BreakLumberTarget.java)
+- [死亡测试](../src/gametest/java/io/github/ozozorz/aimaid/DeathLootGameTests.java)、[伐木测试](../addon/lumber/src/gametest/java/io/github/ozozorz/aimaid/lumber/LumberGameTests.java)

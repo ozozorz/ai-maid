@@ -5,9 +5,25 @@
   "name": "AI Maid Core Acceptance Tests",
   "environment": "*",
   "entrypoints": {
-    "main": ["io.github.ozozorz.aimaid.CoreTestCommands"],
-    "ai-maid-addon": ["io.github.ozozorz.aimaid.CoreTestContributors$First", "io.github.ozozorz.aimaid.CoreTestContributors$Second"],
-    "fabric-gametest": ["io.github.ozozorz.aimaid.CoreGameTests"],
-    "fabric-client-gametest": ["io.github.ozozorz.aimaid.CoreClientGameTest", "io.github.ozozorz.aimaid.CoreReloadClientGameTest"]
-  }
+    "main": [
+      "io.github.ozozorz.aimaid.CoreTestCommands"
+    ],
+    "ai-maid-addon": [
+      "io.github.ozozorz.aimaid.CoreTestContributors$First",
+      "io.github.ozozorz.aimaid.CoreTestContributors$Second"
+    ],
+    "fabric-gametest": [
+      "io.github.ozozorz.aimaid.CoreGameTests",
+      "io.github.ozozorz.aimaid.CombatGameTests",
+      "io.github.ozozorz.aimaid.DeathLootGameTests"
+    ],
+    "fabric-client-gametest": [
+      "io.github.ozozorz.aimaid.CoreClientGameTest",
+      "io.github.ozozorz.aimaid.CoreReloadClientGameTest",
+      "io.github.ozozorz.aimaid.CombatClientGameTest"
+    ]
+  },
+  "mixins": [
+    "ai-maid-test-support.mixins.json"
+  ]
 }

@@ -106,3 +106,7 @@ if (providers.gradleProperty('addonFixtures').isPresent()) {
 		if (name.toLowerCase().contains('gametest')) vmArg '-Dai-maid.testContributors=true'
 	}
 }
+
+// 仅供真实客户端 GameTest 的 26.2 退出握手兼容，不进入发布 JAR。
+sourceSets.gametest.java.srcDir('dev/testsupport/java')
+sourceSets.gametest.resources.srcDir('dev/testsupport/resources')

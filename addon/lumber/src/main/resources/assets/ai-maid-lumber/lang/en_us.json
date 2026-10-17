@@ -1,0 +1,17 @@
+{
+  "maid_command.ai-maid-lumber.lumber": "Lumber",
+  "maid_activity.ai-maid-lumber.lumber": "Lumbering",
+  "message.ai-maid-lumber.lumber.finished": "%s: lumber finished, %s logs cut, %s skipped (%s).",
+  "message.ai-maid-lumber.lumber.complete": "targets processed",
+  "message.ai-maid-lumber.lumber.no_tree": "no matching tree or log found",
+  "message.ai-maid-lumber.lumber.no_tool": "no usable axe",
+  "message.ai-maid-lumber.lumber.disabled": "mob block changes are disabled",
+  "message.ai-maid-lumber.lumber.timeout": "job time limit reached",
+  "status.ai-maid-lumber.equipment_locked": "Current equipment prevents switching tools",
+  "status.ai-maid-lumber.lumber.complete": "Job ended: %s broken, %s skipped (including unreachable logs)",
+  "status.ai-maid-lumber.lumber.no_tree": "No eligible tree/log found; select Lumber to retry",
+  "status.ai-maid-lumber.lumber.no_tool": "No usable axe or equipment locked; select Lumber after fixing",
+  "status.ai-maid-lumber.lumber.disabled": "Mob griefing disabled; select Lumber after enabling",
+  "status.ai-maid-lumber.lumber.timeout": "Job timed out; select Lumber to retry",
+  "status.ai-maid-lumber.lumber.reselect": "Select Lumber to start a new job"
+}

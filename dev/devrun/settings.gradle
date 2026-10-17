@@ -22,16 +22,15 @@ includeBuild('../..') {
 }
 
 
-// TestAddon
-includeBuild('../../addon/testaddon') {
-    dependencySubstitution {
-        substitute module(
-                'io.github.ozozorz.aimaid:testaddon'
-        ) using project(':')
-    }
+includeBuild('../../addon/lumber') {
+    dependencySubstitution { substitute module('io.github.ozozorz.aimaid:ai-maid-lumber') using project(':') }
 }
-
-
-// 以后：
-// includeBuild('../../addon/farmaddon') { ... }
-// includeBuild('../../addon/combataddon') { ... }
+includeBuild('../../addon/farming') {
+    dependencySubstitution { substitute module('io.github.ozozorz.aimaid:ai-maid-farming') using project(':') }
+}
+includeBuild('../../addon/feeding') {
+    dependencySubstitution { substitute module('io.github.ozozorz.aimaid:ai-maid-feeding') using project(':') }
+}
+includeBuild('../../addon/hauling') {
+    dependencySubstitution { substitute module('io.github.ozozorz.aimaid:ai-maid-hauling') using project(':') }
+}

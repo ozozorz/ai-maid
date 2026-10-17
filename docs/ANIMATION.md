@@ -1,5 +1,7 @@
 # 动画系统 1.0
 
+适用于 Core / 正式 Lumber Addon 1.2.1。当前安装见 [Addon 使用说明](ADDONS_1_2.md)。
+
 本轮建立在当前 Alex/Slim 人形、原版 RenderState、已有战斗和持续伐木机制上。动画定义和过渡在客户端；攻击、破坏、掉落、弹药与耐久仍由服务端原有逻辑决定。
 
 ## 当前覆盖
@@ -13,11 +15,11 @@
 | 普通近战 | 原版 swing/attackTime | 主手挥击、躯干转动、收手；支持左右手 |
 | 弓 | 原版使用物品状态 + 射击成功事件 | 拉弓、跟随视线瞄准、放箭收手 |
 | 弩 | 原版装填进度、已装填组件 + 射击成功事件 | 装弩、持弩、射击后坐 |
-| 伐木 | TestAddon 的真实破坏 Behavior | 独立抬斧—下砍循环、身体配合，停止时淡出 |
+| 伐木 | Lumber Addon 的真实破坏 Behavior | 独立抬斧—下砍循环、身体配合，停止时淡出 |
 | 受伤、死亡 | 原版伤害同步和 deathTime | 受伤短暂摇晃，死亡停止其他动作并放松四肢 |
 | 护甲、手持、皮肤第二层、GUI | 同一帧状态和骨骼规则 | 跟随身体姿势，预览不改写世界实体 |
 
-快走/跑动的混合依据实际位移速度，不能仅凭 FOLLOW、GUARD 或某个 Activity 名称判断。LUMBER 命令中的寻路阶段也不会播放伐木循环，只有真正开始破坏时才播放。
+快走/跑动的混合依据实际位移速度，不能仅凭 FOLLOW、ATTACK 或某个 Activity 名称判断。LUMBER 命令中的寻路阶段也不会播放伐木循环，只有真正开始破坏时才播放。
 
 目前的素材面向现有六部件人形骨架。它提供动作切换、过渡、身体部位覆盖和 Addon 注册，不包含面部表情、头发/裙摆物理、脚底 IK 或另一套自定义骨架模型资源。新增这些素材时可以独立扩展；本轮没有引入外部动画库。
 
@@ -107,48 +109,17 @@ maid.stopAnimationAction(CHOP, animationToken);
 
 客户端中途开始追踪一个仍在服务器运行的实体，会使用同步的开始时间恢复当前阶段。服务器真正卸载、切换命令、重选命令或死亡时会清理动作；存档重载不会复活一个旧工作动画。未知 ID 保留同步数据，但客户端没有对应素材时使用基础姿势。
 
-不要从动画关键帧回调中破坏方块或扣血。`MaidRangedAttack` 只在真实发射成功后发出表现事件；`TestBreakLumberTarget` 在真实到位开工时开始循环，在结束/中断时停止。伤害和掉落没有因为动画延迟而重新结算。
+不要从动画关键帧回调中破坏方块或扣血。`MaidRangedAttack` 只在真实发射成功后发出表现事件；`BreakLumberTarget` 在真实到位开工时开始循环，在结束/中断时停止。伤害和掉落没有因为动画延迟而重新结算。
 
-TestAddon 仍然通过 Maven coordinate 消费 Core。本地 composite build 默认的 `classes` 变体只有 `main`，所以客户端依赖显式要求 `LibraryElements.JAR`，取得同时含公共类和客户端类的完整模组产物；没有硬编码跨工程源码路径。
+Lumber Addon 仍然通过 Maven coordinate 消费 Core。本地 composite build 默认的 `classes` 变体只有 `main`，所以客户端依赖显式要求 `LibraryElements.JAR`，取得同时含公共类和客户端类的完整模组产物；没有硬编码跨工程源码路径。
 
-## 自动验收
+## 验收与阅读入口
 
-服务端新增八项：原版挥手计时正常推进和结束、同 tick 重播和旧 token、超时、命令/死亡/卸载清理、存档不恢复旧动画、真实射击才触发后坐、取消真实采伐、多实体独立，以及纯表现不能破坏方块/产生物品。与原有战斗、死亡、伐木和框架测试共 54 项。
+服务端测试验证动作 token、超时、中断清理及真实业务触发。整合客户端流程在烘焙模型上检查 294 个姿势组合，并验证网络同步、共享渲染器、护甲、手持物和 GUI 预览。最新运行结果见 [验收记录](ACCEPTANCE.md)。
 
-客户端保留原有两套流程，增加 `AnimationClientGameTest`。它在临时世界执行实体同步、同 tick 重复提取、共享 Renderer 复用、真实菜单预览、动作优先级、中途进入追踪范围、未知 ID、左右手、真实挥手和弓弩射击、两档实际移动速度、空中落地、水中、受伤、死亡。`AnimationPoseChecks` 在真正烘焙的模型上覆盖七种动作 × 两种主手 × 21 个阶段，检查有限数值、四类护甲、手持矩阵、共享模型复位、下身步态、左手瞄准和死亡覆盖，并检查网络 ID 复用时新实体不会继承旧动作。
-
-复现命令（仓库根目录）：
-
-```powershell
-.\gradlew.bat build
-.\gradlew.bat -p addon/testaddon build
-.\gradlew.bat -p addon/testaddon runClientGameTest
-.\gradlew.bat -p dev/devrun build
-```
-
-`src/gametest` 是独立测试模组，不进入发布 JAR。客户端截图来自真实游戏窗口；姿势采样是确定性测试，不应把它等同于全部动作的长期多人实机观察。
-
-2026-10-16 本机最终结果：
-
-| 检查 | 结果 |
-| --- | --- |
-| Core 独立 build | 通过 |
-| TestAddon 独立 build、专用服务器 GameTest | 54 / 54 通过 |
-| CombatClientGameTest、WorkClientGameTest、AnimationClientGameTest | 三套真实客户端流程全部通过 |
-| 294 组动作/主手/阶段采样 | 通过；包括四类护甲和共享模型复位检查 |
-| devrun Composite Build | 通过 |
-| 发布 JAR | 动画公共类、客户端类和 Addon 素材均存在；JSON 可解析；不含测试类 |
-| 实际画面 | 已检查伐木、近战、弓弩、GUI、跳跃、水中、受伤和死亡截图 |
-
-日志和 20 张截图保存在本机忽略目录 `build/animation-acceptance/`。它独立于 Fabric 的临时运行目录，后续 Addon 服务端 build 清理测试运行目录时不会删除这份记录；根目录 `clean` 仍会清除它。
-
-验收期间实际修复了动物继承链缺少挥手计时推进、组合构建客户端 API 可见性，以及按网络 ID 比较实体可能串用动画缓存的问题。移动用例使用明确的导航与两档速度，避免依赖随机闲逛；步态混合按实际客户端位移采样校准。
-
-## 阅读入口
-
-- [服务端动作值](../src/main/java/io/github/ozozorz/aimaid/entity/animation/MaidAnimationAction.java)和[实体生命周期](../src/main/java/io/github/ozozorz/aimaid/entity/AiMaidEntity.java)
+- [动作值](../src/main/java/io/github/ozozorz/aimaid/entity/animation/MaidAnimationAction.java)、[实体生命周期](../src/main/java/io/github/ozozorz/aimaid/entity/AiMaidEntity.java)
 - [客户端控制器](../src/client/java/io/github/ozozorz/aimaid/client/entity/animation/MaidAnimationController.java)、[一帧数据](../src/client/java/io/github/ozozorz/aimaid/client/entity/animation/MaidAnimationFrame.java)
-- [共享素材注册](../src/client/java/io/github/ozozorz/aimaid/client/entity/animation/MaidAnimations.java)、[素材参数](../src/client/java/io/github/ozozorz/aimaid/client/entity/animation/MaidAnimationClip.java)
-- [模型应用姿势](../src/client/java/io/github/ozozorz/aimaid/client/entity/model/AiMaidEntityModel.java)、[姿势混合](../src/client/java/io/github/ozozorz/aimaid/client/entity/animation/MaidModelPose.java)
-- [Addon 伐木素材](../addon/testaddon/src/client/java/io/github/ozozorz/testaddon/client/TestAddonAnimations.java)和[真实业务触发](../addon/testaddon/src/main/java/io/github/ozozorz/testaddon/ai/behavior/TestBreakLumberTarget.java)
-- [服务端验收](../addon/testaddon/src/gametest/java/io/github/ozozorz/testaddon/AnimationGameTests.java)、[客户端验收](../addon/testaddon/src/gametest/java/io/github/ozozorz/testaddon/AnimationClientGameTest.java)、[模型采样验收](../addon/testaddon/src/gametest/java/io/github/ozozorz/testaddon/AnimationPoseChecks.java)
+- [素材注册](../src/client/java/io/github/ozozorz/aimaid/client/entity/animation/MaidAnimations.java)、[素材参数](../src/client/java/io/github/ozozorz/aimaid/client/entity/animation/MaidAnimationClip.java)
+- [模型应用](../src/client/java/io/github/ozozorz/aimaid/client/entity/model/AiMaidEntityModel.java)、[姿势混合](../src/client/java/io/github/ozozorz/aimaid/client/entity/animation/MaidModelPose.java)
+- [伐木素材](../addon/lumber/src/client/java/io/github/ozozorz/aimaid/lumber/client/LumberAnimations.java)、[业务触发](../addon/lumber/src/main/java/io/github/ozozorz/aimaid/lumber/ai/behavior/BreakLumberTarget.java)
+- [服务端测试](../dev/devrun/src/gametest/java/io/github/ozozorz/aimaid/integration/AnimationGameTests.java)、[客户端测试](../dev/devrun/src/gametest/java/io/github/ozozorz/aimaid/integration/AnimationClientGameTest.java)、[模型检查](../dev/devrun/src/gametest/java/io/github/ozozorz/aimaid/integration/AnimationPoseChecks.java)

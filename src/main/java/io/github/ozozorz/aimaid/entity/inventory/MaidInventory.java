@@ -11,9 +11,21 @@ import net.minecraft.world.item.ItemStack;
 public class MaidInventory extends SimpleContainer {
 
     public static final int STORAGE_SIZE = 35;
+    private long changeVersion;
 
     public MaidInventory() {
         super(STORAGE_SIZE);
+    }
+
+    /** 供等待补给的服务端行为观察变化；不持久化，也不替代 Slot 同步。 */
+    public long getChangeVersion() {
+        return changeVersion;
+    }
+
+    @Override
+    public void setChanged() {
+        changeVersion++;
+        super.setChanged();
     }
 
     /** 所有位置都达到各自堆叠上限时，任何普通物品都无法继续存入。 */

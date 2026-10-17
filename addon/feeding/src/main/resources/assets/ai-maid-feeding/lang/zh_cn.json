@@ -1,0 +1,15 @@
+{
+  "maid_command.ai-maid-feeding.feed": "喂养",
+  "maid_activity.ai-maid-feeding.feed": "喂养",
+  "status.ai-maid-feeding.searching": "正在检查工作区域",
+  "status.ai-maid-feeding.wrong_dimension": "工作区域不在当前维度；重新选择命令可重设中心",
+  "status.ai-maid-feeding.disabled": "mobGriefing 已关闭，工作暂停",
+  "status.ai-maid-feeding.restrained": "被拴住或正在乘坐，工作暂停",
+  "status.ai-maid-feeding.walking": "正在前往工作目标",
+  "status.ai-maid-feeding.unreachable": "目标暂不可达，稍后重新尝试",
+  "status.ai-maid-feeding.full": "背包空间不足，等待腾出位置",
+  "status.ai-maid-feeding.no_animals": "等待范围内可繁殖的成年家畜",
+  "status.ai-maid-feeding.no_food": "缺少合适饲料或目标暂不可达",
+  "status.ai-maid-feeding.working": "已喂食，繁殖与冷却由原版继续执行",
+  "status.ai-maid-feeding.preparing": "准备喂食"
+}

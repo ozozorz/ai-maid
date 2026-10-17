@@ -15,6 +15,8 @@ public class ModSensorTypes {
 
     public static final SensorType<MaidCommandSensor> MAID_COMMAND = register("maid_command", MaidCommandSensor::new);
 
+    public static final SensorType<io.github.ozozorz.aimaid.entity.combat.MaidCombatSensor> COMBAT = register("combat", io.github.ozozorz.aimaid.entity.combat.MaidCombatSensor::new);
+
     private ModSensorTypes() {
     }
 

@@ -1,9 +1,14 @@
-# TestAddon
+# TestAddon 已退役
 
-AI Maid 的独立参考 Addon，提供巡逻、单块/有限整树伐木、近战和弓弩 PvE、自卫护主，以及工作中自卫和战后恢复。
+从 1.2.1 起，本目录不再构建或加载模组。旧代码可在 Git 历史中查看。
 
-当前版本 1.1.0，需要 Core 1.1.0。具体规则见 [战斗](../../docs/COMBAT.md)、[伐木](../../docs/LUMBER_AND_DEATH.md)、[动画](../../docs/ANIMATION.md)、[工作自卫](../../docs/WORK_DEFENSE.md) 和 [Core 接入约定](../../docs/ADDON_API.md)。
+- 战斗迁入 Core；守卫合并到跟随。
+- 伐木迁入 `../lumber`。
+- 耕种、喂养和分类搬运分别位于 `../farming`、`../feeding`、`../hauling`。
+- 巡逻只保留为 `dev/devrun/src/gametest` 的隐藏测试夹具，不进入正式 JAR。
+- 旧回归测试已迁入 Core、伐木 Addon 和 devrun 的 gametest 源集。
 
-在本目录执行 `gradlew.bat runClient` 加载 Core + TestAddon，`gradlew.bat build` 构建并执行服务端验收，`gradlew.bat runClientGameTest` 执行真实客户端验收。它通过 Maven coordinate 消费 Core，settings.gradle 将本地依赖替换为 Core 源码。
+启动整体开发环境：在仓库根执行 `gradlew.bat -p dev/devrun runClient`。
+请从客户端和服务器的 mods 目录删除旧 `testaddon-*.jar`，不要同时安装旧版测试模组。
 
-本 Addon 同时作为 Core 集成回归用例；测试源码位于 src/gametest，不打入发布 JAR。沿用现有 CC0-1.0 许可。
+安装、迁移和验收说明见 [正式 Addon 1.2](../../docs/ADDONS_1_2.md)。

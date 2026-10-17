@@ -1,0 +1,16 @@
+{
+  "maid_command.ai-maid-hauling.haul": "Sort items",
+  "maid_activity.ai-maid-hauling.haul": "Sort items",
+  "status.ai-maid-hauling.searching": "Checking the work area",
+  "status.ai-maid-hauling.wrong_dimension": "Work area is in another dimension; reselect to reset its center",
+  "status.ai-maid-hauling.disabled": "Work paused: mobGriefing is disabled",
+  "status.ai-maid-hauling.restrained": "Work paused while leashed or riding",
+  "status.ai-maid-hauling.walking": "Walking to the work target",
+  "status.ai-maid-hauling.unreachable": "Target unreachable; retrying later",
+  "status.ai-maid-hauling.full": "Sorting needs one empty inventory slot",
+  "status.ai-maid-hauling.no_source": "Waiting for a reachable copper chest with items",
+  "status.ai-maid-hauling.no_destination": "Cargo kept in inventory; waiting for an empty or matching chest",
+  "status.ai-maid-hauling.busy": "Waiting for the chest to become available",
+  "status.ai-maid-hauling.picking": "Taking up to 16 items from a copper chest",
+  "status.ai-maid-hauling.placing": "Sorting cargo into an empty or matching chest"
+}

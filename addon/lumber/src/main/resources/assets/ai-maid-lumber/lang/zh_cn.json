@@ -1,0 +1,17 @@
+{
+  "maid_command.ai-maid-lumber.lumber": "伐木",
+  "maid_activity.ai-maid-lumber.lumber": "伐木",
+  "message.ai-maid-lumber.lumber.finished": "%s：伐木结束，砍伐 %s 块，跳过 %s 块（%s）。",
+  "message.ai-maid-lumber.lumber.complete": "目标处理完毕",
+  "message.ai-maid-lumber.lumber.no_tree": "未找到符合条件的树或原木",
+  "message.ai-maid-lumber.lumber.no_tool": "没有可用的斧头",
+  "message.ai-maid-lumber.lumber.disabled": "世界规则禁止生物破坏方块",
+  "message.ai-maid-lumber.lumber.timeout": "本轮作业超时",
+  "status.ai-maid-lumber.equipment_locked": "当前装备受限制，无法更换工具",
+  "status.ai-maid-lumber.lumber.complete": "本轮结束：砍伐 %s 块，跳过 %s 块（包含不可达原木）",
+  "status.ai-maid-lumber.lumber.no_tree": "未找到符合条件的树或原木，请重选伐木重试",
+  "status.ai-maid-lumber.lumber.no_tool": "缺少可用斧头或装备受限，处理后请重选伐木",
+  "status.ai-maid-lumber.lumber.disabled": "世界规则禁止生物破坏，启用后请重选伐木",
+  "status.ai-maid-lumber.lumber.timeout": "本轮作业超时，请重选伐木重试",
+  "status.ai-maid-lumber.lumber.reselect": "请重选伐木开始新任务"
+}

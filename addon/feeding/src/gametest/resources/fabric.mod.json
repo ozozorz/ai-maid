@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "ai-maid-feeding-tests",
+  "version": "1.0.0",
+  "name": "ai-maid-feeding acceptance",
+  "environment": "*",
+  "entrypoints": {
+    "fabric-gametest": [
+      "io.github.ozozorz.aimaid.feeding.FeedingGameTests"
+    ]
+  }
+}

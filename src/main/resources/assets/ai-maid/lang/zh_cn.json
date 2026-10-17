@@ -2,7 +2,7 @@
   "item.ai-maid.suspicious_substance": "可疑物质",
   "item.ai-maid.mini_golem_spawn_egg": "迷你傀儡刷怪蛋",
   "maid_command.ai-maid.free": "自由活动",
-  "maid_command.ai-maid.follow": "跟随",
+  "maid_command.ai-maid.follow": "跟随与护主",
   "maid_command.ai-maid.stay": "待命",
   "message.ai-maid.maid_command_changed": "女仆命令：%s",
   "gui.ai-maid.maid_inventory": "女仆背包",
@@ -34,5 +34,13 @@
   "maid_activity.ai-maid.wait_for_owner": "等待主人",
   "status.ai-maid.storage_full": "背包已满，无法继续接收物品",
   "command.ai-maid.maid.command_unavailable": "当前无法选择命令：%s",
-  "tag.item.ai-maid.healing_foods": "女仆回血食物"
+  "tag.item.ai-maid.healing_foods": "女仆回血食物",
+  "status.ai-maid.combat.target_unreachable": "目标暂时不可达",
+  "status.ai-maid.combat.no_ammo": "缺少可用箭矢，改用近战",
+  "status.ai-maid.combat.unarmed": "没有可用武器，正在徒手战斗",
+  "status.ai-maid.combat.defending_work": "自卫中，战后恢复原工作",
+  "status.ai-maid.combat.fighting": "正在战斗",
+  "status.ai-maid.combat.equipment_locked": "当前装备受限制，无法更换工具",
+  "maid_command.ai-maid.attack": "主动战斗",
+  "maid_activity.ai-maid.fight": "战斗"
 }

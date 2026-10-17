@@ -1,56 +1,57 @@
 # AI Maid
 
-Minecraft Fabric 女仆模组。Core 提供实体、主人关系、Brain、背包与装备、菜单、跟随、喂食和动画机制；Addon 决定工作与战斗策略。
+Minecraft Fabric 女仆模组。Core 提供主人关系、Brain、35 格背包与六槽装备、GUI、喂食回血、动画，以及近战和弓弩 PvE 战斗。正式 Addon 分别提供伐木、耕种、喂养和分类搬运。
 
-当前开发版本 **1.1.0**，目标环境为 **Minecraft 26.2、Java 25、Fabric Loader 0.19.3、Fabric API 0.158.0+26.2**。构建使用 `net.fabricmc.fabric-loom` 1.17-SNAPSHOT 和当前 unobfuscated / no-remap API。
+当前版本 **1.2.1**；环境：**Minecraft 26.2、Java 25、Fabric Loader 0.19.3、Fabric API 0.158.0+26.2**，Loom 1.17-SNAPSHOT，unobfuscated / no-remap。
 
 ## 使用
 
-- 曲奇概率驯服。主人 Shift+右键打开菜单，手中可以拿物品。
-- 受伤时，主人普通右键投喂曲奇、苹果或面包，每次回复 4 点生命。满血不消耗；创造模式不消耗。
-- Core 提供自由、跟随和待命。跟随时主人不可用会原地等待，持续卡路时尝试受限的同维度安全归队。
-- 背包有 35 个存储槽，装备使用原版六槽。菜单会显示命令、Activity 和具体提示。
-- TestAddon 增加巡逻、有限整树伐木、近战与弓弩 PvE 战斗，以及工作中自卫和战后恢复。
+- 曲奇概率驯服；主人 Shift+右键打开菜单，不要求空手。
+- 主人普通右键喂曲奇、苹果或面包，每次回复 4 点生命；满血与创造模式不会消耗。
+- Core 命令：自由、跟随与护主、待命、主动战斗。跟随会自卫、保护主人并协助主人攻击；主动战斗额外清理附近敌对生物。PvE 规则保护玩家、队友和已驯服宠物。
+- 安装对应 Addon 后，GUI 自动增加正式工作命令；工作中遭到攻击会自卫，结束后恢复。
+- 伐木处理一棵树内能走近且伸手可及的原木；耕种照料四种普通作物；喂养使用真实饲料；分类搬运从铜箱取货，送入空箱或同种物品箱。
 
-客户端与服务端应安装相同版本的 Core 及需要的 Addon。TestAddon 1.1.0 要求 Core 1.1.0 或更新版本；跨版本网络兼容不作保证。
+具体范围、参数和升级办法见 [正式 Addon 1.2 使用与验收](docs/ADDONS_1_2.md)。客户端与服务器安装相同版本的 Core 和所选 Addon。**删除旧 TestAddon JAR**，无需安装全部四个 Addon。
 
-## 开发与构建
+## 独立构建
 
-仓库根、`addon/testaddon`、`dev/devrun` 是三个独立 Gradle Build，以 Composite Build 替换本地 Maven 依赖。都可以单独在 IDEA 中打开。
-
-在仓库根执行，Windows 使用 `gradlew.bat`，其他平台使用 `./gradlew`：
+根目录、四个 `addon/*` 和 `dev/devrun` 都是独立 Gradle Build，可分别在 IDEA 打开。Addon 通过 Maven coordinate 消费 Core，本地 Composite Build 替换为源码。
 
 ```powershell
-.\gradlew.bat runClient                         # 只加载 Core
-.\gradlew.bat -p addon/testaddon runClient      # Core + TestAddon
-.\gradlew.bat -p dev/devrun runClient           # 整体开发入口
+.\gradlew.bat runClient                         # Core，含战斗
+.\gradlew.bat -p addon/lumber runClient         # Core + 伐木
+.\gradlew.bat -p addon/farming runClient        # Core + 耕种
+.\gradlew.bat -p addon/feeding runClient        # Core + 喂养
+.\gradlew.bat -p addon/hauling runClient        # Core + 分类搬运
+.\gradlew.bat -p dev/devrun runClient           # Core + 四个正式 Addon
 .\gradlew.bat build
-.\gradlew.bat -p addon/testaddon build
+.\gradlew.bat -p addon/lumber build             # 其他 Addon 同理
 .\gradlew.bat -p dev/devrun build
 ```
 
-Core 和 TestAddon 的 `build` 包含各自服务端 GameTest。发布 JAR 在各 Build 的 `build/libs`，测试代码不进入发布 JAR。仓库配置了 Maven publication，尚未配置远程发布仓库。
+各 Build 的 `build/libs` 产生发布 JAR；测试夹具不会进入发布包。每个 Addon 的 `build` 包含其独立服务端 GameTest，devrun 包含跨模组回归。远程 Maven 发布仓库尚未配置。
 
-## 验收与文档
+## 验收
 
 ```powershell
-.\gradlew.bat runGameTest                       # 独立 Core
-.\gradlew.bat runGameTest -PaddonFixtures       # 两个独立 Addon 注册入口夹具
-.\gradlew.bat runClientGameTest                 # Core 真实客户端流程
-.\gradlew.bat -p addon/testaddon runClientGameTest
+.\gradlew.bat runGameTest
+.\gradlew.bat runGameTest -PaddonFixtures
+.\gradlew.bat -p addon/hauling runGameTest
+.\gradlew.bat -p dev/devrun runGameTest
+.\gradlew.bat runClientGameTest
+.\gradlew.bat -p addon/lumber runClientGameTest
+.\gradlew.bat -p dev/devrun runClientGameTest
 ```
 
-测试使用临时测试世界。客户端截图位于对应 Build 的 `build/run/clientGameTest/screenshots`；再次构建可能清理这些输出，应先归档需要保留的截图。
+使用临时世界。真实客户端截图在各 Build 的 `build/run/clientGameTest/screenshots`；后续构建可能清理这些文件。最新运行结果、日志与截图见 [验收记录](docs/ACCEPTANCE.md)。
 
-- [Core 1.1 完善内容与验收](docs/CORE_1_1.md)
-- [Addon 公共 API 与生命周期约定](docs/ADDON_API.md)
-- [战斗系统](docs/COMBAT.md)
-- [死亡携带物、持续破坏与整树伐木](docs/LUMBER_AND_DEATH.md)
-- [动画系统](docs/ANIMATION.md)
-- [工作中自卫与战后恢复](docs/WORK_DEFENSE.md)
+- [工作调度与 TLM 参考说明](docs/WORK_SCHEDULING.md)
+- [Addon 公共 API 与生命周期](docs/ADDON_API.md)
+- [Core 1.1 历史里程碑](docs/CORE_1_1.md)
+- [战斗设计](docs/COMBAT.md)
+- [持续破坏、整树伐木与死亡物品](docs/LUMBER_AND_DEATH.md)
+- [动画设计](docs/ANIMATION.md)
+- [工作自卫与恢复](docs/WORK_DEFENSE.md)
 
-旧里程碑文档的测试数量属于当时记录。当前实现和最新验收以 Core 1.1 文档为准。问题反馈见 [GitHub Issues](https://github.com/ozozorz/ai-maid/issues)。
-
-## License
-
-沿用仓库现有 [CC0-1.0](LICENSE) 许可。本轮没有更改许可。
+问题反馈：[GitHub Issues](https://github.com/ozozorz/ai-maid/issues)。许可：[CC0-1.0](LICENSE)。

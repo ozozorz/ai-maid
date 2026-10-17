@@ -1,0 +1,16 @@
+{
+  "maid_command.ai-maid-hauling.haul": "分类搬运",
+  "maid_activity.ai-maid-hauling.haul": "分类搬运",
+  "status.ai-maid-hauling.searching": "正在检查工作区域",
+  "status.ai-maid-hauling.wrong_dimension": "工作区域不在当前维度；重新选择命令可重设中心",
+  "status.ai-maid-hauling.disabled": "mobGriefing 已关闭，工作暂停",
+  "status.ai-maid-hauling.restrained": "被拴住或正在乘坐，工作暂停",
+  "status.ai-maid-hauling.walking": "正在前往工作目标",
+  "status.ai-maid-hauling.unreachable": "目标暂不可达，稍后重新尝试",
+  "status.ai-maid-hauling.full": "搬运需要一个空背包槽，请腾空一格",
+  "status.ai-maid-hauling.no_source": "等待范围内有物品且可达的铜箱",
+  "status.ai-maid-hauling.no_destination": "货物保留在背包；等待空箱或有同种物品的可用箱子",
+  "status.ai-maid-hauling.busy": "箱子正在被使用，等待交互结束",
+  "status.ai-maid-hauling.picking": "正在从铜箱取货（每批最多 16 个）",
+  "status.ai-maid-hauling.placing": "正在向空箱或同种物品箱存货"
+}

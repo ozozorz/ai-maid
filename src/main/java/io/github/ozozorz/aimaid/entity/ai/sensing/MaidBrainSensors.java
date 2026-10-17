@@ -35,6 +35,7 @@ public class MaidBrainSensors {
         registerInternal(SensorType.NEAREST_ITEMS, AIMaid.MOD_ID);
         registerInternal(ModSensorTypes.OWNER, AIMaid.MOD_ID);
         registerInternal(ModSensorTypes.MAID_COMMAND, AIMaid.MOD_ID);
+        registerInternal(ModSensorTypes.COMBAT, AIMaid.MOD_ID);
         loadAddonEntrypoints();
         frozen = true;
     }

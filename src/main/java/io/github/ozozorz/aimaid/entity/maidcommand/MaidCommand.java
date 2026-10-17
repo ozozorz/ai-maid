@@ -22,6 +22,18 @@ import net.minecraft.world.item.ItemStack;
 // 都必须是一个 MaidCommand。
 public interface MaidCommand {
 
+    /** GUARD 护主，HUNT 额外主动清怪，SELF_DEFENSE 只响应工作期间自身遇袭。 */
+    default io.github.ozozorz.aimaid.entity.combat.MaidCombatMode getCombatMode() {
+        return io.github.ozozorz.aimaid.entity.combat.MaidCombatMode.NONE;
+    }
+    /** 已停止旧 Behavior；Addon 可暂停自己的有限任务时钟。 */
+    default void onCombatStarted(AiMaidEntity maid, long now) {}
+    /** 命令仍是原工作命令时才恢复；重新读取世界与真实物品，不复用旧破坏进度。 */
+    default void onCombatEnded(AiMaidEntity maid, long now) {}
+
+    /** 自动换装/弹药候选查询；搬运可保留货物格。GUI 手动转移仍由玩家控制。 */
+    default boolean canUseInventoryItem(AiMaidEntity maid, int slot) { return true; }
+
     // =========================
     // AI
     // =========================

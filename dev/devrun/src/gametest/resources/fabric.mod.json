@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "id": "ai-maid-integration-tests",
+  "version": "1.0.0",
+  "name": "ai-maid-integration-tests",
+  "environment": "*",
+  "entrypoints": {
+    "fabric-gametest": [
+      "io.github.ozozorz.aimaid.integration.AnimationGameTests",
+      "io.github.ozozorz.aimaid.integration.WorkDefenseGameTests",
+      "io.github.ozozorz.aimaid.integration.CoreIntegrationGameTests",
+      "io.github.ozozorz.aimaid.integration.FormalAddonGameTests"
+    ],
+    "fabric-client-gametest": [
+      "io.github.ozozorz.aimaid.integration.AnimationClientGameTest",
+      "io.github.ozozorz.aimaid.integration.WorkDefenseClientGameTest",
+      "io.github.ozozorz.aimaid.integration.FormalAddonClientGameTest"
+    ],
+    "main": [
+      "io.github.ozozorz.aimaid.integration.FixtureEntrypoint"
+    ],
+    "ai-maid-addon": [
+      "io.github.ozozorz.aimaid.integration.FixtureEntrypoint"
+    ]
+  },
+  "mixins": [
+    "ai-maid-test-support.mixins.json"
+  ]
+}

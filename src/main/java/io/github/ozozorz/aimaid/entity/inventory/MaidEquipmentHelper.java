@@ -35,12 +35,14 @@ public class MaidEquipmentHelper {
             return true;
         }
 
-        OptionalInt inventorySlot = maid.getInventory().findFirstMatchingSlot(
-                stack -> predicate.test(stack) && MaidItemTransfer.canPlaceInEquipmentSlot(maid, stack, equipmentSlot));
-        if (inventorySlot.isEmpty()) {
-            return false;
+        for (int slot = 0; slot < maid.getInventory().getContainerSize(); slot++) {
+            ItemStack stack = maid.getInventory().getItem(slot);
+            if (!stack.isEmpty() && maid.getMaidCommand().canUseInventoryItem(maid, slot) && predicate.test(stack)
+                    && MaidItemTransfer.canPlaceInEquipmentSlot(maid, stack, equipmentSlot)) {
+                return MaidItemTransfer.swapInventoryWithEquipment(maid, slot, equipmentSlot);
+            }
         }
-        return MaidItemTransfer.swapInventoryWithEquipment(maid, inventorySlot.getAsInt(), equipmentSlot);
+        return false;
     }
 
 }

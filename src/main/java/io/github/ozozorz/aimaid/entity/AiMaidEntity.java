@@ -51,7 +51,28 @@ import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 
 // 女仆实体类
-public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
+public class AiMaidEntity extends TamableAnimal implements InventoryCarrier, net.minecraft.world.entity.ContainerUser {
+    // 原版容器开合计数使用的临时位置，不是另一份容器或物品数据。
+    private net.minecraft.core.BlockPos openedContainerPos;
+
+    public void setOpenedContainerPos(net.minecraft.core.BlockPos pos) {
+        MaidServerAccess.requireServerThread(this);
+        openedContainerPos = pos == null ? null : pos.immutable();
+    }
+
+    @Override public boolean hasContainerOpen(net.minecraft.world.level.block.entity.ContainerOpenersCounter counter,
+            net.minecraft.core.BlockPos pos) {
+        if (openedContainerPos == null) return false;
+        if (openedContainerPos.equals(pos)) return true;
+        var state = level().getBlockState(openedContainerPos);
+        return state.getBlock() instanceof net.minecraft.world.level.block.ChestBlock
+                && state.getValueOrElse(net.minecraft.world.level.block.ChestBlock.TYPE,
+                        net.minecraft.world.level.block.state.properties.ChestType.SINGLE)
+                        != net.minecraft.world.level.block.state.properties.ChestType.SINGLE
+                && net.minecraft.world.level.block.ChestBlock.getConnectedBlockPos(openedContainerPos, state).equals(pos);
+    }
+
+    @Override public double getContainerInteractionRange() { return 3.0; }
 
     // 定义一个 用来访问“女仆当前命令”这份同步数据的Key，通过它去entityData里读取真正的数据
     // SynchedEntityData.defineId(...) 告诉 Minecraft：我要给某一种实体类型注册一个新的同步数据槽。
@@ -359,6 +380,7 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
     }
 
     private void restoreMaidCommandId(Identifier id) {
+        id = MaidCommands.migrateLegacyId(id);
         this.entityData.set(MAID_COMMAND_ENTITY_DATA_ACCESSOR, id.toString());
     }
 
@@ -426,8 +448,12 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
         if (!held.isEmpty()) {
             return held;
         }
-        return this.inventory.findFirstMatchingSlot(projectileWeapon.getAllSupportedProjectiles())
-                .stream().mapToObj(this.inventory::getItem).findFirst().orElse(ItemStack.EMPTY);
+        for (int slot = 0; slot < inventory.getContainerSize(); slot++) {
+            ItemStack candidate = inventory.getItem(slot);
+            if (getMaidCommand().canUseInventoryItem(this, slot)
+                    && projectileWeapon.getAllSupportedProjectiles().test(candidate)) return candidate;
+        }
+        return ItemStack.EMPTY;
     }
 
     @Override
@@ -435,7 +461,7 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier {
         return weapon.getItem() instanceof BowItem || weapon.getItem() instanceof CrossbowItem;
     }
 
-    // Brain 是攻击目标的权威来源；Core 单独运行时不一定注册了这个 Memory。
+    // Brain 是攻击目标的权威来源，Core 的 Combat Sensor 注册这个 Memory。
     @Override
     public @Nullable LivingEntity getTarget() {
         return this.getBrain().hasMemoryValue(MemoryModuleType.ATTACK_TARGET)

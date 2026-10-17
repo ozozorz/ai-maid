@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "id": "ai-maid-feeding",
+  "version": "${version}",
+  "name": "Ai Maid Feeding",
+  "description": "Official feeding commands for Ai Maid.",
+  "authors": [
+    "ozozorz"
+  ],
+  "contact": {
+    "sources": "https://github.com/ozozorz/ai-maid"
+  },
+  "license": "CC0-1.0",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "io.github.ozozorz.aimaid.feeding.FeedingAddon"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.19.3",
+    "minecraft": "~26.2",
+    "java": ">=25",
+    "fabric-api": ">=0.158.0+26.2",
+    "ai-maid": ">=1.2.1"
+  }
+}

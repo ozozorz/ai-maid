@@ -1,0 +1,15 @@
+{
+  "maid_command.ai-maid-farming.farm": "Farm",
+  "maid_activity.ai-maid-farming.farm": "Farm",
+  "status.ai-maid-farming.searching": "Checking the work area",
+  "status.ai-maid-farming.wrong_dimension": "Work area is in another dimension; reselect to reset its center",
+  "status.ai-maid-farming.disabled": "Work paused: mobGriefing is disabled",
+  "status.ai-maid-farming.restrained": "Work paused while leashed or riding",
+  "status.ai-maid-farming.walking": "Walking to the work target",
+  "status.ai-maid-farming.unreachable": "Target unreachable; retrying later",
+  "status.ai-maid-farming.full": "Waiting for inventory space",
+  "status.ai-maid-farming.no_work": "Waiting for mature crops or available farmland",
+  "status.ai-maid-farming.no_seeds": "No seeds available; waiting for supplies or mature crops",
+  "status.ai-maid-farming.working": "Harvested and replanted / planted a crop",
+  "status.ai-maid-farming.preparing": "Tending crops"
+}

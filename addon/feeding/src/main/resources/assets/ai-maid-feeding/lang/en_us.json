@@ -1,0 +1,15 @@
+{
+  "maid_command.ai-maid-feeding.feed": "Feed animals",
+  "maid_activity.ai-maid-feeding.feed": "Feed animals",
+  "status.ai-maid-feeding.searching": "Checking the work area",
+  "status.ai-maid-feeding.wrong_dimension": "Work area is in another dimension; reselect to reset its center",
+  "status.ai-maid-feeding.disabled": "Work paused: mobGriefing is disabled",
+  "status.ai-maid-feeding.restrained": "Work paused while leashed or riding",
+  "status.ai-maid-feeding.walking": "Walking to the work target",
+  "status.ai-maid-feeding.unreachable": "Target unreachable; retrying later",
+  "status.ai-maid-feeding.full": "Waiting for inventory space",
+  "status.ai-maid-feeding.no_animals": "Waiting for adult animals ready to breed",
+  "status.ai-maid-feeding.no_food": "Need suitable animal feed, or targets are temporarily unreachable",
+  "status.ai-maid-feeding.working": "Fed an animal; vanilla breeding and cooldown continue",
+  "status.ai-maid-feeding.preparing": "Preparing to feed"
+}
