@@ -31,8 +31,11 @@ dependencies {
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
 
-    ['ai-maid', 'ai-maid-lumber', 'ai-maid-farming', 'ai-maid-feeding', 'ai-maid-hauling'].each { name ->
-        def coordinate = "io.github.ozozorz.aimaid:${name}:${project.aimaid_version}"
+    def modCoordinates = ['ai-maid', 'ai-maid-lumber', 'ai-maid-farming', 'ai-maid-feeding', 'ai-maid-hauling'].collect { name ->
+        "io.github.ozozorz.aimaid:${name}:${project.aimaid_version}"
+    }
+    modCoordinates.add("io.github.ozozorz.aimaid:ai-maid-llm:${project.llm_version}")
+    modCoordinates.each { coordinate ->
         implementation coordinate
         clientImplementation(coordinate) {
             attributes { attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, objects.named(LibraryElements, LibraryElements.JAR)) }

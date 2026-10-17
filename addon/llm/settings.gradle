@@ -1,0 +1,19 @@
+pluginManagement {
+    repositories {
+        maven {
+            name = 'Fabric'
+            url = 'https://maven.fabricmc.net/'
+        }
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+rootProject.name = 'ai-maid-llm'
+
+// 独立 Addon 通过 Maven 坐标依赖 Core；本仓库开发时替换成本地源码。
+includeBuild('../..') {
+    dependencySubstitution {
+        substitute module('io.github.ozozorz.aimaid:ai-maid') using project(':')
+    }
+}

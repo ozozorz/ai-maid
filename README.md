@@ -16,7 +16,7 @@ Minecraft Fabric 女仆模组。Core 提供主人关系、Brain、35 格背包�
 
 ## 独立构建
 
-根目录、四个 `addon/*` 和 `dev/devrun` 都是独立 Gradle Build，可分别在 IDEA 打开。Addon 通过 Maven coordinate 消费 Core，本地 Composite Build 替换为源码。
+根目录、四个工作 Addon、正在教学开发的 `addon/llm` 和 `dev/devrun` 都是独立 Gradle Build，可分别在 IDEA 打开。Addon 通过 Maven coordinate 消费 Core，本地 Composite Build 替换为源码。
 
 ```powershell
 .\gradlew.bat runClient                         # Core，含战斗
@@ -24,13 +24,16 @@ Minecraft Fabric 女仆模组。Core 提供主人关系、Brain、35 格背包�
 .\gradlew.bat -p addon/farming runClient        # Core + 耕种
 .\gradlew.bat -p addon/feeding runClient        # Core + 喂养
 .\gradlew.bat -p addon/hauling runClient        # Core + 分类搬运
-.\gradlew.bat -p dev/devrun runClient           # Core + 四个正式 Addon
+.\gradlew.bat -p addon/llm runClient            # Core + LLM 骨架
+.\gradlew.bat -p dev/devrun runClient           # Core + 四个工作 Addon + LLM 骨架
 .\gradlew.bat build
 .\gradlew.bat -p addon/lumber build             # 其他 Addon 同理
 .\gradlew.bat -p dev/devrun build
 ```
 
-各 Build 的 `build/libs` 产生发布 JAR；测试夹具不会进入发布包。每个 Addon 的 `build` 包含其独立服务端 GameTest，devrun 包含跨模组回归。远程 Maven 发布仓库尚未配置。
+各 Build 的 `build/libs` 产生 JAR；测试夹具不会进入发布包。四个工作 Addon 的 `build` 包含其独立服务端 GameTest，devrun 包含跨模组回归。远程 Maven 发布仓库尚未配置。
+
+[LLM Addon](addon/llm/README.md) 当前是 `0.1.0-SNAPSHOT` 教学骨架，只有构建与加载入口；其 `build` 验证编译与打包，尚未实现模型请求或自然语言控制。
 
 ## 验收
 

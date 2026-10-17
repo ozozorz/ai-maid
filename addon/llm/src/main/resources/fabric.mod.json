@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "ai-maid-llm",
+  "version": "${version}",
+  "name": "Ai Maid LLM",
+  "description": "Development scaffold for optional LLM integration with Ai Maid.",
+  "authors": ["ozozorz"],
+  "contact": {
+    "sources": "https://github.com/ozozorz/ai-maid"
+  },
+  "license": "CC0-1.0",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["io.github.ozozorz.aimaid.llm.LlmAddon"]
+  },
+  "depends": {
+    "fabricloader": ">=0.19.3",
+    "minecraft": "~26.2",
+    "java": ">=25",
+    "fabric-api": ">=0.158.0+26.2",
+    "ai-maid": ">=${aimaid_version}"
+  }
+}

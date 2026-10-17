@@ -34,3 +34,6 @@ includeBuild('../../addon/feeding') {
 includeBuild('../../addon/hauling') {
     dependencySubstitution { substitute module('io.github.ozozorz.aimaid:ai-maid-hauling') using project(':') }
 }
+includeBuild('../../addon/llm') {
+    dependencySubstitution { substitute module('io.github.ozozorz.aimaid:ai-maid-llm') using project(':') }
+}
