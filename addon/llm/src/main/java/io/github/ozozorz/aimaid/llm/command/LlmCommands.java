@@ -52,7 +52,8 @@ public final class LlmCommands {
         var player = context.getSource().getPlayerOrException(); var maid = resolver.resolve(context);
         var service = LlmAddon.service(context.getSource().getServer());
         if (service == null) return 0;
-        if (service.resolve(player, maid.getUUID()) != maid) { service.error(player, maid.getUUID(), "unavailable"); return 0; }
+        var resolved = action.equals("cancel") ? service.resolveCancellation(player, maid.getUUID()) : service.resolve(player, maid.getUUID());
+        if (resolved != maid) { service.error(player, maid.getUUID(), "unavailable"); return 0; }
         switch (action) {
             case "open" -> service.open(player, maid);
             case "send" -> { return service.chat(player, maid, text) ? 1 : 0; }

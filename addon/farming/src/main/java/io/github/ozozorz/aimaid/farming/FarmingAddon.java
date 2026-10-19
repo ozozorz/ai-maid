@@ -10,6 +10,8 @@ public final class FarmingAddon implements ModInitializer {
     public static final String ID = "ai-maid-farming";
     public static final Activity ACTIVITY = Registry.register(BuiltInRegistries.ACTIVITY, id("farm"), new Activity(id("farm").toString()));
     public static final FarmingCommand COMMAND = Registry.register(ModBuiltInRegistries.MAID_COMMAND, id("farm"), new FarmingCommand());
+    public static final Activity DELIVERY_ACTIVITY = Registry.register(BuiltInRegistries.ACTIVITY, id("deliver_wheat"), new Activity(id("deliver_wheat").toString()));
+    public static final WheatDeliveryCommand DELIVERY = Registry.register(ModBuiltInRegistries.MAID_COMMAND, id("deliver_wheat"), new WheatDeliveryCommand());
     public static Identifier id(String path) { return Identifier.fromNamespaceAndPath(ID, path); }
     @Override public void onInitialize() { FarmingData.initialize(); }
 }

@@ -37,7 +37,7 @@ public final class MaidChatScreen extends Screen {
         addRenderableWidget(Button.builder(Component.translatable("gui.done"), b -> onClose()).bounds(left + panelWidth - 86, height - 34, 78, 20).build());
         input.setResponder(value -> updateButtons()); setInitialFocus(input); updateButtons();
     }
-    private void updateButtons() { if (send != null) { send.active = !busy && !input.getValue().isBlank(); cancel.active = busy; input.setEditable(!busy); } }
+    private void updateButtons() { if (send != null) { send.active = !busy && !input.getValue().isBlank(); cancel.active = true; input.setEditable(!busy); } }
     public void setInput(String value) { input.setValue(value); }
     public void submit() {
         if (busy || input.getValue().isBlank()) return;

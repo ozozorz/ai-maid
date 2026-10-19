@@ -51,6 +51,7 @@ public class LlmGameTests {
     @GameTest public void coreOnlyCatalogDoesNotInventOptionalWork(GameTestHelper h) {
         var p = pair(h); String commands = MaidTools.commands(p.maid(), p.owner()).toString();
         h.assertTrue(commands.contains("ai-maid:follow") && !commands.contains("ai-maid-farming:farm"), "Missing addons advertised");
+        h.assertTrue(!MaidTools.definitions(p.maid(), p.owner()).toString().contains("start_wheat_delivery"), "Missing delivery addon advertised");
         var data = MaidTools.snapshot(p.maid()); h.assertTrue(data.has("status") && data.has("inventory") && data.has("equipment"), "Missing authoritative context"); h.succeed();
     }
     @GameTest public void personaIsSavedOnMaidAndNotSharedByCommand(GameTestHelper h) {

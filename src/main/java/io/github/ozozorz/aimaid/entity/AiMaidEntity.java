@@ -401,6 +401,7 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier, net
 
     @Override
     public void die(DamageSource source) {
+        if (!this.level().isClientSide()) io.github.ozozorz.aimaid.entity.task.MaidTasks.cancel(this, "maid_died");
         if (this.level() instanceof ServerLevel level) this.getBrain().stopAll(level, this);
         if (!this.level().isClientSide()) clearAnimationAction();
         super.die(source);
@@ -408,6 +409,7 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier, net
 
     @Override
     public void onRemoval(Entity.RemovalReason reason) {
+        if (!this.level().isClientSide()) io.github.ozozorz.aimaid.entity.task.MaidTasks.cancel(this, "entity_unloaded");
         // 卸载/跨维度也要停止持续动作，但它们不属于死亡，不掉落携带物。
         if (this.level() instanceof ServerLevel level) this.getBrain().stopAll(level, this);
         if (!this.level().isClientSide()) clearAnimationAction();

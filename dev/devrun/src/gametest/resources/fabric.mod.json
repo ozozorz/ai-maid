@@ -10,13 +10,15 @@
       "io.github.ozozorz.aimaid.integration.WorkDefenseGameTests",
       "io.github.ozozorz.aimaid.integration.CoreIntegrationGameTests",
       "io.github.ozozorz.aimaid.integration.FormalAddonGameTests",
-      "io.github.ozozorz.aimaid.integration.LlmAddonGameTests"
+      "io.github.ozozorz.aimaid.integration.LlmAddonGameTests",
+      "io.github.ozozorz.aimaid.integration.WheatDeliveryToolGameTests"
     ],
     "fabric-client-gametest": [
       "io.github.ozozorz.aimaid.integration.AnimationClientGameTest",
       "io.github.ozozorz.aimaid.integration.WorkDefenseClientGameTest",
       "io.github.ozozorz.aimaid.integration.FormalAddonClientGameTest",
-      "io.github.ozozorz.aimaid.integration.TestSceneClientGameTest"
+      "io.github.ozozorz.aimaid.integration.TestSceneClientGameTest",
+      "io.github.ozozorz.aimaid.llm.WheatDeliveryClientGameTest"
     ],
     "main": [
       "io.github.ozozorz.aimaid.integration.FixtureEntrypoint"

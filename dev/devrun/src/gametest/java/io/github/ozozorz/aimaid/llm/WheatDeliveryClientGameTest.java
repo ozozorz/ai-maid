@@ -1,0 +1,150 @@
+package io.github.ozozorz.aimaid.llm;
+
+import com.google.gson.*;
+import com.sun.net.httpserver.HttpServer;
+import io.github.ozozorz.aimaid.entity.AiMaidEntity;
+import io.github.ozozorz.aimaid.entity.maidcommand.MaidCommands;
+import io.github.ozozorz.aimaid.entity.task.*;
+import io.github.ozozorz.aimaid.llm.client.MaidChatScreen;
+import io.github.ozozorz.aimaid.llm.config.LlmConfig;
+import io.github.ozozorz.aimaid.llm.protocol.ChatProtocol;
+import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest;
+import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.item.*;
+import net.minecraft.world.level.block.*;
+import net.minecraft.world.level.block.entity.ChestBlockEntity;
+import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+import java.util.concurrent.*;
+
+/** Real chat packets, tool round trips, task ticks and completion UI; only the model is local/mock. */
+public class WheatDeliveryClientGameTest implements FabricClientGameTest {
+    private record Scene(UUID maid, BlockPos chest) {}
+
+    @Override public void runTest(ClientGameTestContext context) {
+        try (var model = new Model(); var world = context.worldBuilder().create()) {
+            var server = world.getServer(); var connection = world.getConnection(); connection.waitForChunksRender();
+            Scene scene = server.computeOnServer(s -> {
+                LlmAddon.install(s, model.config());
+                var owner = connection.getServerPlayer(); var level = connection.getServerLevel(); var base = owner.blockPosition().below();
+                for (int x = -3; x <= 9; x++) for (int z = -3; z <= 9; z++) {
+                    level.setBlockAndUpdate(base.offset(x, 0, z), Blocks.DIRT.defaultBlockState());
+                    for (int y = 1; y <= 4; y++) level.setBlockAndUpdate(base.offset(x, y, z), Blocks.AIR.defaultBlockState());
+                }
+                owner.connection.teleport(base.getX() + 0.5, base.getY() + 1, base.getZ() + 0.5, 0, 15);
+                var maid = new AiMaidEntity(level); maid.setPos(base.getX() + 2.5, base.getY() + 1, base.getZ() + 2.5);
+                maid.setTame(true, true); maid.setOwner(owner); maid.selectMaidCommand(MaidCommands.STAY);
+                maid.getInventory().setItem(0, new ItemStack(Items.WHEAT, 2));
+                maid.getInventory().setItem(1, new ItemStack(Items.WHEAT_SEEDS, 8)); level.addFreshEntity(maid);
+                for (int x = 3; x <= 4; x++) {
+                    var crop = base.offset(x, 1, 4);
+                    level.setBlockAndUpdate(crop.below(), Blocks.FARMLAND.defaultBlockState().setValue(FarmlandBlock.MOISTURE, 7));
+                    level.setBlockAndUpdate(crop, ((CropBlock) Blocks.WHEAT).getStateForAge(7));
+                }
+                var chest = base.offset(6, 1, 6); level.setBlockAndUpdate(chest, Blocks.CHEST.defaultBlockState()); model.chest = chest;
+                try { s.getCommands().getDispatcher().execute("maid uuid " + maid.getUUID() + " chat", owner.createCommandSourceStack()); }
+                catch (Exception e) { throw new AssertionError(e); }
+                return new Scene(maid.getUUID(), chest);
+            });
+            context.waitForScreen(MaidChatScreen.class);
+            send(context, "Gather four wheat, put them in the chest at " + scene.chest().toShortString() + ", then return.");
+            context.waitFor(c -> c.gui.screen() instanceof MaidChatScreen chat && !chat.busy()
+                    && chat.messages().stream().anyMatch(m -> m.getString().contains("Delivery accepted")));
+            server.waitFor(s -> {
+                var maid = (AiMaidEntity) connection.getServerLevel().getEntity(scene.maid());
+                return MaidTasks.current(maid) != null && MaidTasks.current(maid).snapshot(maid).state().terminal();
+            });
+            server.runOnServer(s -> {
+                var maid = (AiMaidEntity) connection.getServerLevel().getEntity(scene.maid());
+                var task = MaidTasks.current(maid).snapshot(maid);
+                check(task.state() == MaidTask.State.SUCCEEDED && task.progress().get("delivered") == 4, "Wrong result: " + task);
+                var chest = (ChestBlockEntity) connection.getServerLevel().getBlockEntity(scene.chest());
+                check(chest.countItem(Items.WHEAT) == 4 && maid.distanceToSqr(connection.getServerPlayer()) <= 9, "No real deposit/return");
+                check(model.requests.size() == 3 && model.requests.get(2).toString().contains("only_one_selection_per_turn"), "Mutation limit not applied to tasks");
+                check(model.requests.get(2).toString().contains("work_completed"), "Task acceptance was not returned to model");
+            });
+            context.waitFor(c -> c.gui.screen() instanceof MaidChatScreen chat
+                    && chat.messages().stream().anyMatch(m -> m.toString().contains("delivery.state.succeeded")));
+            context.takeScreenshot("wheat-delivery-complete");
+
+            // The cancel button must work after the HTTP turn ended, while a game task is still active.
+            model.count = 2;
+            server.runOnServer(s -> {
+                var maid = (AiMaidEntity) connection.getServerLevel().getEntity(scene.maid());
+                maid.setNoAi(true); maid.getInventory().setItem(0, new ItemStack(Items.WHEAT, 2));
+            });
+            send(context, "Deliver two more wheat to that same chest and come back.");
+            context.waitFor(c -> c.gui.screen() instanceof MaidChatScreen chat && !chat.busy() && model.requests.size() == 6);
+            server.runOnServer(s -> {
+                var owner = connection.getServerPlayer();
+                owner.connection.teleport(owner.getX() + 40, owner.getY(), owner.getZ(), owner.getYRot(), owner.getXRot());
+            });
+            context.clickScreenButton("llm.ai-maid.cancel");
+            server.waitFor(s -> {
+                var maid = (AiMaidEntity) connection.getServerLevel().getEntity(scene.maid());
+                return MaidTasks.current(maid).snapshot(maid).state() == MaidTask.State.CANCELLED;
+            });
+            server.runOnServer(s -> {
+                var maid = (AiMaidEntity) connection.getServerLevel().getEntity(scene.maid());
+                check(maid.getMaidCommand() == MaidCommands.STAY && maid.getInventory().countMatching(i -> i.is(Items.WHEAT)) == 2,
+                        "Cancellation lost cargo or failed to stop the task");
+            });
+            context.takeScreenshot("wheat-delivery-cancelled");
+        } catch (Exception e) { throw new AssertionError(e); }
+    }
+
+    private static void send(ClientGameTestContext context, String message) {
+        context.runOnClient(c -> ((MaidChatScreen) c.gui.screen()).setInput(message)); context.clickScreenButton("llm.ai-maid.send");
+    }
+    private static void check(boolean condition, String message) { if (!condition) throw new AssertionError(message); }
+    private static JsonObject call(String id, String name, JsonObject args) {
+        var fn = new JsonObject(); fn.addProperty("name", name); fn.addProperty("arguments", args.toString());
+        var call = new JsonObject(); call.addProperty("id", id); call.addProperty("type", "function"); call.add("function", fn); return call;
+    }
+    private static String response(JsonObject message) {
+        var choice = new JsonObject(); choice.addProperty("finish_reason", message.has("tool_calls") ? "tool_calls" : "stop"); choice.add("message", message);
+        var choices = new JsonArray(); choices.add(choice); var result = new JsonObject(); result.add("choices", choices); return result.toString();
+    }
+    private static String tools(JsonObject... calls) {
+        var message = ChatProtocol.message("assistant", ""); var array = new JsonArray(); for (var call : calls) array.add(call);
+        message.add("tool_calls", array); return response(message);
+    }
+
+    private static final class Model implements AutoCloseable {
+        final HttpServer http;
+        final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+        final List<JsonObject> requests = new CopyOnWriteArrayList<>();
+        volatile BlockPos chest;
+        volatile int count = 4;
+        Model() throws Exception {
+            http = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0); http.setExecutor(executor);
+            http.createContext("/chat", exchange -> {
+                try {
+                    var request = ChatProtocol.object(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
+                    int phase = requests.size() % 3, turn = requests.size() / 3; requests.add(request);
+                    String reply;
+                    if (phase == 0) {
+                        var args = new JsonObject(); args.addProperty("x", chest.getX()); args.addProperty("y", chest.getY()); args.addProperty("z", chest.getZ());
+                        reply = tools(call("observe-" + turn, "observe_wheat_delivery", args));
+                    } else if (phase == 1) {
+                        String token = null;
+                        for (var item : request.getAsJsonArray("messages")) {
+                            var message = item.getAsJsonObject();
+                            if (message.has("tool_call_id") && message.get("tool_call_id").getAsString().equals("observe-" + turn))
+                                token = ChatProtocol.object(message.get("content").getAsString()).get("target_id").getAsString();
+                        }
+                        check(token != null, "No observed target in model context");
+                        var args = new JsonObject(); args.addProperty("count", count); args.addProperty("target_id", token);
+                        reply = tools(call("start-a-" + turn, "start_wheat_delivery", args), call("start-b-" + turn, "start_wheat_delivery", args),
+                                call("forbidden-" + turn, "select_command", ChatProtocol.object("{\"command_id\":\"ai-maid:free\"}")));
+                    } else reply = response(ChatProtocol.message("assistant", "Delivery accepted; waiting for the server's actual result."));
+                    byte[] bytes = reply.getBytes(StandardCharsets.UTF_8); exchange.sendResponseHeaders(200, bytes.length); exchange.getResponseBody().write(bytes);
+                } finally { exchange.close(); }
+            }); http.start();
+        }
+        LlmConfig config() { return new LlmConfig("http://127.0.0.1:" + http.getAddress().getPort() + "/chat", "mock", "", "test", "max_tokens", 10, 512, 2, 0, 2, 4, 32); }
+        @Override public void close() { http.stop(0); executor.shutdownNow(); }
+    }
+}

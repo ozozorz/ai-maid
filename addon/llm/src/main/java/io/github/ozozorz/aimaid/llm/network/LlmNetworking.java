@@ -13,7 +13,8 @@ public final class LlmNetworking {
         ServerPlayNetworking.registerGlobalReceiver(ChatRequest.TYPE, (packet, context) -> {
             var service = LlmAddon.service(context.server());
             if (service == null) return;
-            var player = context.player(); var maid = service.resolve(player, packet.maid());
+            var player = context.player();
+            var maid = packet.action().equals("cancel") ? service.resolveCancellation(player, packet.maid()) : service.resolve(player, packet.maid());
             if (maid == null) { service.error(player, packet.maid(), "unavailable"); return; }
             switch (packet.action()) {
                 case "open" -> service.open(player, maid);

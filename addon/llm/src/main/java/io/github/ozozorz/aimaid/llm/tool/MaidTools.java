@@ -40,10 +40,11 @@ public final class MaidTools {
         var mode = schema("string"); var modes = new JsonArray(); modes.add("tree"); modes.add("single"); mode.add("enum", modes); props.add("mode", mode);
         var restart = schema("boolean"); restart.addProperty("description", "只在主人明确要求重新开始/重设中心时使用 true。重复相同指令默认不重启。"); props.add("restart", restart);
         tools.add(function("select_command", "选择一个工作策略。radius 仅限 farm/feed/haul；mode 仅限 lumber。成功表示已选中，不表示工作已完成。不能排队多个工作。", props, List.of("command_id")));
+        WheatDeliveryTools.definitions(tools);
         return tools;
     }
-    private static JsonObject schema(String type) { var s = new JsonObject(); s.addProperty("type", type); return s; }
-    private static JsonObject function(String name, String description, JsonObject props, List<String> required) {
+    static JsonObject schema(String type) { var s = new JsonObject(); s.addProperty("type", type); return s; }
+    static JsonObject function(String name, String description, JsonObject props, List<String> required) {
         var parameters = schema("object"); parameters.add("properties", props); parameters.addProperty("additionalProperties", false);
         var array = new JsonArray(); required.forEach(array::add); parameters.add("required", array);
         var fn = new JsonObject(); fn.addProperty("name", name); fn.addProperty("description", description); fn.add("parameters", parameters);
@@ -64,8 +65,11 @@ public final class MaidTools {
     /** 调用者先验证会话权限；本层在每次真正修改前再次检查。 */
     public static JsonObject execute(String name, JsonObject args, AiMaidEntity maid, ServerPlayer player, int distance) {
         MaidServerAccess.requireServerThread(maid);
-        if (!allowed(maid, player, distance)) return ChatProtocol.error("maid_unavailable_or_not_owner");
+        if (!(name.equals("cancel_task") ? allowedCancellation(maid, player, distance) : allowed(maid, player, distance)))
+            return ChatProtocol.error("maid_unavailable_or_not_owner");
         try {
+            if (Set.of("observe_wheat_delivery", "start_wheat_delivery", "cancel_task").contains(name))
+                return WheatDeliveryTools.execute(name, args, maid, player);
             if (name.equals("query_maid") || name.equals("list_commands")) {
                 if (!args.isEmpty()) return ChatProtocol.error("unexpected_arguments");
                 if (name.equals("query_maid")) return snapshot(maid);
@@ -117,6 +121,13 @@ public final class MaidTools {
                 && maid.level() == player.level() && maid.isTame() && maid.isOwnedBy(player)
                 && maid.distanceToSqr(player) <= (double) distance * distance;
     }
+    /** Revoking a running task remains possible after its owner walks beyond chat range. */
+    public static boolean allowedCancellation(AiMaidEntity maid, ServerPlayer player, int distance) {
+        if (allowed(maid, player, distance)) return true;
+        var task = io.github.ozozorz.aimaid.entity.task.MaidTasks.current(maid);
+        return maid.isAlive() && !maid.isRemoved() && player.isAlive() && !player.isSpectator()
+                && maid.isTame() && maid.isOwnedBy(player) && task != null && !task.snapshot(maid).state().terminal();
+    }
     public static JsonObject snapshot(AiMaidEntity maid) {
         MaidServerAccess.requireServerThread(maid);
         var state = new JsonObject(); state.addProperty("ok", true);
@@ -136,7 +147,27 @@ public final class MaidTools {
             var item = maid.getInventory().getItem(i); if (item.isEmpty()) continue;
             var row = stack(item); row.addProperty("slot", i); inventory.add(row);
         }
-        state.add("inventory", inventory); return state;
+        state.add("inventory", inventory);
+        var task = io.github.ozozorz.aimaid.entity.task.MaidTasks.current(maid);
+        if (task != null) state.add("task", taskSnapshot(maid));
+        return state;
+    }
+    public static JsonObject taskSnapshot(AiMaidEntity maid) {
+        MaidServerAccess.requireServerThread(maid);
+        var data = io.github.ozozorz.aimaid.entity.task.MaidTasks.current(maid).snapshot(maid);
+        var result = new JsonObject();
+        result.addProperty("id", data.id().toString()); result.addProperty("type", data.type());
+        result.addProperty("state", data.state().name().toLowerCase(Locale.ROOT)); result.addProperty("step", data.step());
+        result.addProperty("reason", data.reason());
+        var progress = new JsonObject(); data.progress().forEach(progress::addProperty); result.add("progress", progress);
+        result.addProperty("destination", data.destination().pos().toShortString());
+        result.addProperty("dimension", data.destination().dimension().identifier().toString());
+        return result;
+    }
+    public static boolean mutatesWork(String name) { return Set.of("select_command", "start_wheat_delivery", "cancel_task").contains(name); }
+    public static boolean changedWork(JsonObject result) {
+        return result.has("selection") || result.has("task_started") && result.get("task_started").getAsBoolean()
+                || result.has("task_cancelled") && result.get("task_cancelled").getAsBoolean();
     }
     private static JsonObject stack(ItemStack item) {
         var result = new JsonObject(); result.addProperty("id", BuiltInRegistries.ITEM.getKey(item.getItem()).toString());
