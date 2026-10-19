@@ -1,10 +1,12 @@
-# Addon API（Core 1.2.1）
+# Addon API（Core 1.2.2）
+
+1.2.2 新增 `AiMaidEntity.getMaidCommandRevision()`：每次选择（含同命令重选）、读入存档时递增的运行期版本号，不持久化、不与客户端同步。异步 Addon 应在服务器线程核对同一个实体实例、该版本以及当前所有权/世界/距离后再执行动作。LLM Addon 的接入范例见 [LLM 架构说明](LLM.md)。
 
 ## 依赖与加载
 
-消费 `io.github.ozozorz.aimaid:ai-maid:1.2.1`。本仓库 `addon/lumber/settings.gradle` 演示 `includeBuild('../..')` 和 dependency substitution。客户端 API 在 Core 的完整 JAR 中；Composite Build 的普通 classes 变体只有 main，客户端扩展依赖应显式选择 JAR，见 Lumber Addon 的 `clientImplementation`。
+新 Addon 消费 `io.github.ozozorz.aimaid:ai-maid:1.2.2`。本仓库 `addon/lumber/settings.gradle` 演示 `includeBuild('../..')` 和 dependency substitution。客户端 API 在 Core 的完整 JAR 中；Composite Build 的普通 classes 变体只有 main，客户端扩展依赖应显式选择 JAR，见 Lumber Addon 的 `clientImplementation`。
 
-模组 metadata 中声明 `ai-maid >=1.2.1`，并按使用的 Minecraft/Fabric 版本限制依赖。Core 的 Maven publishing 尚未配置远程仓库，第三方工程需要自行提供发布位置或使用本地组合构建。
+使用命令版本号 API 的模组须声明 `ai-maid >=1.2.2`；现有工作 Addon 未用该 API，仍可声明 `>=1.2.1`。同时按 Minecraft/Fabric 版本限制依赖。Core 的 Maven publishing 尚未配置远程仓库，第三方工程需要自行提供发布位置或使用本地组合构建。
 
 通过 `ai-maid-addon` entrypoint 实现 `AiMaidAddonEntrypoint`，在 `register(AiMaidAddonRegistrar)` 贡献已注册的 SensorType。此时不能假设自己的普通 `ModInitializer` 已执行，应主动初始化需要的 Memory/Sensor 注册类。贡献完成后冻结，同一个 SensorType 去重；迟到注册会明确报错。
 

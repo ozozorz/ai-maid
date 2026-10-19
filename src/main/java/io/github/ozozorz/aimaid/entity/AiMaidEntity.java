@@ -309,6 +309,11 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier, net
         return message;
     }
 
+    // 运行期版本号：异步调用者可以识别请求期间的人工重选；不保存、不同步。
+    private long maidCommandRevision;
+
+    public long getMaidCommandRevision() { return maidCommandRevision; }
+
     // 设置MaidCommand时，规则是：能成为 Maid 当前命令的 MaidCommand，必须先进入 Registry。
     public void selectMaidCommand(MaidCommand maidCommand) {
         ServerLevel level = MaidServerAccess.requireServerThread(this);
@@ -317,6 +322,7 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier, net
         if (id == null) {
             throw new IllegalArgumentException("Unregistered MaidCommand: " + maidCommand);
         }
+        maidCommandRevision++;
         // 先停止旧行为，让持续动作能清理裂纹、蓄力和导航；重选也会重新开始。
         this.getBrain().stopAll(level, this);
         this.getNavigation().stop();
@@ -358,6 +364,7 @@ public class AiMaidEntity extends TamableAnimal implements InventoryCarrier, net
     @Override
     protected void readAdditionalSaveData(ValueInput input) {
         super.readAdditionalSaveData(input);
+        maidCommandRevision++;
         clearAnimationAction();
         // AiMaid 固有能力：
         // 始终启用 Vanilla Mob pickup infrastructure。

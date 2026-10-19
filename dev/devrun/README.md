@@ -1,16 +1,15 @@
 # Ai Maid 集成开发环境
 
-本目录是独立 Gradle Build，通过 Composite Build 加载 Core、伐木、耕种、喂养、搬运，以及正在教学开发的 LLM Addon。
-
-在本目录执行：
+本目录是独立 Gradle Build，通过 Composite Build 加载 Core、伐木、耕种、喂养、搬运与可选 LLM Addon。
 
 ```powershell
 .\gradlew.bat runClient
-.\gradlew.bat runGameTest
+.\gradlew.bat build
+.\gradlew.bat runClientGameTest
 ```
 
-也可以在仓库根目录使用 `.\gradlew.bat -p dev/devrun runClient`。客户端日志位于本目录 `run/logs/latest.log`。
+也可在仓库根目录使用 `.\gradlew.bat -p dev/devrun runClient`。客户端日志位于本目录 `run/logs/latest.log`。
 
-Core 与工作 Addon 的依赖版本由 `aimaid_version` 控制；LLM Addon 单独使用 `llm_version`。LLM 当前仅输出 `Ai Maid LLM initialized (scaffold)`，不发起模型请求，详见 [LLM 教学骨架](../../addon/llm/README.md)。
+依赖版本分别由 `core_version`（Core 1.2.2）、`aimaid_version`（工作 Addon 1.2.1）和 `llm_version`（LLM 0.1.0）控制。LLM 默认关闭，在本目录的 `run/config/ai-maid-llm.json` 配置后，用 `/maid llm reload` 重载。详见 [LLM 使用说明](../../addon/llm/README.md)。
 
-服务端 GameTest 覆盖既有跨模组行为；将 LLM 骨架一起加载仅验证其能正常初始化，不代表已经完成模型接入验收。
+服务端 GameTest 覆盖跨模组工作行为，并检验 LLM 工具对四个正式命令的参数适配、真实工作执行与停工状态查询。LLM 的完整客户端/模拟服务测试放在独立 Build，使用 `.\gradlew.bat -p addon/llm runClientGameTest` 从仓库根目录执行。验收边界和结果见 [LLM 接入与验收](../../docs/LLM.md)。

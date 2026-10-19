@@ -3,7 +3,7 @@
   "id": "ai-maid-llm",
   "version": "${version}",
   "name": "Ai Maid LLM",
-  "description": "Development scaffold for optional LLM integration with Ai Maid.",
+  "description": "Server-authoritative maid chat and natural-language work commands through compatible LLM services.",
   "authors": ["ozozorz"],
   "contact": {
     "sources": "https://github.com/ozozorz/ai-maid"
@@ -11,7 +11,8 @@
   "license": "CC0-1.0",
   "environment": "*",
   "entrypoints": {
-    "main": ["io.github.ozozorz.aimaid.llm.LlmAddon"]
+    "main": ["io.github.ozozorz.aimaid.llm.LlmAddon"],
+    "client": ["io.github.ozozorz.aimaid.llm.client.LlmClientAddon"]
   },
   "depends": {
     "fabricloader": ">=0.19.3",

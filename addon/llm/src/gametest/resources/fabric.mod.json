@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "ai-maid-llm-tests",
+  "version": "1.0.0",
+  "name": "Ai Maid LLM Acceptance",
+  "environment": "*",
+  "entrypoints": {
+    "fabric-gametest": ["io.github.ozozorz.aimaid.llm.LlmGameTests"],
+    "fabric-client-gametest": ["io.github.ozozorz.aimaid.llm.LlmClientGameTest"]
+  },
+  "mixins": ["ai-maid-test-support.mixins.json"]
+}

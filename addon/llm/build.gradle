@@ -27,6 +27,8 @@ dependencies {
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
     implementation "net.fabricmc:fabric-loader:${project.loader_version}"
     implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
     def aiMaid = "io.github.ozozorz.aimaid:ai-maid:${project.aimaid_version}"
     implementation aiMaid
@@ -37,6 +39,20 @@ dependencies {
         }
     }
 }
+
+test { useJUnitPlatform() }
+
+fabricApi {
+    configureTests {
+        createSourceSet = true
+        modId = 'ai-maid-llm-tests'
+        enableGameTests = true
+        enableClientGameTests = true
+        eula = true
+    }
+}
+sourceSets.gametest.java.srcDir('../../dev/testsupport/java')
+sourceSets.gametest.resources.srcDir('../../dev/testsupport/resources')
 
 processResources {
     def properties = [version: project.version, aimaid_version: project.aimaid_version]

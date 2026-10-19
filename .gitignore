@@ -38,3 +38,6 @@ hs_err_*.log
 replay_*.log
 *.hprof
 *.jfr
+
+# Local model service configuration may contain API credentials.
+**/ai-maid-llm.json

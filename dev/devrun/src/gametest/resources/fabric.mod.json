@@ -9,7 +9,8 @@
       "io.github.ozozorz.aimaid.integration.AnimationGameTests",
       "io.github.ozozorz.aimaid.integration.WorkDefenseGameTests",
       "io.github.ozozorz.aimaid.integration.CoreIntegrationGameTests",
-      "io.github.ozozorz.aimaid.integration.FormalAddonGameTests"
+      "io.github.ozozorz.aimaid.integration.FormalAddonGameTests",
+      "io.github.ozozorz.aimaid.integration.LlmAddonGameTests"
     ],
     "fabric-client-gametest": [
       "io.github.ozozorz.aimaid.integration.AnimationClientGameTest",
