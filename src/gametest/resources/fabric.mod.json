@@ -15,7 +15,8 @@
     "fabric-gametest": [
       "io.github.ozozorz.aimaid.CoreGameTests",
       "io.github.ozozorz.aimaid.CombatGameTests",
-      "io.github.ozozorz.aimaid.DeathLootGameTests"
+      "io.github.ozozorz.aimaid.DeathLootGameTests",
+      "io.github.ozozorz.aimaid.TestSceneGameTests"
     ],
     "fabric-client-gametest": [
       "io.github.ozozorz.aimaid.CoreClientGameTest",

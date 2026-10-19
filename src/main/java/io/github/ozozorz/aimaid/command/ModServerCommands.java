@@ -46,6 +46,7 @@ public class ModServerCommands {
     private static void register(CommandDispatcher<CommandSourceStack> dispatcher, CommandBuildContext buildContext) {
 
         LiteralArgumentBuilder<CommandSourceStack> root = Commands.literal("maid");
+        root.then(MaidTestSceneCommand.node());
 
         // 1 默认目标
         //

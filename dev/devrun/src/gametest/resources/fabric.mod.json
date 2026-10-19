@@ -15,7 +15,8 @@
     "fabric-client-gametest": [
       "io.github.ozozorz.aimaid.integration.AnimationClientGameTest",
       "io.github.ozozorz.aimaid.integration.WorkDefenseClientGameTest",
-      "io.github.ozozorz.aimaid.integration.FormalAddonClientGameTest"
+      "io.github.ozozorz.aimaid.integration.FormalAddonClientGameTest",
+      "io.github.ozozorz.aimaid.integration.TestSceneClientGameTest"
     ],
     "main": [
       "io.github.ozozorz.aimaid.integration.FixtureEntrypoint"
