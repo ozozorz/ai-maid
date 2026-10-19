@@ -52,7 +52,20 @@ public class LlmGameTests {
         var p = pair(h); String commands = MaidTools.commands(p.maid(), p.owner()).toString();
         h.assertTrue(commands.contains("ai-maid:follow") && !commands.contains("ai-maid-farming:farm"), "Missing addons advertised");
         h.assertTrue(!MaidTools.definitions(p.maid(), p.owner()).toString().contains("start_wheat_delivery"), "Missing delivery addon advertised");
+        var actions = MaidTools.execute("list_actions", ChatProtocol.object("{}"), p.maid(), p.owner(), 32).toString();
+        h.assertTrue(actions.contains("ai-maid:deposit_wheat") && actions.contains("ai-maid:return_to_owner")
+                && !actions.contains("ai-maid-farming:collect_wheat"), "Action catalog ignored installed addons");
         var data = MaidTools.snapshot(p.maid()); h.assertTrue(data.has("status") && data.has("inventory") && data.has("equipment"), "Missing authoritative context"); h.succeed();
+    }
+    @GameTest public void coreOnlyCanSubmitAndCancelReturnPlan(GameTestHelper h) {
+        var p = pair(h);
+        var request = ChatProtocol.object("{\"request_id\":\"core-only\",\"steps\":[{\"action\":\"ai-maid:return_to_owner\"}]}");
+        var result = MaidTools.execute("submit_plan", request, p.maid(), p.owner(), 32);
+        h.assertTrue(result.has("task_started") && p.maid().getMaidCommand() == MaidCommands.PLAN, "Core-only plan rejected: " + result);
+        h.assertTrue(!result.getAsJsonObject("task").has("destination"), "Return-only plan invented a chest");
+        var cancelled = MaidTools.execute("cancel_task", ChatProtocol.object("{}"), p.maid(), p.owner(), 32);
+        h.assertTrue(cancelled.get("task_cancelled").getAsBoolean() && p.maid().getMaidCommand() == MaidCommands.STAY, "Core-only cancellation failed");
+        h.succeed();
     }
     @GameTest public void personaIsSavedOnMaidAndNotSharedByCommand(GameTestHelper h) {
         var p = pair(h); p.maid().setAttached(LlmData.PERSONA, "A patient gardener");

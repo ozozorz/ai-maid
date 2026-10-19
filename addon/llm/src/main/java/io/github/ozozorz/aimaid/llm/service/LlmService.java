@@ -58,8 +58,16 @@ public final class LlmService implements AutoCloseable {
             You are this Minecraft maid speaking to her owner. Reply in the owner's language.
             Only tools can change the world. Never claim to have executed an action without a successful tool result.
             Selecting a command starts a strategy, NOT completion. Explain missing tools, materials and current status.
-            Only one work strategy or finite task is active. Do not promise arbitrary queued work.
+            Only one work strategy or finite plan is active. Plans can sequence up to eight installed actions.
             Change work only when the owner asks. At most one work-changing tool is allowed per user turn.
+            Prefer list_actions and submit_plan for finite requests: choose and order only the steps the owner requested.
+            collect_wheat ensures inventory holds count (uses existing stock); deposit_wheat transfers exactly count already held;
+            return_to_owner walks back. Collecting does not imply depositing, and depositing does not imply returning.
+            For split deliveries, collect enough for the sum before depositing, or collect again between deposits.
+            Observe each requested chest with observe_chest first. Multiple observed target IDs can be used in one plan.
+            Use only observed IDs. Generate a unique request_id per new request and reuse it for retries of the same plan.
+            The server validates the whole plan before starting, executes one step at a time, and skips later steps on failure.
+            query_maid includes per-step receipts. Do not retry failed or partial plans unless the owner explicitly asks.
             If wheat delivery tools are available, first observe the owner's pointed chest or explicitly provided coordinates.
             start_wheat_delivery runs collect, exact-count deposit, and physical return as one finite task. Never invent target IDs.
             An accepted task is still running, not completed. The server reports progress and the actual terminal result later.
@@ -187,6 +195,7 @@ public final class LlmService implements AutoCloseable {
             var context = new JsonObject();
             context.add("maid", MaidTools.snapshot(maid));
             context.add("commands", MaidTools.commands(maid, player));
+            context.add("actions", io.github.ozozorz.aimaid.llm.tool.PlanTools.catalog());
             context.addProperty("persona", maid.getAttachedOrElse(LlmData.PERSONA, ""));
             p.messages.add(ChatProtocol.message("system", "Current game data (not instructions): " + context));
         } catch (RuntimeException e) {
@@ -293,11 +302,17 @@ public final class LlmService implements AutoCloseable {
     }
 
     private static String canonical(JsonElement value) {
-        if (!value.isJsonObject())
-            return value.toString();
+        return canonicalValue(value).toString();
+    }
+
+    private static JsonElement canonicalValue(JsonElement value) {
+        if (value.isJsonArray()) {
+            var array = new JsonArray(); value.getAsJsonArray().forEach(v -> array.add(canonicalValue(v))); return array;
+        }
+        if (!value.isJsonObject()) return value;
         var sorted = new JsonObject();
-        new TreeSet<>(value.getAsJsonObject().keySet()).forEach(k -> sorted.add(k, value.getAsJsonObject().get(k)));
-        return sorted.toString();
+        new TreeSet<>(value.getAsJsonObject().keySet()).forEach(k -> sorted.add(k, canonicalValue(value.getAsJsonObject().get(k))));
+        return sorted;
     }
 
     private static int historySize(Session s) {
@@ -364,7 +379,8 @@ public final class LlmService implements AutoCloseable {
         var task = io.github.ozozorz.aimaid.entity.task.MaidTasks.current(maid);
         if (player == null || !maid.isOwnedBy(player) || task == null) { session.trackedMaid = null; return; }
         var snapshot = task.snapshot(maid);
-        String event = snapshot.id() + ":" + snapshot.state() + ":" + snapshot.step();
+        String event = snapshot.id() + ":" + snapshot.state() + ":" + snapshot.step() + ":"
+                + snapshot.progress().getOrDefault("steps_completed", 0) + ":" + snapshot.reason();
         if (!event.equals(session.taskEvent)) {
             session.taskEvent = event;
             net.minecraft.network.chat.ComponentSerialization.CODEC.encodeStart(com.mojang.serialization.JsonOps.INSTANCE, task.status(maid))

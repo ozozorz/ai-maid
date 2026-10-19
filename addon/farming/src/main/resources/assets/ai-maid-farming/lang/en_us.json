@@ -53,5 +53,7 @@
   "status.ai-maid-farming.delivery.reason.entity_unloaded": "Cancelled on entity unload or dimension change",
   "status.ai-maid-farming.delivery.reason.look_at_chest": "Look at an accessible chest within 6 blocks, or specify its coordinates",
   "status.ai-maid-farming.delivery.reason.chest_too_far": "Chest must be within 32 blocks of the maid",
-  "status.ai-maid-farming.delivery.reason.task_busy": "A task is already running; cancel it before starting another"
+  "status.ai-maid-farming.delivery.reason.task_busy": "A task is already running; cancel it before starting another",
+  "action.ai-maid-farming.collect_wheat": "Collect wheat",
+  "action.ai-maid-farming.collect_wheat.description": "Ensure inventory holds count wheat, using existing stock first and harvesting/replanting only the shortfall. Search mature wheat on farmland within 16 blocks horizontally and 2 vertically of the plan origin; do not wait for growth."
 }

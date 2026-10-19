@@ -16,6 +16,7 @@ public class MaidCommands {
     public static final MaidCommand STAY = register(STAY_ID, new StayMaidCommand());
 
     public static final MaidCommand ATTACK = register(id("attack"), new AttackMaidCommand());
+    public static final MaidCommand PLAN = register(id("plan"), new PlanMaidCommand());
     private static final java.util.Map<Identifier, Identifier> LEGACY_IDS = new java.util.HashMap<>();
     static {
         registerLegacyAlias(Identifier.parse("testaddon:guard"), FOLLOW_ID);

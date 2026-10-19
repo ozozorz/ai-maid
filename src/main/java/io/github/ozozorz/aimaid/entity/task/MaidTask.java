@@ -1,6 +1,7 @@
 package io.github.ozozorz.aimaid.entity.task;
 
 import java.util.Map;
+import java.util.List;
 import java.util.UUID;
 import io.github.ozozorz.aimaid.entity.AiMaidEntity;
 import net.minecraft.core.GlobalPos;
@@ -19,6 +20,11 @@ public interface MaidTask {
     }
 
     Snapshot snapshot(AiMaidEntity maid);
+    record ActionSnapshot(int index, String action, String state, int count, GlobalPos destination,
+                          Map<String, Integer> progress, String reason) {
+        public ActionSnapshot { progress = Map.copyOf(progress); }
+    }
+    default List<ActionSnapshot> actions(AiMaidEntity maid) { return List.of(); }
     Component status(AiMaidEntity maid);
     void cancel(AiMaidEntity maid, String reason);
 }

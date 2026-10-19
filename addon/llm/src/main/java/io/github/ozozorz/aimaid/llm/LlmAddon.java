@@ -19,6 +19,7 @@ public final class LlmAddon implements ModInitializer {
     @Override public void onInitialize() {
         LlmData.initialize(); LlmNetworking.initialize(); LlmCommands.initialize();
         io.github.ozozorz.aimaid.llm.tool.WheatDeliveryTools.initialize();
+        io.github.ozozorz.aimaid.llm.tool.PlanTools.initialize();
         ServerLifecycleEvents.SERVER_STARTING.register(server -> { if (!reload(server)) install(server, null); });
         ServerTickEvents.END_SERVER_TICK.register(server -> { var service = service(server); if (service != null) service.tick(); });
         ServerLifecycleEvents.SERVER_STOPPING.register(server -> { var service = SERVICES.remove(server); if (service != null) service.close(); });

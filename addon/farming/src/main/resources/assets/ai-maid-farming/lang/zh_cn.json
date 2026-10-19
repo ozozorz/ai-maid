@@ -53,5 +53,7 @@
   "status.ai-maid-farming.delivery.reason.entity_unloaded": "女仆卸载或离开维度，任务已取消",
   "status.ai-maid-farming.delivery.reason.look_at_chest": "请将准星对准6格内可用的箱子，或提供箱子坐标",
   "status.ai-maid-farming.delivery.reason.chest_too_far": "箱子必须位于女仆32格内",
-  "status.ai-maid-farming.delivery.reason.task_busy": "已有任务正在执行；请先取消再下达新任务"
+  "status.ai-maid-farming.delivery.reason.task_busy": "已有任务正在执行；请先取消再下达新任务",
+  "action.ai-maid-farming.collect_wheat": "收集小麦",
+  "action.ai-maid-farming.collect_wheat.description": "使背包中的小麦达到count个，优先使用现有库存，只收获并补种差额。搜索计划提交位置周围16格、上下2格的现有成熟小麦；不等待生长。"
 }

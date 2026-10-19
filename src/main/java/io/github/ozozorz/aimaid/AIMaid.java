@@ -36,6 +36,7 @@ public class AIMaid implements ModInitializer {
 		// Brain 类型
 		io.github.ozozorz.aimaid.entity.combat.CombatProtection.initialize();
 		io.github.ozozorz.aimaid.entity.task.MaidTasks.initialize();
+		io.github.ozozorz.aimaid.entity.task.MaidActions.initialize();
 		ModMemoryModuleTypes.initialize();
 		ModSensorTypes.initialize();
 		MaidBrainSensors.initialize();

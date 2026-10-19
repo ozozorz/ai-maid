@@ -85,8 +85,9 @@ public final class WheatDeliveryCommand implements MaidCommand {
         if (error != null) {
             c.getSource().sendFailure(Component.translatable("status.ai-maid-farming.delivery.reason." + error)); return 0;
         }
-        if (MaidTasks.current(maid) instanceof WheatDeliveryTask current && current.active()) {
-            if (current.sameRequest(count, chest)) {
+        var running = MaidTasks.current(maid);
+        if (running != null && !running.snapshot(maid).state().terminal()) {
+            if (running instanceof WheatDeliveryTask current && current.sameRequest(count, chest)) {
                 c.getSource().sendSuccess(() -> current.status(maid), false); return 1;
             }
             c.getSource().sendFailure(Component.translatable("status.ai-maid-farming.delivery.reason.task_busy")); return 0;

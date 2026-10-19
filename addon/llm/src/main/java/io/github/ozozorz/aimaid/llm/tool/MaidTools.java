@@ -41,6 +41,7 @@ public final class MaidTools {
         var restart = schema("boolean"); restart.addProperty("description", "只在主人明确要求重新开始/重设中心时使用 true。重复相同指令默认不重启。"); props.add("restart", restart);
         tools.add(function("select_command", "选择一个工作策略。radius 仅限 farm/feed/haul；mode 仅限 lumber。成功表示已选中，不表示工作已完成。不能排队多个工作。", props, List.of("command_id")));
         WheatDeliveryTools.definitions(tools);
+        PlanTools.definitions(tools);
         return tools;
     }
     static JsonObject schema(String type) { var s = new JsonObject(); s.addProperty("type", type); return s; }
@@ -68,7 +69,9 @@ public final class MaidTools {
         if (!(name.equals("cancel_task") ? allowedCancellation(maid, player, distance) : allowed(maid, player, distance)))
             return ChatProtocol.error("maid_unavailable_or_not_owner");
         try {
-            if (Set.of("observe_wheat_delivery", "start_wheat_delivery", "cancel_task").contains(name))
+            if (Set.of("list_actions", "observe_chest", "submit_plan", "cancel_task").contains(name))
+                return PlanTools.execute(name, args, maid, player);
+            if (Set.of("observe_wheat_delivery", "start_wheat_delivery").contains(name))
                 return WheatDeliveryTools.execute(name, args, maid, player);
             if (name.equals("query_maid") || name.equals("list_commands")) {
                 if (!args.isEmpty()) return ChatProtocol.error("unexpected_arguments");
@@ -153,18 +156,35 @@ public final class MaidTools {
         return state;
     }
     public static JsonObject taskSnapshot(AiMaidEntity maid) {
+        return taskSnapshot(maid, io.github.ozozorz.aimaid.entity.task.MaidTasks.current(maid));
+    }
+    public static JsonObject taskSnapshot(AiMaidEntity maid, io.github.ozozorz.aimaid.entity.task.MaidTask task) {
         MaidServerAccess.requireServerThread(maid);
-        var data = io.github.ozozorz.aimaid.entity.task.MaidTasks.current(maid).snapshot(maid);
+        var data = task.snapshot(maid);
         var result = new JsonObject();
         result.addProperty("id", data.id().toString()); result.addProperty("type", data.type());
         result.addProperty("state", data.state().name().toLowerCase(Locale.ROOT)); result.addProperty("step", data.step());
         result.addProperty("reason", data.reason());
         var progress = new JsonObject(); data.progress().forEach(progress::addProperty); result.add("progress", progress);
-        result.addProperty("destination", data.destination().pos().toShortString());
-        result.addProperty("dimension", data.destination().dimension().identifier().toString());
+        if (data.destination() != null) {
+            result.addProperty("destination", data.destination().pos().toShortString());
+            result.addProperty("dimension", data.destination().dimension().identifier().toString());
+        }
+        var actions = new JsonArray();
+        for (var action : task.actions(maid)) {
+            var row = new JsonObject(); row.addProperty("index", action.index()); row.addProperty("action", action.action());
+            row.addProperty("state", action.state()); row.addProperty("count", action.count()); row.addProperty("reason", action.reason());
+            if (action.destination() != null) {
+                row.addProperty("destination", action.destination().pos().toShortString());
+                row.addProperty("dimension", action.destination().dimension().identifier().toString());
+            }
+            var metrics = new JsonObject(); action.progress().forEach(metrics::addProperty); row.add("progress", metrics); actions.add(row);
+        }
+        if (!actions.isEmpty()) result.add("steps", actions);
+        if (task instanceof io.github.ozozorz.aimaid.entity.task.MaidPlanTask plan) result.addProperty("request_id", plan.requestId());
         return result;
     }
-    public static boolean mutatesWork(String name) { return Set.of("select_command", "start_wheat_delivery", "cancel_task").contains(name); }
+    public static boolean mutatesWork(String name) { return Set.of("select_command", "start_wheat_delivery", "submit_plan", "cancel_task").contains(name); }
     public static boolean changedWork(JsonObject result) {
         return result.has("selection") || result.has("task_started") && result.get("task_started").getAsBoolean()
                 || result.has("task_cancelled") && result.get("task_cancelled").getAsBoolean();

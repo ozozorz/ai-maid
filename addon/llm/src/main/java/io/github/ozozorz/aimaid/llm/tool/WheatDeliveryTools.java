@@ -36,7 +36,6 @@ public final class WheatDeliveryTools {
         var count = MaidTools.schema("integer"); count.addProperty("minimum", 1); count.addProperty("maximum", 64);
         props.add("count", count); props.add("target_id", MaidTools.schema("string"));
         tools.add(MaidTools.function("start_wheat_delivery", "启动一次有限任务：先用背包已有小麦，收获补种以补足指定数量，向观察到的指定箱子存入恰好count个，再步行返回主人。count=1..64，箱子距女仆不超过32格。成功返回仅表示任务已接受；完成或失败由任务执行器另行报告。缺资源/满箱/不可达会停止，已完成的物品转移不回滚。", props, List.of("count", "target_id")));
-        tools.add(MaidTools.function("cancel_task", "取消当前有限任务并原地待命；已收获或已存入的物品保留。", new JsonObject(), List.of()));
     }
 
     public static JsonObject execute(String name, JsonObject args, AiMaidEntity maid, ServerPlayer player) {

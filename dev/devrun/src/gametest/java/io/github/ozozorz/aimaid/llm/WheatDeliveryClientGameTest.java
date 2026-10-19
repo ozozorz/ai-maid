@@ -22,9 +22,10 @@ import java.util.concurrent.*;
 /** Real chat packets, tool round trips, task ticks and completion UI; only the model is local/mock. */
 public class WheatDeliveryClientGameTest implements FabricClientGameTest {
     private record Scene(UUID maid, BlockPos chest) {}
+    protected boolean plans() { return false; }
 
     @Override public void runTest(ClientGameTestContext context) {
-        try (var model = new Model(); var world = context.worldBuilder().create()) {
+        try (var model = new Model(plans()); var world = context.worldBuilder().create()) {
             var server = world.getServer(); var connection = world.getConnection(); connection.waitForChunksRender();
             Scene scene = server.computeOnServer(s -> {
                 LlmAddon.install(s, model.config());
@@ -49,7 +50,7 @@ public class WheatDeliveryClientGameTest implements FabricClientGameTest {
                 return new Scene(maid.getUUID(), chest);
             });
             context.waitForScreen(MaidChatScreen.class);
-            send(context, "Gather four wheat, put them in the chest at " + scene.chest().toShortString() + ", then return.");
+            send(context, "Gather four wheat, " + (plans() ? "deposit two and then another two" : "put them") + " in the chest at " + scene.chest().toShortString() + ", then return.");
             context.waitFor(c -> c.gui.screen() instanceof MaidChatScreen chat && !chat.busy()
                     && chat.messages().stream().anyMatch(m -> m.getString().contains("Delivery accepted")));
             server.waitFor(s -> {
@@ -64,10 +65,26 @@ public class WheatDeliveryClientGameTest implements FabricClientGameTest {
                 check(chest.countItem(Items.WHEAT) == 4 && maid.distanceToSqr(connection.getServerPlayer()) <= 9, "No real deposit/return");
                 check(model.requests.size() == 3 && model.requests.get(2).toString().contains("only_one_selection_per_turn"), "Mutation limit not applied to tasks");
                 check(model.requests.get(2).toString().contains("work_completed"), "Task acceptance was not returned to model");
+                if (plans()) {
+                    var steps = MaidTasks.current(maid).actions(maid);
+                    check(steps.size() == 4 && steps.get(1).progress().get("delivered") == 2 && steps.get(2).progress().get("delivered") == 2,
+                            "LLM-selected repeated steps were not executed separately");
+                    check(!model.requests.get(2).toString().contains("request_id_conflict"), "Reordered duplicate JSON was not reused");
+                    int accepted = 0;
+                    for (var message : model.requests.get(2).getAsJsonArray("messages")) {
+                        var row = message.getAsJsonObject();
+                        if (row.has("tool_call_id") && row.get("tool_call_id").getAsString().startsWith("start-")) {
+                            var receipt = ChatProtocol.object(row.get("content").getAsString());
+                            check(receipt.has("task_started") && receipt.get("task_started").getAsBoolean(), "Equivalent duplicate was rejected");
+                            accepted++;
+                        }
+                    }
+                    check(accepted == 2, "Missing duplicate tool receipt");
+                }
             });
             context.waitFor(c -> c.gui.screen() instanceof MaidChatScreen chat
-                    && chat.messages().stream().anyMatch(m -> m.toString().contains("delivery.state.succeeded")));
-            context.takeScreenshot("wheat-delivery-complete");
+                    && chat.messages().stream().anyMatch(m -> m.toString().contains(plans() ? "plan.state.succeeded" : "delivery.state.succeeded")));
+            context.takeScreenshot(plans() ? "action-plan-complete" : "wheat-delivery-complete");
 
             // The cancel button must work after the HTTP turn ended, while a game task is still active.
             model.count = 2;
@@ -91,7 +108,7 @@ public class WheatDeliveryClientGameTest implements FabricClientGameTest {
                 check(maid.getMaidCommand() == MaidCommands.STAY && maid.getInventory().countMatching(i -> i.is(Items.WHEAT)) == 2,
                         "Cancellation lost cargo or failed to stop the task");
             });
-            context.takeScreenshot("wheat-delivery-cancelled");
+            context.takeScreenshot(plans() ? "action-plan-cancelled" : "wheat-delivery-cancelled");
         } catch (Exception e) { throw new AssertionError(e); }
     }
 
@@ -118,7 +135,7 @@ public class WheatDeliveryClientGameTest implements FabricClientGameTest {
         final List<JsonObject> requests = new CopyOnWriteArrayList<>();
         volatile BlockPos chest;
         volatile int count = 4;
-        Model() throws Exception {
+        Model(boolean plans) throws Exception {
             http = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0); http.setExecutor(executor);
             http.createContext("/chat", exchange -> {
                 try {
@@ -127,7 +144,7 @@ public class WheatDeliveryClientGameTest implements FabricClientGameTest {
                     String reply;
                     if (phase == 0) {
                         var args = new JsonObject(); args.addProperty("x", chest.getX()); args.addProperty("y", chest.getY()); args.addProperty("z", chest.getZ());
-                        reply = tools(call("observe-" + turn, "observe_wheat_delivery", args));
+                        reply = tools(call("observe-" + turn, plans ? "observe_chest" : "observe_wheat_delivery", args));
                     } else if (phase == 1) {
                         String token = null;
                         for (var item : request.getAsJsonArray("messages")) {
@@ -137,7 +154,26 @@ public class WheatDeliveryClientGameTest implements FabricClientGameTest {
                         }
                         check(token != null, "No observed target in model context");
                         var args = new JsonObject(); args.addProperty("count", count); args.addProperty("target_id", token);
-                        reply = tools(call("start-a-" + turn, "start_wheat_delivery", args), call("start-b-" + turn, "start_wheat_delivery", args),
+                        if (plans) {
+                            var sequence = new JsonArray();
+                            if (turn == 0) sequence.add(ChatProtocol.object("{\"action\":\"ai-maid-farming:collect_wheat\",\"count\":4}"));
+                            var deposit = new JsonObject(); deposit.addProperty("action", "ai-maid:deposit_wheat"); deposit.addProperty("count", 2); deposit.addProperty("target_id", token);
+                            sequence.add(deposit);
+                            if (turn == 0) sequence.add(deposit.deepCopy());
+                            sequence.add(ChatProtocol.object("{\"action\":\"ai-maid:return_to_owner\"}"));
+                            args = new JsonObject(); args.addProperty("request_id", "chat-plan-" + turn); args.add("steps", sequence);
+                        }
+                        var duplicate = args.deepCopy();
+                        if (plans) {
+                            var steps = duplicate.getAsJsonArray("steps");
+                            for (int i = 0; i < steps.size(); i++) {
+                                var source = steps.get(i).getAsJsonObject(); var sorted = new JsonObject();
+                                source.keySet().stream().sorted(Comparator.reverseOrder()).forEach(k -> sorted.add(k, source.get(k)));
+                                steps.set(i, sorted);
+                            }
+                        }
+                        String startTool = plans ? "submit_plan" : "start_wheat_delivery";
+                        reply = tools(call("start-a-" + turn, startTool, args), call("start-b-" + turn, startTool, duplicate),
                                 call("forbidden-" + turn, "select_command", ChatProtocol.object("{\"command_id\":\"ai-maid:free\"}")));
                     } else reply = response(ChatProtocol.message("assistant", "Delivery accepted; waiting for the server's actual result."));
                     byte[] bytes = reply.getBytes(StandardCharsets.UTF_8); exchange.sendResponseHeaders(200, bytes.length); exchange.getResponseBody().write(bytes);
