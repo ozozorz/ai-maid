@@ -1,15 +1,17 @@
-# Ai Maid 集成开发环境
+# 整合开发与验证
 
-本目录是独立 Gradle Build，通过 Composite Build 加载 Core、伐木、耕种、喂养、搬运与可选 LLM Addon。
+独立 Gradle Build，通过 Composite Build 加载 Core、伐木、耕种、喂养、搬运和 LLM。
+
+在仓库根目录执行：
 
 ```powershell
-.\gradlew.bat runClient
-.\gradlew.bat build
-.\gradlew.bat runClientGameTest
+.\gradlew.bat -p dev/devrun runClient
+.\gradlew.bat -p dev/devrun build
+.\gradlew.bat -p dev/devrun runClientGameTest
 ```
 
-也可在仓库根目录使用 `.\gradlew.bat -p dev/devrun runClient`。客户端日志位于本目录 `run/logs/latest.log`。
+依赖版本分别由 `core_version`、`farming_version`、`lumber_version`（均1.3.0）、`aimaid_version`（Feeding / Hauling 1.2.1）和 `llm_version`（0.3.0）控制。LLM 默认关闭；日常运行在本目录 `run/config/ai-maid-llm.json` 配置，通过 `/maid llm reload` 重载。
 
-依赖版本分别由 `core_version`（Core 1.2.2）、`aimaid_version`（工作 Addon 1.2.1）和 `llm_version`（LLM 0.1.0）控制。LLM 默认关闭，在本目录的 `run/config/ai-maid-llm.json` 配置后，用 `/maid llm reload` 重载。详见 [LLM 使用说明](../../addon/llm/README.md)。
+服务端 GameTest 验证工作模式、工具适配、有限动作、固定计划、自主任务状态机、真实物品数量、目标变化、预算与战斗恢复。客户端 GameTest 使用临时世界和本机模拟模型，覆盖旧小麦预设、固定计划，以及“部分存入→根据实际剩余数量选择授权备用箱→返回”的自主循环、请求去重和迟到回复取消。
 
-服务端 GameTest 覆盖跨模组工作行为，并检验 LLM 工具对四个正式命令的参数适配、真实工作执行与停工状态查询。LLM 的完整客户端/模拟服务测试放在独立 Build，使用 `.\gradlew.bat -p addon/llm runClientGameTest` 从仓库根目录执行。验收边界和结果见 [LLM 接入与验收](../../docs/LLM.md)。
+独立 LLM Build 的 `runClientGameTest` 另覆盖普通聊天、协议、权限与会话隔离。测试不会读取真实密钥或调用真实模型。实际构建结果见 [验收记录](../../docs/ACCEPTANCE.md)，配置见 [LLM 使用说明](../../addon/llm/README.md)。

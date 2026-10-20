@@ -18,6 +18,19 @@ class LlmProtocolTest {
     @Test void acceptsLegacyConfigAndLocalNoAuth() {
         var config = LlmConfigLoader.parse("{\"enabled\":true,\"apiUrl\":\"http://127.0.0.1:8080/v1/chat/completions\",\"model\":\"local\",\"apiKey\":\"\"}").orElseThrow();
         assertEquals(45, config.timeoutSeconds()); assertEquals(8, config.historyTurns());
+        assertEquals(16, config.goalLimits().actions()); assertEquals(12000, config.goalLimits().ticks());
+    }
+    @Test void goalBudgetsHaveStrictTypesAndFiniteBounds() {
+        var base = ChatProtocol.object("{\"enabled\":true,\"apiUrl\":\"http://localhost/chat\",\"model\":\"mock\",\"apiKey\":\"\"}");
+        for (String field : new String[]{"goalMaxActions", "goalMaxFailures", "goalTimeoutSeconds", "goalRadius"}) {
+            for (String bad : new String[]{"0", "99999", "1.5", "\"16\"", "null"}) {
+                var value = base.deepCopy(); value.add(field, JsonParser.parseString(bad));
+                assertThrows(IllegalArgumentException.class, () -> LlmConfigLoader.parse(value.toString()), field + "=" + bad);
+            }
+        }
+        base.addProperty("goalMaxActions", 8); base.addProperty("goalMaxFailures", 2); base.addProperty("goalTimeoutSeconds", 300); base.addProperty("goalRadius", 48);
+        var limits = LlmConfigLoader.parse(base.toString()).orElseThrow().goalLimits();
+        assertEquals(8, limits.actions()); assertEquals(2, limits.failures()); assertEquals(6000, limits.ticks()); assertEquals(48, limits.radius());
     }
     @Test void rejectsInvalidTypesAndRangesWithoutLeakingSecrets() {
         var root = ChatProtocol.object("{\"enabled\":true,\"apiUrl\":\"https://example.test/v1/chat/completions\",\"model\":\"mock\",\"apiKey\":\"secret-value\"}");

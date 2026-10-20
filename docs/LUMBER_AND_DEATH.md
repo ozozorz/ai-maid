@@ -1,4 +1,4 @@
-# 死亡携带物与持续伐木（Minecraft 26.2 / 1.2.1）
+# 死亡携带物与持续伐木（Minecraft 26.2 / 1.3.0）
 
 Core 管理死亡物品、持续动作的生命周期和方块破坏机制；正式 Lumber Addon 管理树识别、站位、队列和工具要求。临时战斗保留有限队列，手动换命令取消任务，见[工作自卫](WORK_DEFENSE.md)。
 
@@ -115,3 +115,7 @@ Core 验证死亡物品；Lumber 独立验证有限伐木；`dev/devrun` 验证�
 - [有限队列](../addon/lumber/src/main/java/io/github/ozozorz/aimaid/lumber/lumber/LumberJob.java)、[树识别](../addon/lumber/src/main/java/io/github/ozozorz/aimaid/lumber/lumber/LumberTreeFinder.java)、[站位规划](../addon/lumber/src/main/java/io/github/ozozorz/aimaid/lumber/lumber/LumberWorkPlanner.java)
 - [持续破坏](../addon/lumber/src/main/java/io/github/ozozorz/aimaid/lumber/ai/behavior/BreakLumberTarget.java)
 - [死亡测试](../src/gametest/java/io/github/ozozorz/aimaid/DeathLootGameTests.java)、[伐木测试](../addon/lumber/src/gametest/java/io/github/ozozorz/aimaid/lumber/LumberGameTests.java)
+
+## 作为自主任务动作（Lumber 1.3.0）
+
+`ChopTreeAction` 使用观察得到的指定树木快照，复用 `LumberTreeFinder`、`LumberWorkPlanner`、`LumberJob` 和 Core 的渐进破坏。它与上述手动 Lumber 模式共用底层能力，但有明确终态：分别记录破坏、跳过、拾取；掉落物下落后走近拾取，缺斧头、满包、无法到达或掉落物消失均返回原因和已完成数量。模型可先调用 `equip_tool`，随后砍树、存放原木、返回。具体协议见 [自主任务架构](AUTONOMOUS_TASKS.md)。

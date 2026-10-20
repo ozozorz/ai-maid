@@ -6,7 +6,7 @@
   "llm.ai-maid.send": "Send",
   "llm.ai-maid.cancel": "Cancel",
   "llm.ai-maid.clear": "Clear chat",
-  "llm.ai-maid.thinking": "Thinking… Manual command changes cancel this request.",
+  "llm.ai-maid.thinking": "Thinking or executing… You can cancel or change the work mode.",
   "llm.ai-maid.hint": "Enter to send · Scroll for history · Closing keeps the request running",
   "llm.ai-maid.line.user": "You: %s",
   "llm.ai-maid.line.assistant": "Maid: %s",
@@ -32,5 +32,7 @@
   "llm.ai-maid.message.invalid_response": "Invalid, empty or truncated model response. No actions from that response were executed.",
   "llm.ai-maid.message.response_too_large": "Model response exceeded the size limit.",
   "llm.ai-maid.message.tool_limit": "Tool round limit reached. Review accepted actions before sending a new message.",
-  "llm.ai-maid.message.duplicate_call_id": "Duplicate tool call ID received. The turn was stopped without repeating accepted actions."
+  "llm.ai-maid.message.duplicate_call_id": "Duplicate tool call ID received. The turn was stopped without repeating accepted actions.",
+  "llm.ai-maid.message.goal_started": "Goal accepted. Observing and executing one action at a time; actual results will follow.",
+  "llm.ai-maid.message.goal_decision_limit": "Decision budget exhausted. The goal has stopped; already completed actions are preserved."
 }

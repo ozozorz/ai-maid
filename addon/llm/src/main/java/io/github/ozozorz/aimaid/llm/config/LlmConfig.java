@@ -7,6 +7,7 @@ import java.util.Objects;
 public final class LlmConfig {
     private final String apiUrl, model, apiKey, systemPrompt, tokenField;
     private final int timeoutSeconds, maxTokens, historyTurns, cooldownSeconds, maxConcurrent, maxToolRounds, chatDistance;
+    private final io.github.ozozorz.aimaid.entity.task.MaidGoalTask.Limits goalLimits;
 
     public LlmConfig(String apiUrl, String model, String apiKey) {
         this(apiUrl, model, apiKey, "你是一位友善的 Minecraft 女仆。使用主人的语言简洁回答。", "max_tokens", 45, 1024, 8, 2, 4, 4, 32);
@@ -14,6 +15,13 @@ public final class LlmConfig {
     public LlmConfig(String apiUrl, String model, String apiKey, String systemPrompt, String tokenField,
                      int timeoutSeconds, int maxTokens, int historyTurns, int cooldownSeconds,
                      int maxConcurrent, int maxToolRounds, int chatDistance) {
+        this(apiUrl, model, apiKey, systemPrompt, tokenField, timeoutSeconds, maxTokens, historyTurns, cooldownSeconds,
+                maxConcurrent, maxToolRounds, chatDistance, io.github.ozozorz.aimaid.entity.task.MaidGoalTask.Limits.DEFAULT);
+    }
+    public LlmConfig(String apiUrl, String model, String apiKey, String systemPrompt, String tokenField,
+                     int timeoutSeconds, int maxTokens, int historyTurns, int cooldownSeconds,
+                     int maxConcurrent, int maxToolRounds, int chatDistance, io.github.ozozorz.aimaid.entity.task.MaidGoalTask.Limits goalLimits) {
+        this.goalLimits = Objects.requireNonNull(goalLimits);
         this.apiUrl = Objects.requireNonNull(apiUrl).strip();
         this.model = Objects.requireNonNull(model).strip();
         this.apiKey = Objects.requireNonNull(apiKey);
@@ -55,5 +63,6 @@ public final class LlmConfig {
     public int maxConcurrent() { return maxConcurrent; }
     public int maxToolRounds() { return maxToolRounds; }
     public int chatDistance() { return chatDistance; }
+    public io.github.ozozorz.aimaid.entity.task.MaidGoalTask.Limits goalLimits() { return goalLimits; }
     @Override public String toString() { return "LlmConfig[redacted]"; }
 }

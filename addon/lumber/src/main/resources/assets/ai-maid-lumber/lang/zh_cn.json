@@ -13,5 +13,7 @@
   "status.ai-maid-lumber.lumber.no_tool": "缺少可用斧头或装备受限，处理后请重选伐木",
   "status.ai-maid-lumber.lumber.disabled": "世界规则禁止生物破坏，启用后请重选伐木",
   "status.ai-maid-lumber.lumber.timeout": "本轮作业超时，请重选伐木重试",
-  "status.ai-maid-lumber.lumber.reselect": "请重选伐木开始新任务"
+  "status.ai-maid-lumber.lumber.reselect": "请重选伐木开始新任务",
+  "action.ai-maid-lumber.chop_tree": "砍伐指定树木",
+  "action.ai-maid-lumber.chop_tree.description": "需要已装备斧头。仅砍伐观察时记录的自然树原木，并走近拾取其掉落物；分别返回砍断、跳过、拾取数量。原木不可达或掉落物消失会报告部分失败。"
 }

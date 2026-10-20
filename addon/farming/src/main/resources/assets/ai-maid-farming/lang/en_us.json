@@ -55,5 +55,7 @@
   "status.ai-maid-farming.delivery.reason.chest_too_far": "Chest must be within 32 blocks of the maid",
   "status.ai-maid-farming.delivery.reason.task_busy": "A task is already running; cancel it before starting another",
   "action.ai-maid-farming.collect_wheat": "Collect wheat",
-  "action.ai-maid-farming.collect_wheat.description": "Ensure inventory holds count wheat, using existing stock first and harvesting/replanting only the shortfall. Search mature wheat on farmland within 16 blocks horizontally and 2 vertically of the plan origin; do not wait for growth."
+  "action.ai-maid-farming.collect_wheat.description": "Ensure inventory holds count wheat, using existing stock first and harvesting/replanting only the shortfall. Search mature wheat on farmland within 16 blocks horizontally and 2 vertically of the plan origin; do not wait for growth.",
+  "action.ai-maid-farming.harvest_crops": "Harvest crops",
+  "action.ai-maid-farming.harvest_crops.description": "Ensure inventory holds count (1..64) of item, using existing stock first. Supported items: minecraft:wheat, minecraft:carrot, minecraft:potato, minecraft:beetroot. Harvest and replant mature crops in the observed area, within 2 vertical blocks; do not wait for growth."
 }

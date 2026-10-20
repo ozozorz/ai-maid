@@ -1,4 +1,4 @@
-# 工作自卫与战后恢复（Minecraft 26.2 / 1.2.1）
+# 工作自卫与战后恢复（Minecraft 26.2 / 1.3.0）
 
 Core 提供战斗、中断顺序与生命周期通知；Lumber、Farming、Feeding、Hauling 四个正式工作命令声明 SELF_DEFENSE。工作不需要额外的守卫按钮。
 
@@ -52,3 +52,7 @@ GUI 从服务端同步命令、Activity 和具体状态。命令仍为伐木、A
 - [选敌与中断](../src/main/java/io/github/ozozorz/aimaid/entity/combat/MaidCombatSensor.java)、[生命周期转发](../src/main/java/io/github/ozozorz/aimaid/entity/combat/WorkDefense.java)
 - [命令契约](../src/main/java/io/github/ozozorz/aimaid/entity/maidcommand/MaidCommand.java)、[有限伐木任务](../addon/lumber/src/main/java/io/github/ozozorz/aimaid/lumber/lumber/LumberJob.java)
 - [工作恢复测试](../dev/devrun/src/gametest/java/io/github/ozozorz/aimaid/integration/WorkDefenseGameTests.java)、[正式 Addon 整合测试](../dev/devrun/src/gametest/java/io/github/ozozorz/aimaid/integration/FormalAddonGameTests.java)
+
+## 自主任务与固定计划（1.3.0）
+
+隐藏的 PLAN 命令通过 `MaidTaskRunner` 暂停/恢复当前执行器。`MaidGoalTask` 保留动作记录与同一个子任务；战斗暂停期间不扣游戏任务 tick 预算、不开始下一动作。模型请求可在后台完成，但回复等战斗结束并重新核对授权后才处理；HTTP 自身超时仍独立生效。手动切换命令取消整个目标，已完成动作不重放。

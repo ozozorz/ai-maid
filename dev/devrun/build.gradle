@@ -32,7 +32,7 @@ dependencies {
 	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
 
     def modCoordinates = ['ai-maid-lumber', 'ai-maid-farming', 'ai-maid-feeding', 'ai-maid-hauling'].collect { name ->
-        "io.github.ozozorz.aimaid:${name}:${name == 'ai-maid-farming' ? project.farming_version : project.aimaid_version}"
+        "io.github.ozozorz.aimaid:${name}:${name == 'ai-maid-farming' ? project.farming_version : name == 'ai-maid-lumber' ? project.lumber_version : project.aimaid_version}"
     }
     modCoordinates.add("io.github.ozozorz.aimaid:ai-maid:${project.core_version}")
     modCoordinates.add("io.github.ozozorz.aimaid:ai-maid-llm:${project.llm_version}")

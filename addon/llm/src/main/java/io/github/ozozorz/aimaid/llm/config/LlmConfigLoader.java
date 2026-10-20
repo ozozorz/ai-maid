@@ -23,7 +23,11 @@ public final class LlmConfigLoader {
           "cooldownSeconds": 2,
           "maxConcurrent": 4,
           "maxToolRounds": 4,
-          "chatDistance": 32
+          "chatDistance": 32,
+          "goalMaxActions": 16,
+          "goalMaxFailures": 3,
+          "goalTimeoutSeconds": 600,
+          "goalRadius": 64
         }
         """;
     private LlmConfigLoader() {}
@@ -46,7 +50,9 @@ public final class LlmConfigLoader {
                 string(root, "systemPrompt", "你是一位友善的 Minecraft 女仆。使用主人的语言简洁回答。"),
                 string(root, "tokenField", "max_tokens"), integer(root, "timeoutSeconds", 45), integer(root, "maxTokens", 1024),
                 integer(root, "historyTurns", 8), integer(root, "cooldownSeconds", 2), integer(root, "maxConcurrent", 4),
-                integer(root, "maxToolRounds", 4), integer(root, "chatDistance", 32)));
+                integer(root, "maxToolRounds", 4), integer(root, "chatDistance", 32),
+                new io.github.ozozorz.aimaid.entity.task.MaidGoalTask.Limits(integer(root, "goalMaxActions", 16), integer(root, "goalMaxFailures", 3),
+                        Math.multiplyExact(integer(root, "goalTimeoutSeconds", 600), 20), integer(root, "goalRadius", 64))));
     }
     private static String string(JsonObject root, String field, String fallback) {
         if (!root.has(field) && fallback != null) return fallback;

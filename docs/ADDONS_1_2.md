@@ -1,6 +1,6 @@
-# 正式 Addon 1.2：使用、迁移与验收
+# 工作 Addon：使用、迁移与验收
 
-目标环境：Minecraft 26.2、Java 25、Fabric Loader 0.19.3、Fabric API 0.158.0+26.2。版本统一为 1.2.1。
+目标环境：Minecraft 26.2、Java 25、Fabric Loader 0.19.3、Fabric API 0.158.0+26.2。当前 Core、Lumber、Farming 为 1.3.0，Feeding、Hauling 保持 1.2.1。本文描述持续工作模式；新增有限动作与自主目标执行见 [自主任务架构](AUTONOMOUS_TASKS.md)。
 
 ## 模组组成
 
@@ -17,7 +17,7 @@
 ## 从 TestAddon 升级
 
 1. 关闭游戏／服务器，从两端 mods 目录移除旧 `testaddon-*.jar`。
-2. 安装 `ai-maid-1.2.1.jar` 和需要的正式 Addon JAR；两端版本和模组列表保持一致。
+2. 安装 `ai-maid-1.3.0.jar` 和需要的正式 Addon JAR；两端版本和模组列表保持一致。
 3. 已保存的 `testaddon:guard` 和 `testaddon:patrol` 转为 `ai-maid:follow`；`testaddon:attack` 转为 `ai-maid:attack`。
 4. 安装 Lumber 时，`testaddon:lumber` 转为 `ai-maid-lumber:lumber`。旧有限任务不恢复砍伐进度，需要重新选择伐木。
 

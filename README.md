@@ -2,7 +2,7 @@
 
 Minecraft Fabric 女仆模组。Core 提供主人关系、Brain、35 格背包与六槽装备、GUI、喂食回血、动画，以及近战和弓弩 PvE 战斗。正式 Addon 分别提供伐木、耕种、喂养和分类搬运。
 
-当前版本：**Core 1.2.2、工作 Addon 1.2.1、LLM Addon 0.1.0**；环境：**Minecraft 26.2、Java 25、Fabric Loader 0.19.3、Fabric API 0.158.0+26.2**，Loom 1.17-SNAPSHOT，unobfuscated / no-remap。
+当前版本：**Core / Farming / Lumber 1.3.0、Feeding / Hauling 1.2.1、LLM Addon 0.3.0**；环境：**Minecraft 26.2、Java 25、Fabric Loader 0.19.3、Fabric API 0.158.0+26.2**，Loom 1.17-SNAPSHOT，unobfuscated / no-remap。
 
 ## 使用
 
@@ -11,10 +11,11 @@ Minecraft Fabric 女仆模组。Core 提供主人关系、Brain、35 格背包�
 - Core 命令：自由、跟随与护主、待命、主动战斗。跟随会自卫、保护主人并协助主人攻击；主动战斗额外清理附近敌对生物。PvE 规则保护玩家、队友和已驯服宠物。
 - 安装对应 Addon 后，GUI 自动增加正式工作命令；工作中遭到攻击会自卫，结束后恢复。
 - 伐木处理一棵树内能走近且伸手可及的原木；耕种照料四种普通作物；喂养使用真实饲料；分类搬运从铜箱取货，送入空箱或同种物品箱。
-- 可选 LLM Addon 提供 `/maid chat` 聊天界面、角色设定、状态查询和自然语言工作控制。默认关闭，在服务端配置兼容 Chat Completions 的服务后启用。
+- 可选 LLM Addon 提供聊天与自主任务：模型观察环境、选择一个有限动作，等待实际结果，再决定下一步。支持移动、装备工具、指定树木砍伐、四种作物收获、指定箱子存放和返回主人。仍可选择原有持续工作模式。
+- 在 `/maid chat` 中可说“收集8个小麦，放到坐标x y z的箱子，然后回来”。收集会使用已有库存；箱满等失败带实际已存入数量。模型只有在主人允许时才应改用备用箱子。默认关闭，配置方法见 [LLM 使用说明](addon/llm/README.md)。
 - 管理员在主世界输入 `/maid test-scene`，在上方空中生成 31×31 测试平台并传送上去，配有自己的待命女仆、工具材料和四种工作场景。每次执行新建，不覆盖原有地形；操作说明见 [测试场地](docs/TEST_SCENE.md)。
 
-具体范围、参数和升级办法见 [正式 Addon 1.2 使用与验收](docs/ADDONS_1_2.md)。客户端与服务器安装相同版本的 Core 和所选 Addon。**删除旧 TestAddon JAR**，无需安装全部四个 Addon。
+持续工作的范围和参数见 [工作 Addon 使用说明](docs/ADDONS_1_2.md)，自主任务的动作、预算与生命周期见 [动作接口与自主任务](docs/AUTONOMOUS_TASKS.md)。客户端与服务器安装相同版本的 Core 和所选 Addon。**删除旧 TestAddon JAR**，无需安装全部四个 Addon。
 
 ## 独立构建
 
@@ -52,6 +53,7 @@ Minecraft Fabric 女仆模组。Core 提供主人关系、Brain、35 格背包�
 使用临时世界。真实客户端截图在各 Build 的 `build/run/clientGameTest/screenshots`；后续构建可能清理这些文件。最新运行结果、日志与截图见 [验收记录](docs/ACCEPTANCE.md)。
 
 - [工作调度与 TLM 参考说明](docs/WORK_SCHEDULING.md)
+- [动作接口与自主任务架构](docs/AUTONOMOUS_TASKS.md)
 - [LLM 架构、TLM 参考与验收](docs/LLM.md)
 - [Addon 公共 API 与生命周期](docs/ADDON_API.md)
 - [Core 1.1 历史里程碑](docs/CORE_1_1.md)

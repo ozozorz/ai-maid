@@ -16,16 +16,16 @@ public final class MaidPlanBehavior extends Behavior<AiMaidEntity> {
                 MemoryModuleType.ATTACK_TARGET, MemoryStatus.VALUE_ABSENT));
     }
     private boolean active(AiMaidEntity maid) {
-        return maid.getMaidCommand() == MaidCommands.PLAN && MaidTasks.current(maid) instanceof MaidPlanTask task
+        return maid.getMaidCommand() == MaidCommands.PLAN && MaidTasks.current(maid) instanceof MaidTaskRunner task
                 && task.active() && !maid.getBrain().hasMemoryValue(MemoryModuleType.ATTACK_TARGET);
     }
     @Override protected boolean timedOut(long now) { return false; }
     @Override protected boolean checkExtraStartConditions(ServerLevel level, AiMaidEntity maid) { return active(maid); }
     @Override protected boolean canStillUse(ServerLevel level, AiMaidEntity maid, long now) { return active(maid); }
     @Override protected void tick(ServerLevel level, AiMaidEntity maid, long now) {
-        if (MaidTasks.current(maid) instanceof MaidPlanTask task) task.tick(maid, now);
+        if (MaidTasks.current(maid) instanceof MaidTaskRunner task) task.tick(maid, now);
     }
     @Override protected void stop(ServerLevel level, AiMaidEntity maid, long now) {
-        if (MaidTasks.current(maid) instanceof MaidPlanTask task) task.clearInteraction(maid);
+        if (MaidTasks.current(maid) instanceof MaidTaskRunner task) task.clearInteraction(maid);
     }
 }

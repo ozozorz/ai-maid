@@ -1,4 +1,4 @@
-# Core PvE 战斗（Minecraft 26.2 / 1.2.1）
+# Core PvE 战斗（Minecraft 26.2 / 1.3.0）
 
 战斗随 Core 独立运行。跟随包含自卫、护主和协助攻击，主动战斗增加清怪；四个正式工作 Addon 接入[工作自卫与恢复](WORK_DEFENSE.md)。
 

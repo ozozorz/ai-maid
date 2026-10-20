@@ -7,6 +7,8 @@ import io.github.ozozorz.aimaid.llm.config.LlmConfig;
 import io.github.ozozorz.aimaid.llm.http.LlmClient;
 import io.github.ozozorz.aimaid.llm.protocol.ChatProtocol;
 import io.github.ozozorz.aimaid.llm.tool.MaidTools;
+import io.github.ozozorz.aimaid.entity.task.*;
+import io.github.ozozorz.aimaid.entity.maidcommand.MaidCommands;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import net.minecraft.server.MinecraftServer;
@@ -26,8 +28,10 @@ public final class LlmService implements AutoCloseable {
         final Deque<List<JsonObject>> history = new ArrayDeque<>();
         final Deque<Line> transcript = new ArrayDeque<>();
         Pending pending;
+        GoalDecisionLoop goalLoop;
         AiMaidEntity trackedMaid;
         String taskEvent;
+        long lastTaskReport;
         long touched = System.nanoTime();
     }
 
@@ -36,6 +40,7 @@ public final class LlmService implements AutoCloseable {
 
     private static final class Pending {
         final AiMaidEntity maid; // 仅在服务器线程读它；也用于识别卸载后重新创建的同 UUID 实体。
+        final String ownerRequest;
         final List<JsonObject> messages = new ArrayList<>();
         final List<JsonObject> turn = new ArrayList<>();
         final Map<String, JsonObject> results = new HashMap<>();
@@ -46,8 +51,9 @@ public final class LlmService implements AutoCloseable {
         boolean selected;
         CompletableFuture<ChatProtocol.Reply> request;
 
-        Pending(AiMaidEntity maid, LlmConfig config) {
+        Pending(AiMaidEntity maid, LlmConfig config, String ownerRequest) {
             this.maid = maid;
+            this.ownerRequest = ownerRequest;
             revision = maid.getMaidCommandRevision();
             deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS
                     .toNanos((long) config.timeoutSeconds() * (config.maxToolRounds() + 1));
@@ -60,7 +66,9 @@ public final class LlmService implements AutoCloseable {
             Selecting a command starts a strategy, NOT completion. Explain missing tools, materials and current status.
             Only one work strategy or finite plan is active. Plans can sequence up to eight installed actions.
             Change work only when the owner asks. At most one work-changing tool is allowed per user turn.
-            Prefer list_actions and submit_plan for finite requests: choose and order only the steps the owner requested.
+            Prefer start_goal for finite work that needs multiple steps or adaptation to results. It uses the owner's actual current message as the goal.
+            start_goal activates a separate feedback loop: observe, execute one action, wait for its real result, decide again. Do not rewrite the owner's goal.
+            Use submit_plan only when a fixed sequence is explicitly appropriate; it stops at the first failure without model replanning.
             collect_wheat ensures inventory holds count (uses existing stock); deposit_wheat transfers exactly count already held;
             return_to_owner walks back. Collecting does not imply depositing, and depositing does not imply returning.
             For split deliveries, collect enough for the sum before depositing, or collect again between deposits.
@@ -108,7 +116,7 @@ public final class LlmService implements AutoCloseable {
     public boolean busy(UUID maid, UUID owner) {
         checkThread();
         var s = sessions.get(new Key(maid, owner));
-        return s != null && s.pending != null;
+        return s != null && (s.pending != null || s.goalLoop != null && s.goalLoop.active());
     }
 
     public AiMaidEntity resolve(ServerPlayer player, UUID uuid) {
@@ -133,9 +141,9 @@ public final class LlmService implements AutoCloseable {
         session.trackedMaid = maid;
         session.taskEvent = null;
         output.send(player, maid.getUUID(), "open", MaidTools.clipped(maid.getName().getString(), 80),
-                session.pending != null);
+                busy(maid.getUUID(), player.getUUID()));
         for (var line : session.transcript)
-            output.send(player, maid.getUUID(), line.kind(), line.text(), session.pending != null);
+            output.send(player, maid.getUUID(), line.kind(), line.text(), busy(maid.getUUID(), player.getUUID()));
         if (!enabled())
             output.send(player, maid.getUUID(), "info", "disabled", false);
     }
@@ -148,7 +156,7 @@ public final class LlmService implements AutoCloseable {
                 remove(entry.getKey(), entry.getValue());
         }
         if (!sessions.containsKey(key) && sessions.size() >= 128) {
-            sessions.entrySet().stream().filter(e -> e.getValue().pending == null)
+            sessions.entrySet().stream().filter(e -> e.getValue().pending == null && (e.getValue().goalLoop == null || !e.getValue().goalLoop.active()))
                     .min(Comparator.comparingLong(e -> e.getValue().touched))
                     .ifPresent(e -> sessions.remove(e.getKey()));
         }
@@ -174,11 +182,11 @@ public final class LlmService implements AutoCloseable {
             return false;
         }
         var s = session(player, maid);
-        if (s.pending != null) {
+        if (s.pending != null || s.goalLoop != null && s.goalLoop.active()) {
             error(player, id, "busy");
             return false;
         }
-        if (sessions.values().stream().filter(v -> v.pending != null).count() >= config.maxConcurrent()) {
+        if (sessions.values().stream().filter(v -> v.pending != null || v.goalLoop != null && v.goalLoop.active()).count() >= config.maxConcurrent()) {
             error(player, id, "capacity");
             return false;
         }
@@ -188,7 +196,7 @@ public final class LlmService implements AutoCloseable {
             return false;
         }
         cooldowns.put(player.getUUID(), now + java.util.concurrent.TimeUnit.SECONDS.toNanos(config.cooldownSeconds()));
-        var p = new Pending(maid, config);
+        var p = new Pending(maid, config, text);
         s.pending = p;
         try {
             p.messages.add(ChatProtocol.message("system", RULES + "\nStyle: " + config.systemPrompt()));
@@ -215,7 +223,9 @@ public final class LlmService implements AutoCloseable {
     private void request(Key key, Session s, Pending p, ServerPlayer player) {
         // HTTP 只获得已创建的 JSON，不获得实体或世界。
         try {
-            p.request = client.complete(List.copyOf(p.messages), MaidTools.definitions(p.maid, player));
+            var tools = MaidTools.definitions(p.maid, player);
+            tools.add(MaidTools.function("start_goal", "开始执行主人本轮提出的有限目标。模型将观察环境、逐步执行动作并根据真实结果继续决策。不要用于普通聊天。成功表示开始执行。", new JsonObject(), List.of()));
+            p.request = client.complete(List.copyOf(p.messages), tools);
             p.request.whenComplete((reply, failure) -> server.execute(() -> {
                 try {
                     receive(key, s, p, reply, failure);
@@ -280,7 +290,8 @@ public final class LlmService implements AutoCloseable {
                 else if (MaidTools.mutatesWork(call.name()) && p.selected)
                     result = ChatProtocol.error("only_one_selection_per_turn");
                 else {
-                    result = MaidTools.execute(call.name(), args, p.maid, player, distance());
+                    result = call.name().equals("start_goal") ? startGoal(key, s, p, player, args)
+                            : MaidTools.execute(call.name(), args, p.maid, player, distance());
                     if (MaidTools.mutatesWork(call.name()) && MaidTools.changedWork(result)) {
                         p.selected = true;
                         s.trackedMaid = p.maid;
@@ -298,7 +309,28 @@ public final class LlmService implements AutoCloseable {
             p.messages.add(message);
             p.turn.add(message);
         }
-        request(key, s, p, player);
+        if (s.goalLoop != null && s.goalLoop.active()) {
+            s.history.addLast(List.copyOf(p.turn));
+            while (s.history.size() > config.historyTurns() || historySize(s) > 24000) s.history.removeFirst();
+            s.pending = null; line(player, key.maid(), s, "info", "goal_started");
+        } else request(key, s, p, player);
+    }
+
+    private JsonObject startGoal(Key key, Session s, Pending p, ServerPlayer player, JsonObject args) {
+        if (!args.isEmpty()) return ChatProtocol.error("unexpected_arguments");
+        var current = MaidTasks.current(p.maid);
+        if (current != null && !current.snapshot(p.maid).state().terminal()) return ChatProtocol.error("task_busy_cancel_before_replacing");
+        var goal = new MaidGoalTask(p.maid, p.ownerRequest, config.goalLimits());
+        if (s.goalLoop != null) s.goalLoop.cancel("replaced");
+        p.maid.selectMaidCommand(MaidCommands.PLAN); MaidTasks.install(p.maid, goal);
+        io.github.ozozorz.aimaid.entity.ai.AiMaidAi.updateActivity(p.maid);
+        var prior = new JsonArray(); s.history.forEach(turn -> turn.forEach(prior::add)); p.turn.forEach(prior::add);
+        while (!prior.isEmpty() && prior.toString().length() > 16000) prior.remove(0);
+        s.goalLoop = new GoalDecisionLoop(server, config, client, p.maid, player, goal, prior, (kind, text) -> {
+            var recipient = server.getPlayerList().getPlayer(key.owner());
+            if (recipient != null) line(recipient, key.maid(), s, kind, text);
+        });
+        var result = MaidTools.snapshot(p.maid); result.addProperty("task_started", true); result.addProperty("work_completed", false); return result;
     }
 
     private static String canonical(JsonElement value) {
@@ -326,6 +358,7 @@ public final class LlmService implements AutoCloseable {
         var key = new Key(maid.getUUID(), player.getUUID());
         var s = sessions.get(key);
         boolean wasBusy = s != null && s.pending != null;
+        boolean hadTask = MaidTasks.current(maid) != null && !MaidTasks.current(maid).snapshot(maid).state().terminal();
         if (s != null) {
             stop(key, s, "cancelled");
             if (clear) {
@@ -333,8 +366,9 @@ public final class LlmService implements AutoCloseable {
                 s.transcript.clear();
             }
         }
-        if (!clear && io.github.ozozorz.aimaid.entity.task.MaidTasks.cancel(maid, "cancelled"))
-            maid.selectMaidCommand(io.github.ozozorz.aimaid.entity.maidcommand.MaidCommands.STAY);
+        if (!clear && hadTask) {
+            MaidTasks.cancel(maid, "cancelled"); maid.selectMaidCommand(MaidCommands.STAY);
+        }
         if (clear || !wasBusy)
             output.send(player, maid.getUUID(), clear ? "clear" : "info", clear ? "cleared" : "cancelled", false);
     }
@@ -359,6 +393,10 @@ public final class LlmService implements AutoCloseable {
             var s = entry.getValue();
             var key = entry.getKey();
             reportTask(key, s);
+            if (s.goalLoop != null) {
+                try { s.goalLoop.tick(); }
+                catch (RuntimeException e) { s.goalLoop.fail("internal"); }
+            }
             if (s.pending != null) {
                 if (valid(key, s, s.pending) == null)
                     stop(key, s, "stale");
@@ -380,9 +418,11 @@ public final class LlmService implements AutoCloseable {
         if (player == null || !maid.isOwnedBy(player) || task == null) { session.trackedMaid = null; return; }
         var snapshot = task.snapshot(maid);
         String event = snapshot.id() + ":" + snapshot.state() + ":" + snapshot.step() + ":"
-                + snapshot.progress().getOrDefault("steps_completed", 0) + ":" + snapshot.reason();
-        if (!event.equals(session.taskEvent)) {
+                + snapshot.progress().getOrDefault("steps_completed", 0) + ":" + snapshot.reason() + ":" + task.actions(maid);
+        long tick = maid.level().getGameTime();
+        if (!event.equals(session.taskEvent) && (snapshot.state().terminal() || tick - session.lastTaskReport >= 20 || session.taskEvent == null)) {
             session.taskEvent = event;
+            session.lastTaskReport = tick;
             net.minecraft.network.chat.ComponentSerialization.CODEC.encodeStart(com.mojang.serialization.JsonOps.INSTANCE, task.status(maid))
                     .result().ifPresent(json -> line(player, key.maid(), session, "task", json.toString()));
         }
@@ -390,9 +430,14 @@ public final class LlmService implements AutoCloseable {
     }
 
     private void stop(Key key, Session s, String code) {
+        boolean wasGoalActive = s.goalLoop != null && s.goalLoop.active();
+        if (s.goalLoop != null) s.goalLoop.cancel(code);
         var p = s.pending;
-        if (p == null)
+        if (p == null) {
+            var player = server.getPlayerList().getPlayer(key.owner());
+            if (wasGoalActive && player != null) line(player, key.maid(), s, "error", code);
             return;
+        }
         s.pending = null;
         if (p.request != null)
             p.request.cancel(true);
@@ -411,7 +456,7 @@ public final class LlmService implements AutoCloseable {
         s.transcript.addLast(new Line(kind, text));
         while (s.transcript.size() > 40 || s.transcript.stream().mapToInt(l -> l.text().length()).sum() > 24000)
             s.transcript.removeFirst();
-        output.send(player, maid, kind, text, s.pending != null);
+        output.send(player, maid, kind, text, s.pending != null || s.goalLoop != null && s.goalLoop.active());
     }
 
     public void error(ServerPlayer player, UUID maid, String code) {

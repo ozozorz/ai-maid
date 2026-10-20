@@ -7,10 +7,9 @@ import io.github.ozozorz.aimaid.entity.MaidServerAccess;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.item.Items;
 
 /** A bounded, ordered plan. Each action commits once; failure skips all later actions. */
-public class MaidPlanTask implements MaidTask {
+public class MaidPlanTask implements MaidTaskRunner {
     private final UUID id = UUID.randomUUID(), ownerId;
     private final GlobalPos origin;
     private final String requestId;
@@ -20,11 +19,16 @@ public class MaidPlanTask implements MaidTask {
     private State state = State.RUNNING;
     private String reason = "";
     private int index, activeTicks, stepTicks;
+    private final boolean notifyOwner;
 
     public MaidPlanTask(AiMaidEntity maid, String requestId, List<MaidActions.Request> requests) {
+        this(maid, requestId, requests, true);
+    }
+    public MaidPlanTask(AiMaidEntity maid, String requestId, List<MaidActions.Request> requests, boolean notifyOwner) {
         var level = MaidServerAccess.requireServerThread(maid);
         if (maid.getOwner() == null) throw new IllegalArgumentException("owner_unavailable");
         this.requestId = Objects.requireNonNull(requestId);
+        this.notifyOwner = notifyOwner;
         this.requests = List.copyOf(requests);
         this.operations = MaidActions.prepare(maid, this.requests);
         ownerId = maid.getOwner().getUUID(); origin = GlobalPos.of(level.dimension(), maid.blockPosition());
@@ -41,17 +45,18 @@ public class MaidPlanTask implements MaidTask {
             harvested += action.progress().getOrDefault("harvested", 0);
             delivered += action.progress().getOrDefault("delivered", 0);
         }
-        for (var request : requests) if (request.action().equals(MaidActions.DEPOSIT_WHEAT)) requested += request.count();
+        for (var request : requests) if (request.action().equals(MaidActions.DEPOSIT_WHEAT) || request.action().equals(MaidActions.DEPOSIT_ITEMS)) requested += request.count();
         var target = requests.get(currentIndex()).target();
         if (target == null) target = requests.stream().map(MaidActions.Request::target).filter(Objects::nonNull).findFirst().orElse(null);
         return new Snapshot(id, type(), state, step(), Map.of("requested", requested,
-                "available", maid.getInventory().countMatching(s -> s.is(Items.WHEAT)), "harvested", harvested, "delivered", delivered,
+                "available", operations.get(currentIndex()).result(maid).progress().getOrDefault("available", 0), "harvested", harvested, "delivered", delivered,
                 "steps_completed", index, "steps_total", requests.size()), reason, target == null ? null : target.position());
     }
     private ActionSnapshot receipt(AiMaidEntity maid, int i, String actionState, String why) {
         var request = requests.get(i);
         return new ActionSnapshot(i + 1, request.action().toString(), actionState, request.count(),
-                request.target() == null ? null : request.target().position(), operations.get(i).result(maid).progress(), why);
+                request.target() != null ? request.target().position() : request.focus() != null ? request.focus().position() : null,
+                operations.get(i).result(maid).progress(), why, request.item() == null ? "" : request.item().toString(), request.slot());
     }
     @Override public List<ActionSnapshot> actions(AiMaidEntity maid) {
         var result = new ArrayList<>(receipts);
@@ -66,8 +71,16 @@ public class MaidPlanTask implements MaidTask {
         var snap = snapshot(maid);
         var request = requests.get(currentIndex());
         var label = Component.translatable(request.action().toLanguageKey("action"));
+        if (request.item() != null) label.append(" (").append(net.minecraft.core.registries.BuiltInRegistries.ITEM.getValue(request.item()).getDefaultInstance().getHoverName()).append(")");
         if (request.count() > 0) label.append(" ×" + request.count());
         if (request.target() != null) label.append(" @ " + request.target().position().pos().toShortString());
+        var progress = actions(maid).get(currentIndex()).progress();
+        if (progress.containsKey("available")) label.append(Component.translatable("status.ai-maid.plan.held", progress.get("available")));
+        if (progress.containsKey("broken")) label.append(Component.translatable("status.ai-maid.plan.logs", progress.get("broken"), progress.get("collected")));
+        if (snap.progress().get("requested") == 0)
+            return Component.translatable("status.ai-maid.plan.action_progress", Component.translatable("status.ai-maid.plan.state." + state.name().toLowerCase(Locale.ROOT)),
+                    Math.min(index + 1, requests.size()), requests.size(), label,
+                    reason.isEmpty() ? Component.empty() : Component.translatable("status.ai-maid.plan.reason." + reason));
         return Component.translatable("status.ai-maid.plan.progress", Component.translatable("status.ai-maid.plan.state." + state.name().toLowerCase(Locale.ROOT)),
                 Math.min(index + 1, requests.size()), requests.size(), label,
                 snap.progress().get("delivered"), snap.progress().get("requested"),
@@ -101,7 +114,7 @@ public class MaidPlanTask implements MaidTask {
             for (int i = index + 1; i < operations.size(); i++) receipts.add(receipt(maid, i, "skipped", "previous_step_stopped"));
         }
         clearInteraction(maid);
-        if (maid.getOwner() instanceof ServerPlayer owner && owner.connection != null && owner.getUUID().equals(ownerId))
+        if (notifyOwner && maid.getOwner() instanceof ServerPlayer owner && owner.connection != null && owner.getUUID().equals(ownerId))
             owner.sendSystemMessage(Component.translatable("message.ai-maid.plan.finished", maid.getDisplayName(), status(maid)));
     }
     @Override public void cancel(AiMaidEntity maid, String why) { MaidServerAccess.requireServerThread(maid); finish(maid, State.CANCELLED, why); }

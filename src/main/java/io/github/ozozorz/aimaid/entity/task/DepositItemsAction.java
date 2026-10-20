@@ -6,15 +6,16 @@ import io.github.ozozorz.aimaid.entity.MaidServerAccess;
 import io.github.ozozorz.aimaid.entity.inventory.MaidContainers;
 import net.minecraft.world.Container;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.item.Items;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.level.gamerules.GameRules;
 
-final class DepositWheatAction extends WalkingMaidAction {
+final class DepositItemsAction extends WalkingMaidAction {
     private final int requested;
+    private final Item item;
     private final MaidActions.ChestTarget destination;
     private int delivered;
     private Container opened;
-    DepositWheatAction(int requested, MaidActions.ChestTarget destination) { this.requested = requested; this.destination = destination; }
+    DepositItemsAction(int requested, MaidActions.ChestTarget destination, Item item) { this.requested = requested; this.destination = destination; this.item = item; }
     @Override public Result result(AiMaidEntity maid) {
         return new Result(state, reason, Map.of("requested", requested, "delivered", delivered, "remaining", requested - delivered));
     }
@@ -27,7 +28,7 @@ final class DepositWheatAction extends WalkingMaidAction {
         var chest = MaidContainers.resolveChest(level, pos);
         if (chest == null) { fail("chest_unavailable"); return; }
         if (!level.getGameRules().get(GameRules.MOB_GRIEFING)) { fail("disabled"); return; }
-        if (maid.getInventory().countMatching(s -> s.is(Items.WHEAT)) < requested - delivered) { fail("inventory_changed"); return; }
+        if (maid.getInventory().countMatching(s -> s.is(item)) < requested - delivered) { fail("inventory_changed"); return; }
         if (!approach(maid, pos, 2.5, now, "chest_unreachable")) { close(maid); return; }
         if (chest.getEntitiesWithContainerOpen().stream().anyMatch(e -> e != maid)) {
             close(maid); interaction = 0; reason = "chest_busy"; return;
@@ -38,7 +39,7 @@ final class DepositWheatAction extends WalkingMaidAction {
         if (interaction < 20) return;
         for (int slot = 0; slot < maid.getInventory().getContainerSize() && delivered < requested; slot++) {
             var stack = maid.getInventory().getItem(slot);
-            if (stack.is(Items.WHEAT)) delivered += MaidContainers.insert(chest, stack, requested - delivered);
+            if (stack.is(item)) delivered += MaidContainers.insert(chest, stack, requested - delivered);
         }
         maid.getInventory().setChanged(); maid.swing(InteractionHand.MAIN_HAND);
         if (delivered < requested) fail("chest_full");

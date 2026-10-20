@@ -13,5 +13,7 @@
   "status.ai-maid-lumber.lumber.no_tool": "No usable axe or equipment locked; select Lumber after fixing",
   "status.ai-maid-lumber.lumber.disabled": "Mob griefing disabled; select Lumber after enabling",
   "status.ai-maid-lumber.lumber.timeout": "Job timed out; select Lumber to retry",
-  "status.ai-maid-lumber.lumber.reselect": "Select Lumber to start a new job"
+  "status.ai-maid-lumber.lumber.reselect": "Select Lumber to start a new job",
+  "action.ai-maid-lumber.chop_tree": "Chop observed tree",
+  "action.ai-maid-lumber.chop_tree.description": "Chop only logs in the observed natural tree snapshot with an equipped axe, then physically collect its drops. Reports broken, skipped and collected separately; inaccessible logs or missing drops are partial failure."
 }

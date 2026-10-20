@@ -44,8 +44,8 @@ public final class MaidTools {
         PlanTools.definitions(tools);
         return tools;
     }
-    static JsonObject schema(String type) { var s = new JsonObject(); s.addProperty("type", type); return s; }
-    static JsonObject function(String name, String description, JsonObject props, List<String> required) {
+    public static JsonObject schema(String type) { var s = new JsonObject(); s.addProperty("type", type); return s; }
+    public static JsonObject function(String name, String description, JsonObject props, List<String> required) {
         var parameters = schema("object"); parameters.add("properties", props); parameters.addProperty("additionalProperties", false);
         var array = new JsonArray(); required.forEach(array::add); parameters.add("required", array);
         var fn = new JsonObject(); fn.addProperty("name", name); fn.addProperty("description", description); fn.add("parameters", parameters);
@@ -68,8 +68,23 @@ public final class MaidTools {
         MaidServerAccess.requireServerThread(maid);
         if (!(name.equals("cancel_task") ? allowedCancellation(maid, player, distance) : allowed(maid, player, distance)))
             return ChatProtocol.error("maid_unavailable_or_not_owner");
+        return executeAuthorized(name, args, maid, player, distance);
+    }
+    public static JsonObject executeForGoal(String name, JsonObject args, AiMaidEntity maid, ServerPlayer player,
+            io.github.ozozorz.aimaid.entity.task.MaidGoalTask goal) {
+        MaidServerAccess.requireServerThread(maid);
+        if (!Set.of("query_maid", "list_actions", "observe_chest", "observe_position", "observe_nearby").contains(name))
+            return ChatProtocol.error("tool_unavailable_in_goal");
+        if (io.github.ozozorz.aimaid.entity.task.MaidTasks.current(maid) != goal || !goal.active()
+                || !maid.isAlive() || maid.isRemoved() || !maid.isTame() || !maid.isOwnedBy(player)
+                || !player.isAlive() || player.isSpectator() || maid.level() != player.level()
+                || !goal.withinScope(net.minecraft.core.GlobalPos.of(maid.level().dimension(), maid.blockPosition())))
+            return ChatProtocol.error("goal_authorization_expired");
+        return executeAuthorized(name, args, maid, player, 32);
+    }
+    private static JsonObject executeAuthorized(String name, JsonObject args, AiMaidEntity maid, ServerPlayer player, int distance) {
         try {
-            if (Set.of("list_actions", "observe_chest", "submit_plan", "cancel_task").contains(name))
+            if (Set.of("list_actions", "observe_chest", "observe_position", "observe_nearby", "submit_plan", "cancel_task").contains(name))
                 return PlanTools.execute(name, args, maid, player);
             if (Set.of("observe_wheat_delivery", "start_wheat_delivery").contains(name))
                 return WheatDeliveryTools.execute(name, args, maid, player);
@@ -174,6 +189,8 @@ public final class MaidTools {
         for (var action : task.actions(maid)) {
             var row = new JsonObject(); row.addProperty("index", action.index()); row.addProperty("action", action.action());
             row.addProperty("state", action.state()); row.addProperty("count", action.count()); row.addProperty("reason", action.reason());
+            if (!action.item().isEmpty()) row.addProperty("item", action.item());
+            if (action.slot() >= 0) row.addProperty("slot", action.slot());
             if (action.destination() != null) {
                 row.addProperty("destination", action.destination().pos().toShortString());
                 row.addProperty("dimension", action.destination().dimension().identifier().toString());
@@ -182,9 +199,14 @@ public final class MaidTools {
         }
         if (!actions.isEmpty()) result.add("steps", actions);
         if (task instanceof io.github.ozozorz.aimaid.entity.task.MaidPlanTask plan) result.addProperty("request_id", plan.requestId());
+        if (task instanceof io.github.ozozorz.aimaid.entity.task.MaidGoalTask goal) {
+            result.addProperty("goal", goal.goal()); result.addProperty("conclusion", goal.conclusion());
+            result.addProperty("completion_source", "planner_with_server_action_receipts");
+            result.addProperty("execution_radius", goal.limits().radius());
+        }
         return result;
     }
-    public static boolean mutatesWork(String name) { return Set.of("select_command", "start_wheat_delivery", "submit_plan", "cancel_task").contains(name); }
+    public static boolean mutatesWork(String name) { return Set.of("select_command", "start_wheat_delivery", "submit_plan", "start_goal", "cancel_task").contains(name); }
     public static boolean changedWork(JsonObject result) {
         return result.has("selection") || result.has("task_started") && result.get("task_started").getAsBoolean()
                 || result.has("task_cancelled") && result.get("task_cancelled").getAsBoolean();

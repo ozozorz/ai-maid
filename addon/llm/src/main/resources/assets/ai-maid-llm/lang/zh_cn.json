@@ -6,7 +6,7 @@
   "llm.ai-maid.send": "发送",
   "llm.ai-maid.cancel": "取消请求/任务",
   "llm.ai-maid.clear": "清空会话",
-  "llm.ai-maid.thinking": "正在思考… 你仍可在游戏中手动切换工作。",
+  "llm.ai-maid.thinking": "正在思考或执行任务… 可取消任务或手动切换工作。",
   "llm.ai-maid.hint": "Enter 发送 · 滚轮查看记录 · 关闭窗口不取消请求",
   "llm.ai-maid.line.user": "你：%s",
   "llm.ai-maid.line.assistant": "女仆：%s",
@@ -32,5 +32,7 @@
   "llm.ai-maid.message.invalid_response": "模型响应格式不正确、内容为空或已被截断，本轮不执行该响应中的动作。",
   "llm.ai-maid.message.response_too_large": "模型响应超过大小限制，已停止读取。",
   "llm.ai-maid.message.tool_limit": "工具调用达到本轮上限。请查看已接受的动作，再发送新消息。",
-  "llm.ai-maid.message.duplicate_call_id": "模型返回了重复调用编号，本轮已停止。已接受的动作不会重复执行。"
+  "llm.ai-maid.message.duplicate_call_id": "模型返回了重复调用编号，本轮已停止。已接受的动作不会重复执行。",
+  "llm.ai-maid.message.goal_started": "目标已接受，开始观察并逐步执行；随后报告实际结果。",
+  "llm.ai-maid.message.goal_decision_limit": "决策次数已达到上限，任务停止；已完成动作的实际效果保留。"
 }

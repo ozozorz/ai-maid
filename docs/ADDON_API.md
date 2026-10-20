@@ -1,12 +1,12 @@
-# Addon API（Core 1.2.2）
+# Addon API（Core 1.3.0）
 
 1.2.2 新增 `AiMaidEntity.getMaidCommandRevision()`：每次选择（含同命令重选）、读入存档时递增的运行期版本号，不持久化、不与客户端同步。异步 Addon 应在服务器线程核对同一个实体实例、该版本以及当前所有权/世界/距离后再执行动作。LLM Addon 的接入范例见 [LLM 架构说明](LLM.md)。
 
 ## 依赖与加载
 
-新 Addon 消费 `io.github.ozozorz.aimaid:ai-maid:1.2.2`。本仓库 `addon/lumber/settings.gradle` 演示 `includeBuild('../..')` 和 dependency substitution。客户端 API 在 Core 的完整 JAR 中；Composite Build 的普通 classes 变体只有 main，客户端扩展依赖应显式选择 JAR，见 Lumber Addon 的 `clientImplementation`。
+新 Addon 消费 `io.github.ozozorz.aimaid:ai-maid:1.3.0`。本仓库 `addon/lumber/settings.gradle` 演示 `includeBuild('../..')` 和 dependency substitution。客户端 API 在 Core 的完整 JAR 中；Composite Build 的普通 classes 变体只有 main，客户端扩展依赖应显式选择 JAR，见 Lumber Addon 的 `clientImplementation`。
 
-使用命令版本号 API 的模组须声明 `ai-maid >=1.2.2`；现有工作 Addon 未用该 API，仍可声明 `>=1.2.1`。同时按 Minecraft/Fabric 版本限制依赖。Core 的 Maven publishing 尚未配置远程仓库，第三方工程需要自行提供发布位置或使用本地组合构建。
+使用本版动作/观察/目标任务 API 的模组须声明 `ai-maid >=1.3.0`；当前 Lumber、Farming 和 LLM 均要求该版本。未改动的 Feeding、Hauling 保持 1.2.1 依赖下限。只使用命令版本号的旧模组仍可声明 `>=1.2.2`。同时按 Minecraft/Fabric 版本限制依赖。Core 的 Maven publishing 尚未配置远程仓库，第三方工程需要自行提供发布位置或使用本地组合构建。
 
 通过 `ai-maid-addon` entrypoint 实现 `AiMaidAddonEntrypoint`，在 `register(AiMaidAddonRegistrar)` 贡献已注册的 SensorType。此时不能假设自己的普通 `ModInitializer` 已执行，应主动初始化需要的 Memory/Sensor 注册类。贡献完成后冻结，同一个 SensorType 去重；迟到注册会明确报错。
 
@@ -100,3 +100,16 @@ Core 安装一次 `ModActivities.FIGHT` 和独立于 Addon 的 Combat Sensor。�
 - `MaidInventory.getChangeVersion()` 是服务端运行期修改计数，用于提前结束缺料等待；不持久化、不参与 Slot 网络同步。通过容器 API 修改会增加计数；直接改变取出的可变 ItemStack 后，调用者仍须 `setChanged()`。
 
 等料、无目标、箱子占用、路径不可达由 Addon 区分；Core 不替业务设置统一失败冷却。不在 Command singleton 保存队列、随机计时、目标或 `MaidWorkIdle` 实例。循环工作被战斗中断后丢弃短期候选，再从真实世界选取；伐木的有限队列继续使用自己的恢复契约。
+
+## 有限动作与目标任务（1.3.0）
+
+- `MaidAction`：`tick(maid, now)` 执行一个有限动作；`result(maid)` 返回 `State/reason/progress`；`stop(maid)` 只释放导航、动画、裂纹、开箱等资源。暂停也会调用 `stop`，因此不能把已提交的数量或队列在这里清零。
+- `MaidActions.register(Definition)`：在 ModInitializer 注册实际安装的动作。定义声明是否需要 count/chest/item/slot，以及观察目标类型。factory 在服务器线程创建每次独立实例，不能在校验/构造阶段修改世界。
+- `MaidActions.Request`：动作ID、数量、已观察的箱子身份、物品ID、背包格、可选 `MaidObservations.Target`。原来的三个参数构造器继续可用。框架先验证整组参数，再创建操作。
+- `MaidObservations.register(Provider)`：工作插件返回有界的已加载目标快照与计数。Core 的类型包括 POSITION、CHEST、AREA、TREE。树快照记录具体原木及预期状态；执行时再核对。提供者必须限制扫描、结果和寻路开销。
+- `MaidTaskRunner`：统一 `active/tick/pause/resume/clearInteraction`。`PlanMaidCommand` 与 `MaidPlanBehavior` 只依赖此接口；Brain 同时驱动一个执行器。
+- `MaidPlanTask`：1..8步固定计划，后一步等待前一步；失败跳过余下步骤。终态记录冻结，部分效果保留。
+- `MaidGoalTask`：保存原始目标、主人、起点、预算与已执行动作。`submit(requestId, request)` 每次接受一个动作，完成后等待下一次决策；`conclude` 记录规划器的结论。已接受请求在整个目标生命周期去重。一个动作失败后，只要失败预算未耗尽，目标可以继续接收修正动作。
+- `MaidTasks.install/current/cancel`：实体上的运行期任务附件，不持久化。安装执行器前选择隐藏的 `MaidCommands.PLAN`，之后更新 Activity；每个子动作不切换工作模式。
+
+LLM 适配器的观察 token、原始 JSON 校验、目标授权和异步等待属于 `ActionTools` / `GoalDecisionLoop`，Core 不依赖它们。受信任的 Java Addon 可直接构造请求，仍需自行授权调用者。动作契约、完整调用顺序与预算见 [自主任务架构](AUTONOMOUS_TASKS.md)。

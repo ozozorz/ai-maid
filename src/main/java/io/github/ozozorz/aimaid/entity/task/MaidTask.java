@@ -21,8 +21,11 @@ public interface MaidTask {
 
     Snapshot snapshot(AiMaidEntity maid);
     record ActionSnapshot(int index, String action, String state, int count, GlobalPos destination,
-                          Map<String, Integer> progress, String reason) {
+                          Map<String, Integer> progress, String reason, String item, int slot) {
         public ActionSnapshot { progress = Map.copyOf(progress); }
+        public ActionSnapshot(int index, String action, String state, int count, GlobalPos destination, Map<String, Integer> progress, String reason) {
+            this(index, action, state, count, destination, progress, reason, "", -1);
+        }
     }
     default List<ActionSnapshot> actions(AiMaidEntity maid) { return List.of(); }
     Component status(AiMaidEntity maid);

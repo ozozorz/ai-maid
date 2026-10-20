@@ -26,14 +26,14 @@ public final class PlanMaidCommand implements MaidCommand {
                 Set.of(MemoryModuleType.WALK_TARGET, MemoryModuleType.LOOK_TARGET, MemoryModuleType.CANT_REACH_WALK_TARGET_SINCE)));
     }
     @Override public List<Activity> getActivityCandidates(AiMaidEntity maid) {
-        return MaidTasks.current(maid) instanceof MaidPlanTask task && task.active()
+        return MaidTasks.current(maid) instanceof MaidTaskRunner task && task.active()
                 ? List.of(ModActivities.FIGHT, ModActivities.PLAN, ModActivities.STAY) : List.of(ModActivities.FIGHT, ModActivities.STAY);
     }
     @Override public void onDeselected(AiMaidEntity maid) { MaidTasks.cancel(maid, "manual_override"); WorkDefense.clearCombat(maid); }
-    @Override public void onCombatStarted(AiMaidEntity maid, long now) { if (MaidTasks.current(maid) instanceof MaidPlanTask task) task.pause(maid); }
-    @Override public void onCombatEnded(AiMaidEntity maid, long now) { if (MaidTasks.current(maid) instanceof MaidPlanTask task) task.resume(maid); }
+    @Override public void onCombatStarted(AiMaidEntity maid, long now) { if (MaidTasks.current(maid) instanceof MaidTaskRunner task) task.pause(maid); }
+    @Override public void onCombatEnded(AiMaidEntity maid, long now) { if (MaidTasks.current(maid) instanceof MaidTaskRunner task) task.resume(maid); }
     @Override public Component getStatus(AiMaidEntity maid) {
-        return MaidTasks.current(maid) instanceof MaidPlanTask task ? task.status(maid) : Component.translatable("status.ai-maid.plan.not_running");
+        return MaidTasks.current(maid) instanceof MaidTaskRunner task ? task.status(maid) : Component.translatable("status.ai-maid.plan.not_running");
     }
     @Override public void buildServerCommand(LiteralArgumentBuilder<CommandSourceStack> node, CommandBuildContext build, MaidTargetResolver resolver) {
         node.then(Commands.literal("status").executes(c -> {
