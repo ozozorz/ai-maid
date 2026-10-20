@@ -3,5 +3,8 @@
   "id": "aimaid-devrun",
   "version": "1.2.1",
   "name": "AiMaid Development Runner",
-  "environment": "*"
+  "environment": "*",
+  "entrypoints": {
+    "main": ["io.github.ozozorz.aimaid.experiment.ExperimentAddon"]
+  }
 }

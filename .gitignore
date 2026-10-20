@@ -41,3 +41,7 @@ replay_*.log
 
 # Local model service configuration may contain API credentials.
 **/ai-maid-llm.json
+
+# Generated local experiment data and Python bytecode.
+maid-experiments/
+__pycache__/

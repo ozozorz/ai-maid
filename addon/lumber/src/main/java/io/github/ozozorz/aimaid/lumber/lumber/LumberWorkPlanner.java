@@ -7,6 +7,7 @@ import io.github.ozozorz.aimaid.entity.AiMaidEntity;
 import io.github.ozozorz.aimaid.entity.ai.behavior.MaidBlockBreaking;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
@@ -26,14 +27,21 @@ public final class LumberWorkPlanner {
             }
         }
         var logByFeet = new LinkedHashMap<BlockPos, BlockPos>();
+        double range = maid.getAttributeValue(Attributes.BLOCK_INTERACTION_RANGE);
         outer: for (BlockPos log : job.remaining().keySet()) {
             // 有限的环形站位候选，允许上下地形，但绝不造台阶/隔空破坏。
             for (int radius = 0; radius <= 3; radius++) for (int dy = -5; dy <= 1; dy++) {
                 for (int dx = -radius; dx <= radius; dx++) for (int dz = -radius; dz <= radius; dz++) {
                     if (Math.max(Math.abs(dx), Math.abs(dz)) != radius) continue;
                     BlockPos feet = log.offset(dx, dy, dz);
-                    if (logByFeet.containsKey(feet) || !canStand(level, maid, feet)) continue;
+                    // 当前格的实际位置够不到时，不能再次选择这格并等待寻路把它当成已到达。
+                    if (feet.equals(maid.blockPosition()) || logByFeet.containsKey(feet) || !canStand(level, maid, feet)) continue;
                     Vec3 eye = Vec3.atBottomCenterOf(feet).add(0, maid.getEyeHeight(), 0);
+                    // MoveToTargetSink 进入目标格就会停止。按格内最远的水平角点检查距离，
+                    // 避免只有中心够得到；保留真实的垂直距离，不缩短可砍树干的高度。
+                    Vec3 delta = Vec3.atCenterOf(log).subtract(eye);
+                    double farX = Math.abs(delta.x) + 0.5, farZ = Math.abs(delta.z) + 0.5;
+                    if (farX * farX + delta.y * delta.y + farZ * farZ > range * range) continue;
                     if (!MaidBlockBreaking.canReachFrom(level, maid, eye, log)) continue;
                     logByFeet.put(feet, log);
                     if (logByFeet.size() >= MAX_STATIONS) break outer;

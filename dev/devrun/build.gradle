@@ -24,6 +24,8 @@ loom {
 }
 
 dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 	// To change the versions see the gradle.properties file
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
 	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
@@ -68,3 +70,51 @@ fabricApi {
 
 sourceSets.gametest.java.srcDir('../testsupport/java')
 sourceSets.gametest.resources.srcDir('../testsupport/resources')
+
+test { useJUnitPlatform() }
+
+// Fingerprint executable sources, prompts, fixtures and build configuration; never local secrets.
+def experimentSources = fileTree('../..') {
+    include 'src/**', 'addon/*/src/**', 'dev/devrun/src/**', 'dev/devrun/build.gradle', 'dev/experiments/*.py'
+    include 'build.gradle', 'settings.gradle', 'gradle.properties', 'addon/*/build.gradle', 'addon/*/gradle.properties'
+}
+def experimentBuild = tasks.register('experimentBuild') {
+    inputs.files(experimentSources)
+    outputs.file(layout.buildDirectory.file('generated/experiment/experiment-build.json'))
+    doLast {
+        def digest = java.security.MessageDigest.getInstance('SHA-256')
+        def root = file('../..').toPath()
+        experimentSources.files.sort { root.relativize(it.toPath()).toString() }.each { f ->
+            digest.update(root.relativize(f.toPath()).toString().replace('\\','/').getBytes('UTF-8'))
+            digest.update((byte) 0)
+            digest.update(f.bytes)
+        }
+        def out = layout.buildDirectory.file('generated/experiment/experiment-build.json').get().asFile
+        out.parentFile.mkdirs()
+        out.text = groovy.json.JsonOutput.toJson([source_sha256: digest.digest().encodeHex().toString(), file_count: experimentSources.files.size()])
+    }
+}
+processResources {
+    dependsOn experimentBuild
+    from(layout.buildDirectory.dir('generated/experiment'))
+}
+
+// Optional selection avoids re-running unrelated UI tests during harness development.
+tasks.named('processGametestResources') {
+    def selected = providers.gradleProperty('clientGameTest').orElse('')
+    inputs.property('clientGameTest', selected)
+    doLast {
+        if (!selected.get().isEmpty()) {
+            def mod = new File(destinationDir, 'fabric.mod.json')
+            def json = new groovy.json.JsonSlurper().parse(mod)
+            def names = selected.get().split(',').toList()
+            if (!json.entrypoints['fabric-client-gametest'].containsAll(names)) throw new GradleException('Unknown clientGameTest entrypoint')
+            json.entrypoints['fabric-client-gametest'] = names
+            mod.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(json))
+        }
+    }
+}
+
+tasks.named('runClientGameTest') {
+    systemProperty 'aimaid.experiment.testCases', providers.gradleProperty('experimentTestCases').orElse('').get()
+}

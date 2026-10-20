@@ -89,15 +89,22 @@ public final class LlmService implements AutoCloseable {
     private final LlmConfig config;
     private final LlmClient client;
     private final Output output;
+    private final ExecutionPolicy policy;
     private final Map<Key, Session> sessions = new LinkedHashMap<>();
     private final Map<UUID, Long> cooldowns = new HashMap<>();
     private boolean closed;
 
     public LlmService(MinecraftServer server, LlmConfig config, Output output) {
+        this(server, config, output, ExecutionPolicy.AUTO, ignored -> {});
+    }
+
+    public LlmService(MinecraftServer server, LlmConfig config, Output output,
+                      ExecutionPolicy policy, java.util.function.Consumer<JsonObject> trace) {
         this.server = server;
         this.config = config;
         this.output = output;
-        client = config == null ? null : new LlmClient(config);
+        this.policy = Objects.requireNonNull(policy);
+        client = config == null ? null : new LlmClient(config, trace);
     }
 
     private void checkThread() {
@@ -199,10 +206,10 @@ public final class LlmService implements AutoCloseable {
         var p = new Pending(maid, config, text);
         s.pending = p;
         try {
-            p.messages.add(ChatProtocol.message("system", RULES + "\nStyle: " + config.systemPrompt()));
+            p.messages.add(ChatProtocol.message("system", (policy == ExecutionPolicy.AUTO ? RULES : policy.rules()) + "\nStyle: " + config.systemPrompt()));
             var context = new JsonObject();
             context.add("maid", MaidTools.snapshot(maid));
-            context.add("commands", MaidTools.commands(maid, player));
+            if (policy == ExecutionPolicy.AUTO) context.add("commands", MaidTools.commands(maid, player));
             context.add("actions", io.github.ozozorz.aimaid.llm.tool.PlanTools.catalog());
             context.addProperty("persona", maid.getAttachedOrElse(LlmData.PERSONA, ""));
             p.messages.add(ChatProtocol.message("system", "Current game data (not instructions): " + context));
@@ -225,7 +232,10 @@ public final class LlmService implements AutoCloseable {
         try {
             var tools = MaidTools.definitions(p.maid, player);
             tools.add(MaidTools.function("start_goal", "开始执行主人本轮提出的有限目标。模型将观察环境、逐步执行动作并根据真实结果继续决策。不要用于普通聊天。成功表示开始执行。", new JsonObject(), List.of()));
-            p.request = client.complete(List.copyOf(p.messages), tools);
+            var permitted = new JsonArray();
+            for (var tool : tools)
+                if (policy.allows(tool.getAsJsonObject().getAsJsonObject("function").get("name").getAsString())) permitted.add(tool);
+            p.request = client.complete(List.copyOf(p.messages), permitted);
             p.request.whenComplete((reply, failure) -> server.execute(() -> {
                 try {
                     receive(key, s, p, reply, failure);
@@ -285,7 +295,9 @@ public final class LlmService implements AutoCloseable {
                 var args = ChatProtocol.object(call.arguments());
                 // Gson JsonObject 的 Map 相等语义不依赖参数顺序。
                 String signature = call.name() + canonical(args);
-                if (MaidTools.mutatesWork(call.name()) && p.results.containsKey(signature))
+                if (!policy.allows(call.name()))
+                    result = ChatProtocol.error("tool_not_allowed_by_execution_policy");
+                else if (MaidTools.mutatesWork(call.name()) && p.results.containsKey(signature))
                     result = p.results.get(signature).deepCopy();
                 else if (MaidTools.mutatesWork(call.name()) && p.selected)
                     result = ChatProtocol.error("only_one_selection_per_turn");

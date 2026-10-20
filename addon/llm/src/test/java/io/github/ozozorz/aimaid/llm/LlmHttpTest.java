@@ -63,4 +63,21 @@ class LlmHttpTest {
         status = 302;
         try (var c = client(3, "")) { assertEquals("http_302", LlmClient.errorCode(assertThrows(CompletionException.class, () -> ask(c).join()))); }
     }
+    @Test void telemetryIncludesActualUsageAndPayloadButNeverHeadersOrErrorBody() throws Exception {
+        var events = new CopyOnWriteArrayList<JsonObject>();
+        var body = ChatProtocol.object(response);
+        body.add("usage", ChatProtocol.object("{\"prompt_tokens\":11,\"completion_tokens\":4}"));
+        body.addProperty("model","resolved-model"); response=body.toString();
+        try(var c = new LlmClient(new LlmConfig("http://127.0.0.1:" + server.getAddress().getPort() + "/chat","mock","test-secret"), events::add)) {
+            ask(c).get(5,TimeUnit.SECONDS);
+            assertEquals(11, events.stream().filter(e -> e.get("event").getAsString().equals("model_response")).findFirst().orElseThrow()
+                    .getAsJsonObject("usage").get("prompt_tokens").getAsInt());
+            assertEquals("resolved-model", events.get(1).get("returned_model").getAsString());
+            status=503; response="provider echoed test-secret";
+            assertThrows(CompletionException.class, () -> ask(c).join());
+        }
+        assertTrue(events.stream().anyMatch(e -> e.get("event").getAsString().equals("model_request") && e.has("payload")));
+        assertFalse(events.toString().contains("test-secret")); assertFalse(events.toString().contains("Authorization"));
+        assertFalse(events.toString().contains("provider echoed"));
+    }
 }

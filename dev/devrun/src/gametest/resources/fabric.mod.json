@@ -22,7 +22,8 @@
       "io.github.ozozorz.aimaid.integration.TestSceneClientGameTest",
       "io.github.ozozorz.aimaid.llm.WheatDeliveryClientGameTest",
       "io.github.ozozorz.aimaid.llm.ActionPlanClientGameTest",
-      "io.github.ozozorz.aimaid.llm.GoalClientGameTest"
+      "io.github.ozozorz.aimaid.llm.GoalClientGameTest",
+      "io.github.ozozorz.aimaid.experiment.ExperimentClientGameTest"
     ],
     "main": [
       "io.github.ozozorz.aimaid.integration.FixtureEntrypoint"

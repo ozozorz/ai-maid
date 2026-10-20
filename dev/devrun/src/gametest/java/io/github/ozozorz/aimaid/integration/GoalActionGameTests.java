@@ -14,6 +14,7 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.*;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.entity.ChestBlockEntity;
@@ -100,6 +101,75 @@ public class GoalActionGameTests {
             h.assertTrue(receipt.progress().get("broken") == 3 && receipt.progress().get("collected") == 3, "Broken is not collected");
             h.assertTrue(s.maid().getInventory().countMatching(i -> i.is(Items.OAK_LOG)) == 3 && h.getBlockState(TREE).isAir(), "No physical logging");
             h.assertTrue(s.maid().getMainHandItem().getDamageValue() == 3 && task.actions(s.maid()).getFirst().slot() == 2, "Tool durability or receipt incorrect");
+        });
+    }
+    @GameTest(structure = AREA, maxTicks = 600)
+    public void mergedLumberDropsAreCollectedOnceWithoutTakingUnrelatedSurplus(GameTestHelper h) {
+        var s = scene(h); tree(h);
+        s.maid().setItemSlot(net.minecraft.world.entity.EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_AXE));
+        var chop = step("ai-maid-lumber:chop_tree"); chop.addProperty("target_id", observe(h, s, "tree"));
+        var task = plan(s, chop);
+        boolean[] merged = {false};
+        h.onEachTick(() -> {
+            if (merged[0] || task.actions(s.maid()).getFirst().progress().get("broken") < 2) return;
+            var drops = h.getLevel().getEntitiesOfClass(ItemEntity.class, h.getBounds(), e -> e.getItem().is(Items.OAK_LOG));
+            if (drops.size() < 2) return;
+            var first = drops.getFirst(); var second = drops.get(1);
+            // Exercise the same stack transfer and empty-entity removal used by vanilla merging.
+            first.setItem(ItemEntity.merge(first.getItem(), second.getItem(), 64)); second.discard();
+            first.setItem(first.getItem().copyWithCount(first.getItem().getCount() + 4));
+            merged[0] = true;
+        });
+        h.succeedWhen(() -> {
+            h.assertTrue(merged[0] && task.snapshot(s.maid()).state() == MaidTask.State.SUCCEEDED, "Merged drops did not complete: " + task.actions(s.maid()));
+            var receipt = task.actions(s.maid()).getFirst().progress();
+            h.assertTrue(receipt.get("broken") == 3 && receipt.get("collected") == 3 && receipt.get("pending_drop_items") == 0,
+                    "Merging changed the physical collection receipt");
+            h.assertTrue(s.maid().getInventory().countMatching(i -> i.is(Items.OAK_LOG)) == 3, "Collected unrelated surplus");
+            int left = h.getLevel().getEntitiesOfClass(ItemEntity.class, h.getBounds()).stream()
+                    .filter(e -> e.getItem().is(Items.OAK_LOG)).mapToInt(e -> e.getItem().getCount()).sum();
+            h.assertTrue(left == 4, "Unrelated logs were lost or taken");
+            for (int y = 0; y < 3; y++) h.assertBlockPresent(Blocks.AIR, TREE.above(y));
+        });
+    }
+    @GameTest(structure = AREA, maxTicks = 600)
+    public void disappearingEmptyDropStillFailsUntilEveryProducedItemIsCollected(GameTestHelper h) {
+        var s = scene(h); tree(h);
+        s.maid().setItemSlot(net.minecraft.world.entity.EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_AXE));
+        var chop = step("ai-maid-lumber:chop_tree"); chop.addProperty("target_id", observe(h, s, "tree"));
+        var task = plan(s, chop);
+        boolean[] removed = {false};
+        h.onEachTick(() -> {
+            if (removed[0]) return;
+            var drops = h.getLevel().getEntitiesOfClass(ItemEntity.class, h.getBounds(), e -> e.getItem().is(Items.OAK_LOG));
+            if (drops.isEmpty()) return;
+            var drop = drops.getFirst(); drop.setItem(ItemStack.EMPTY); drop.discard(); removed[0] = true;
+        });
+        h.succeedWhen(() -> {
+            h.assertTrue(removed[0] && task.snapshot(s.maid()).state() == MaidTask.State.FAILED, "Missing drop became success");
+            h.assertTrue(task.snapshot(s.maid()).reason().equals("drops_missing"), "Wrong missing-drop failure");
+            var receipt = task.actions(s.maid()).getFirst().progress();
+            h.assertTrue(receipt.get("broken") == 3 && receipt.get("collected") < 3 && receipt.get("pending_drop_items") > 0,
+                    "Empty removed entity erased an uncollected item");
+            h.assertTrue(s.maid().getInventory().countMatching(i -> i.is(Items.OAK_LOG)) < 3, "Missing item was fabricated");
+        });
+    }
+    @GameTest(structure = AREA, maxTicks = 300)
+    public void pendingLumberDropsReserveInventoryCapacityBeforeAnotherLogIsBroken(GameTestHelper h) {
+        var s = scene(h); tree(h);
+        s.maid().setItemSlot(net.minecraft.world.entity.EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_AXE));
+        for (int i = 0; i < s.maid().getInventory().getContainerSize(); i++) s.maid().getInventory().setItem(i, new ItemStack(Items.STONE, 64));
+        s.maid().getInventory().setItem(0, new ItemStack(Items.OAK_LOG, 63));
+        var chop = step("ai-maid-lumber:chop_tree"); chop.addProperty("target_id", observe(h, s, "tree"));
+        var task = plan(s, chop);
+        h.succeedWhen(() -> {
+            h.assertTrue(task.snapshot(s.maid()).state() == MaidTask.State.FAILED
+                    && task.snapshot(s.maid()).reason().equals("inventory_full"), "Pending drops did not reserve space");
+            h.assertTrue(task.actions(s.maid()).getFirst().progress().get("broken") == 1
+                    && s.maid().getMainHandItem().getDamageValue() == 1, "Broke more logs than the inventory can hold");
+            int remaining = 0;
+            for (int y = 0; y < 3; y++) if (h.getBlockState(TREE.above(y)).is(Blocks.OAK_LOG)) remaining++;
+            h.assertTrue(remaining == 2, "Unstorable logs were destroyed");
         });
     }
     @GameTest(structure = AREA, maxTicks = 150)

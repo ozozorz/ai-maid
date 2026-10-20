@@ -167,6 +167,22 @@ public class LumberGameTests {
     }
 
     @GameTest(maxTicks = 400)
+    public void diagonalApproachFellsEveryLogWithoutSkippingTheCanopy(GameTestHelper h) {
+        var maid = worker(h, Items.IRON_AXE, 2.5F, 7.5F);
+        for (int y = 1; y <= 3; y++) h.setBlock(6, y, 2, Blocks.OAK_LOG);
+        for (int x = 5; x <= 7; x++) for (int z = 1; z <= 3; z++)
+            h.setBlock(new BlockPos(x, 4, z), Blocks.OAK_LEAVES.defaultBlockState()
+                    .setValue(LeavesBlock.PERSISTENT, false).setValue(LeavesBlock.DISTANCE, 1));
+        maid.selectMaidCommand(LumberAddon.LUMBER);
+        h.succeedWhen(() -> {
+            h.assertTrue(done(maid), "Diagonal approach did not finish");
+            for (int y = 1; y <= 3; y++) h.assertBlockPresent(Blocks.AIR, new BlockPos(6, y, 2));
+            h.assertTrue(logs(h, maid) == 3 && maid.getMainHandItem().getDamageValue() == 3,
+                    "Stopping at a stand's edge must not skip a reachable log");
+        });
+    }
+
+    @GameTest(maxTicks = 400)
     public void unreachableCanopyIsSkippedWithoutRemoteBreaking(GameTestHelper h) {
         var maid = worker(h, Items.IRON_AXE, 2.5F, 4.5F);
         tree(h, 4, 4, 12, false);

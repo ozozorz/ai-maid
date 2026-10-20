@@ -11,14 +11,24 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 /** 异步 HTTP；限制响应体，关闭时立即取消请求，不阻塞游戏线程。 */
 public final class LlmClient implements AutoCloseable {
     private final LlmConfig config;
     private final HttpClient http;
+    private final Consumer<JsonObject> trace;
+    private final AtomicInteger callIds = new AtomicInteger();
 
     public LlmClient(LlmConfig config) {
+        this(config, ignored -> {});
+    }
+
+    /** Trace events contain model payloads, never authentication headers or provider error bodies. */
+    public LlmClient(LlmConfig config, Consumer<JsonObject> trace) {
         this.config = config;
+        this.trace = java.util.Objects.requireNonNull(trace);
         http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(config.timeoutSeconds()))
                 .followRedirects(HttpClient.Redirect.NEVER).build();
     }
@@ -50,21 +60,47 @@ public final class LlmClient implements AutoCloseable {
                 .POST(HttpRequest.BodyPublishers.ofString(json, StandardCharsets.UTF_8));
         if (!config.getApiKey().isEmpty())
             builder.header("Authorization", "Bearer " + config.getApiKey());
+        int callId = callIds.incrementAndGet();
+        long started = System.nanoTime();
+        var sent = event("model_request", callId, started);
+        sent.add("payload", body.deepCopy());
+        trace.accept(sent);
         var request = http.sendAsync(builder.build(), info -> new LimitedBody());
         var result = request.thenApply(response -> {
             if (response.statusCode() < 200 || response.statusCode() >= 300)
                 throw new CompletionException(new Failure("http_" + response.statusCode()));
             try {
-                return ChatProtocol.parseReply(response.body());
+                var reply = ChatProtocol.parseReply(response.body());
+                var received = event("model_response", callId, started);
+                received.add("message", reply.message().deepCopy());
+                // Usage is optional telemetry; malformed/missing usage never becomes zero tokens.
+                var raw = ChatProtocol.object(response.body());
+                if (raw.has("usage") && raw.get("usage").isJsonObject())
+                    received.add("usage", raw.getAsJsonObject("usage").deepCopy());
+                if (raw.has("model") && raw.get("model").isJsonPrimitive())
+                    received.add("returned_model", raw.get("model").deepCopy());
+                trace.accept(received);
+                return reply;
             } catch (IllegalArgumentException e) {
                 throw new CompletionException(new Failure("invalid_response"));
             }
         }).orTimeout(config.timeoutSeconds(), TimeUnit.SECONDS);
         result.whenComplete((r, e) -> {
-            if (e != null)
+            if (e != null) {
+                var failed = event("model_error", callId, started);
+                failed.addProperty("error", errorCode(e));
+                trace.accept(failed);
                 request.cancel(true);
+            }
         });
         return result;
+    }
+
+    private static JsonObject event(String type, int call, long started) {
+        var event = new JsonObject();
+        event.addProperty("event", type); event.addProperty("call", call);
+        event.addProperty("elapsed_ms", (System.nanoTime() - started) / 1_000_000);
+        return event;
     }
 
     public static String errorCode(Throwable error) {
