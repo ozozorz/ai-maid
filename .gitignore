@@ -45,3 +45,5 @@ replay_*.log
 # Generated local experiment data and Python bytecode.
 maid-experiments/
 __pycache__/
+.agents/
+outputs/paper-draft-20261026/
