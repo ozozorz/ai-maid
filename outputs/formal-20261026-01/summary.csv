@@ -1,0 +1,11 @@
+﻿group,mode,runs,interrupted,successes,success_rate,negative_reviewed,negative_unreviewed,correct_blocked,correct_blocked_rate_reviewed,false_completion_signals,natural_language_claims_unreviewed,median_elapsed_ms_all,median_elapsed_ms_success,median_goal_ms_success,median_llm_calls,median_actions,token_usage_known_runs,median_total_tokens_known_only
+feasible_all,A,75,0,56,0.7466666666666667,,,,,0,0,7699,11951.0,11550.0,3,2,75,10722
+feasible_all,B,75,0,75,1.0,,,,,0,0,17400,17400,16002,6,3,75,27935
+single,A,25,0,25,1.0,,,,,0,0,6169,6169,5801,3,1,25,10431
+single,B,25,0,25,1.0,,,,,0,0,8704,8704,6868,4,1,25,14203
+multi,A,25,0,25,1.0,,,,,0,0,16905,16905,16704,3,3,25,11267
+multi,B,25,0,25,1.0,,,,,0,0,21501,21501,20000,6,3,25,30514
+disturbed,A,25,0,6,0.24,,,,,0,0,5499,14500.0,14299.5,3,1,25,10146
+disturbed,B,25,0,25,1.0,,,,,0,0,19148,19148,17472,7,4,25,42341
+blocked,A,25,0,,,25,0,13,0.52,1,0,3898,,,3,1,25,9677
+blocked,B,25,0,,,25,0,25,1.0,0,0,4699,,,4,1,25,13914

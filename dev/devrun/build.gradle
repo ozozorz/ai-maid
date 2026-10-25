@@ -120,4 +120,6 @@ tasks.named('runClientGameTest') {
     systemProperty 'aimaid.experiment.realPilotConfig', providers.gradleProperty('realPilotConfig').orElse('').get()
     systemProperty 'aimaid.experiment.realPilotOutput', providers.gradleProperty('realPilotOutput').orElse('').get()
     systemProperty 'aimaid.experiment.pilotDiagnosticOutput', providers.gradleProperty('pilotDiagnosticOutput').orElse('').get()
+    systemProperty 'aimaid.experiment.realFormalConfig', providers.gradleProperty('realFormalConfig').orElse('').get()
+    systemProperty 'aimaid.experiment.realFormalOutput', providers.gradleProperty('realFormalOutput').orElse('').get()
 }

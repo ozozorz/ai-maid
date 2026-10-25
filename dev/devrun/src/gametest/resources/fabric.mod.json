@@ -24,7 +24,8 @@
       "io.github.ozozorz.aimaid.llm.ActionPlanClientGameTest",
       "io.github.ozozorz.aimaid.llm.GoalClientGameTest",
       "io.github.ozozorz.aimaid.experiment.ExperimentClientGameTest",
-      "io.github.ozozorz.aimaid.experiment.RealLlmPilotGameTest"
+      "io.github.ozozorz.aimaid.experiment.RealLlmPilotGameTest",
+      "io.github.ozozorz.aimaid.experiment.RealLlmFormalGameTest"
     ],
     "main": [
       "io.github.ozozorz.aimaid.integration.FixtureEntrypoint"
