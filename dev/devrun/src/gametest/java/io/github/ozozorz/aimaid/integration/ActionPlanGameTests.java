@@ -3,6 +3,7 @@ package io.github.ozozorz.aimaid.integration;
 import java.util.*;
 import com.google.gson.*;
 import io.github.ozozorz.aimaid.entity.*;
+import io.github.ozozorz.aimaid.entity.ai.behavior.MaidWorkNavigation;
 import io.github.ozozorz.aimaid.entity.maidcommand.MaidCommands;
 import io.github.ozozorz.aimaid.entity.task.*;
 import io.github.ozozorz.aimaid.llm.tool.MaidTools;
@@ -220,6 +221,101 @@ public class ActionPlanGameTests {
         h.succeedWhen(() -> {
             h.assertTrue(paused[0] && task.snapshot(s.maid()).state() == MaidTask.State.SUCCEEDED, "No combat resume");
             h.assertTrue(stored(h, A) == 2 && held(s) == 0, "Combat replayed effects");
+        });
+    }
+
+    @GameTest(structure = AREA, maxTicks = 500)
+    public void moveToObservedTreeThenChopCollectsEveryLog(GameTestHelper h) {
+        var s = scene(h, 0, 0);
+        var tree = new BlockPos(22, 1, 16);
+        for (int y = 0; y < 3; y++) h.setBlock(tree.above(y), Blocks.OAK_LOG);
+        for (int x = -1; x <= 1; x++) for (int z = -1; z <= 1; z++)
+            h.setBlock(tree.offset(x, 3, z), Blocks.OAK_LEAVES.defaultBlockState()
+                    .setValue(LeavesBlock.PERSISTENT, false).setValue(LeavesBlock.DISTANCE, 1));
+        s.maid().setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_AXE));
+        // Let the spawned maid land before asking the ground navigator for a path.
+        s.maid().setNoAi(false);
+        MaidPlanTask[] tasks = {null};
+        h.runAfterDelay(20, () -> {
+            h.assertTrue(s.maid().onGround(), "Maid has not landed before path observation");
+            var observations = MaidTools.execute("observe_nearby", new JsonObject(), s.maid(), s.owner(), 32);
+            JsonObject target = null;
+            for (var value : observations.getAsJsonArray("targets")) {
+                var row = value.getAsJsonObject();
+                if (row.get("kind").getAsString().equals("tree")
+                        && row.get("position").getAsString().equals(h.absolutePos(tree).toShortString())) target = row;
+            }
+            h.assertTrue(target != null && target.getAsJsonObject("facts").get("logs").getAsInt() == 3, "Natural tree not observed");
+            h.assertTrue(target.get("path_reachable").getAsBoolean(), "Tree should be accessible before submitting the plan");
+            var move = step("ai-maid:move_to"); move.add("target_id", target.get("target_id"));
+            var chop = step("ai-maid-lumber:chop_tree"); chop.add("target_id", target.get("target_id"));
+            tasks[0] = start(h, s, plan("move-then-chop", move, chop));
+        });
+        boolean[] checkedArrival = {false};
+        h.onEachTick(() -> {
+            var task = tasks[0];
+            if (task != null && !checkedArrival[0] && task.actions(s.maid()).getFirst().state().equals("succeeded")) {
+                h.assertTrue(MaidWorkNavigation.canReach(s.maid(), h.absolutePos(tree), 2.5), "Move succeeded outside actual interaction range or through a block");
+                checkedArrival[0] = true;
+            }
+        });
+        h.succeedWhen(() -> {
+            var task = tasks[0];
+            h.assertTrue(task != null, "Plan has not started");
+            h.assertTrue(task.snapshot(s.maid()).state() == MaidTask.State.SUCCEEDED, "Move/chop chain incomplete: " + task.snapshot(s.maid()));
+            h.assertTrue(checkedArrival[0], "No actual arrival before chopping");
+            var steps = task.actions(s.maid());
+            h.assertTrue(steps.size() == 2 && steps.stream().allMatch(a -> a.state().equals("succeeded")), "A step was skipped");
+            for (int y = 0; y < 3; y++) h.assertTrue(h.getBlockState(tree.above(y)).isAir(), "Tree left standing");
+            h.assertTrue(s.maid().getInventory().countMatching(stack -> stack.is(Items.OAK_LOG)) == 3, "Not all three logs were physically collected");
+            h.assertTrue(s.maid().getMainHandItem().getDamageValue() == 3, "Expected three real block breaks");
+            var progress = steps.get(1).progress();
+            h.assertTrue(progress.get("broken") == 3 && progress.get("collected") == 3, "Incomplete lumber receipt");
+            for (String key : List.of("skipped", "remaining_blocks", "uncollected_entities", "missing_drop_entities", "pending_drop_items"))
+                h.assertTrue(progress.get(key) == 0, "Unfinished lumber work: " + key);
+        });
+    }
+
+    @GameTest(structure = AREA, maxTicks = 150)
+    public void moveToChestFromStandBlockEdgeFinishesInsideActualRange(GameTestHelper h) {
+        var s = scene(h, 3, 0);
+        var stand = h.absolutePos(A.offset(-2, 0, 0));
+        s.maid().setPos(h.absoluteVec(new net.minecraft.world.phys.Vec3(21.05, 1, 22.5)));
+        s.maid().setNoAi(false);
+        MaidPlanTask[] tasks = {null};
+        h.runAfterDelay(20, () -> {
+            h.assertTrue(s.maid().onGround() && s.maid().blockPosition().equals(stand), "Maid did not settle at the stand block edge");
+            h.assertTrue(!MaidWorkNavigation.canReach(s.maid(), h.absolutePos(A), 2.5), "Edge should be outside the actual interaction range");
+            var move = step("ai-maid:move_to"); move.addProperty("target_id", s.a());
+            tasks[0] = start(h, s, plan("move-from-edge", move));
+        });
+        h.succeedWhen(() -> {
+            var task = tasks[0];
+            h.assertTrue(task != null && task.snapshot(s.maid()).state() == MaidTask.State.SUCCEEDED, "Short move from block edge did not finish");
+            h.assertTrue(s.maid().blockPosition().equals(stand), "Maid left a stand block that already contained a valid interaction position");
+            h.assertTrue(MaidWorkNavigation.canReach(s.maid(), h.absolutePos(A), 2.5), "Move succeeded before actually reaching the chest");
+            h.assertTrue(held(s) == 3 && stored(h, A) == 0, "Move alone must not transfer cargo");
+        });
+    }
+
+    @GameTest(structure = AREA, maxTicks = 150)
+    public void moveToEnclosedChestFailsWithoutRemoteTransfer(GameTestHelper h) {
+        var s = scene(h, 3, 0);
+        for (int x = -1; x <= 1; x++) for (int z = -1; z <= 1; z++) for (int y = 0; y <= 3; y++)
+            if (x != 0 || z != 0 || y == 3) h.setBlock(A.offset(x, y, z), Blocks.STONE);
+        s.maid().setNoAi(false);
+        h.runAfterDelay(20, () -> blockedMove(h, s));
+    }
+
+    private void blockedMove(GameTestHelper h, Scene s) {
+        h.assertTrue(s.maid().onGround(), "Maid has not landed before blocked movement");
+        var move = step("ai-maid:move_to"); move.addProperty("target_id", s.a());
+        var task = start(h, s, plan("blocked-move", move, deposit(s.a(), 3)));
+        h.succeedWhen(() -> {
+            h.assertTrue(task.snapshot(s.maid()).state() == MaidTask.State.FAILED
+                    && task.snapshot(s.maid()).reason().equals("unreachable"), "Blocked target was accepted as reached");
+            h.assertTrue(!MaidWorkNavigation.canReach(s.maid(), h.absolutePos(A), 2.5), "Reached through an enclosing wall");
+            h.assertTrue(held(s) == 3 && stored(h, A) == 0 && task.actions(s.maid()).get(1).state().equals("skipped"), "Transferred through a wall or lost cargo");
         });
     }
 }

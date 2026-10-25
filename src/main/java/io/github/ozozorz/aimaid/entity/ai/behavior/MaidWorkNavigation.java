@@ -79,12 +79,10 @@ public final class MaidWorkNavigation {
         for (int x = -radius; x <= radius; x++) for (int z = -radius; z <= radius; z++) {
             for (int y = -1; y <= 1; y++) {
                 BlockPos feet = target.offset(x, y, z).immutable();
-                // 已站在此格却够不到时，必须换一个站位，不能反复返回同一格。
-                if (feet.equals(maid.blockPosition())) continue;
-                // MoveToTargetSink 进入目标方格就算到达，并不保证走到方格中心。
-                // 预留半格对角线的距离，否则会反复选中“中心够得到、实际停下够不到”的站位。
+                // 按实际交互距离验证格子中心；walk 会处理进格后还需靠近中心的情况。
+                // 不能统一扣除半格对角线，否则低处目标（如树根）的合法站位会全部被排除。
                 Vec3 eye = Vec3.atBottomCenterOf(feet).add(0, maid.getEyeHeight(), 0);
-                if (canStand(maid, feet) && canReachFrom(maid, eye, to, hitBlock, range - 0.75))
+                if (canStand(maid, feet) && canReachFrom(maid, eye, to, hitBlock, range))
                     candidates.putIfAbsent(feet, target.immutable());
             }
         }
@@ -106,6 +104,14 @@ public final class MaidWorkNavigation {
 
     public static void walk(AiMaidEntity maid, BlockPos feet) {
         MaidServerAccess.requireServerThread(maid);
+        // 原版 MoveToTargetSink 进入目标方格就停止。此时可能仍够不到工作目标，
+        // 用正常移动控制继续靠近已验证的格子中心；是否真正到位仍由 canReach 判定。
+        if (feet.equals(maid.blockPosition())) {
+            haltMovement(maid);
+            Vec3 center = Vec3.atBottomCenterOf(feet);
+            maid.getMoveControl().setWantedPosition(center.x, center.y, center.z, 0.8);
+            return;
+        }
         var existing = maid.getBrain().getMemory(MemoryModuleType.WALK_TARGET).orElse(null);
         if (existing == null || !existing.getTarget().currentBlockPosition().equals(feet)
                 || existing.getSpeedModifier() != 0.8F || existing.getCloseEnoughDist() != 0) {

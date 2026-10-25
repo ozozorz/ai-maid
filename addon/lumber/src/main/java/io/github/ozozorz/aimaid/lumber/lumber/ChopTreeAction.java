@@ -97,8 +97,8 @@ public final class ChopTreeAction extends WalkingMaidAction {
             if (!drop.getItem().isEmpty()) missingDrops++;
             drops.removeFirst(); settlingTicks = 0; stop(maid); return;
         }
-        // Item entities need time to fall from a cut log. Block stand selection also reserves
-        // 0.75 blocks for path arrival, so use the same physical reach as container interaction.
+        // Item entities need time to fall from a cut log. After settling, approach with
+        // the same physical reach as container interaction before transferring the drop.
         if (!drop.onGround() && ++settlingTicks <= 40) return;
         if (!approach(maid, drop.blockPosition(), 2.5, now, "drops_unreachable")) return;
         if (drop.hasPickUpDelay()) return;

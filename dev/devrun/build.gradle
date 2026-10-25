@@ -117,4 +117,7 @@ tasks.named('processGametestResources') {
 
 tasks.named('runClientGameTest') {
     systemProperty 'aimaid.experiment.testCases', providers.gradleProperty('experimentTestCases').orElse('').get()
+    systemProperty 'aimaid.experiment.realPilotConfig', providers.gradleProperty('realPilotConfig').orElse('').get()
+    systemProperty 'aimaid.experiment.realPilotOutput', providers.gradleProperty('realPilotOutput').orElse('').get()
+    systemProperty 'aimaid.experiment.pilotDiagnosticOutput', providers.gradleProperty('pilotDiagnosticOutput').orElse('').get()
 }
