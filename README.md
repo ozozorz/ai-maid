@@ -1,5 +1,7 @@
 # AI Maid
 
+[简体中文](README.md) | [한국어](README.ko.md) | [English](README.en.md)
+
 Minecraft Fabric 女仆模组。Core 提供主人关系、Brain、35 格背包与六槽装备、GUI、喂食回血、动画，以及近战和弓弩 PvE 战斗。正式 Addon 分别提供伐木、耕种、喂养和分类搬运。
 
 当前版本：**Core / Farming / Lumber 1.3.0、Feeding / Hauling 1.2.1、LLM Addon 0.3.0**；环境：**Minecraft 26.2、Java 25、Fabric Loader 0.19.3、Fabric API 0.158.0+26.2**，Loom 1.17-SNAPSHOT，unobfuscated / no-remap。
