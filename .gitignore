@@ -46,4 +46,4 @@ replay_*.log
 maid-experiments/
 __pycache__/
 .agents/
-outputs/
+outputs/paper*
